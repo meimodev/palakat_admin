@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/models/membership.dart';
 import '../state/members_providers.dart';
 import 'edit_member_drawer.dart';
 

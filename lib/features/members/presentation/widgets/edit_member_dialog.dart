@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../state/members_providers.dart';
 import 'package:multi_dropdown/multi_dropdown.dart';
+import 'package:palakat_admin/core/models/membership.dart';
 
 class EditMemberDialog extends StatefulWidget {
   final Membership member;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:palakat_admin/core/models/membership.dart';
 import 'package:palakat_admin/features/members/presentation/state/members_providers.dart';
 import 'package:multi_dropdown/multi_dropdown.dart';
 
@@ -218,10 +219,7 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
                                 value: 'Female',
                                 child: Text('Female'),
                               ),
-                              DropdownMenuItem<String>(
-                                value: 'Other',
-                                child: Text('Other'),
-                              ),
+
                             ],
                             onChanged: _isLinked
                                 ? null
@@ -236,34 +234,12 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
                       ),
                       const SizedBox(height: 16),
                       const Divider(),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 16),
                       const Text(
                         'Membership Information',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: 8),
-                      CheckboxListTile(
-                        title: const Text('Baptized'),
-                        value: _isBaptized,
-                        onChanged: (value) =>
-                            setState(() => _isBaptized = value ?? false),
-                        controlAffinity: ListTileControlAffinity.leading,
-                        dense: true,
-                      ),
-                      CheckboxListTile(
-                        title: const Text('SIDI'),
-                        value: _isSidi,
-                        onChanged: (value) =>
-                            setState(() => _isSidi = value ?? false),
-                        controlAffinity: ListTileControlAffinity.leading,
-                        dense: true,
-                      ),
                       const SizedBox(height: 16),
-                      const Text(
-                        'Positions',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
                       MultiDropdown<String>(
                         controller: _positionsController,
                         items: _pos
@@ -309,6 +285,24 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
                             _selectedColumn = newValue;
                           });
                         },
+                      ),
+                      const SizedBox(height: 16),
+                      CheckboxListTile(
+                        title: const Text('Baptized'),
+                        value: _isBaptized,
+                        onChanged: (value) =>
+                            setState(() => _isBaptized = value ?? false),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        dense: true,
+                      ),
+                      const SizedBox(height: 16),
+                      CheckboxListTile(
+                        title: const Text('SIDI'),
+                        value: _isSidi,
+                        onChanged: (value) =>
+                            setState(() => _isSidi = value ?? false),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        dense: true,
                       ),
                       const SizedBox(height: 80), // Space for the save button
                     ],
@@ -423,7 +417,7 @@ Future<Membership?> showEditMemberDrawer(
 }) async {
   return await showGeneralDialog<Membership>(
     context: context,
-    pageBuilder: (context, _, __) => Scaffold(
+    pageBuilder: (context, _, _) => Scaffold(
       backgroundColor: Colors.transparent,
       body: Row(
         children: [

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:palakat_admin/core/models/membership.dart';
 
 import '../widgets/members_table.dart';
 import '../widgets/edit_member_drawer.dart';
