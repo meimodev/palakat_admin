@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'core/theme/theme.dart';
 import 'core/layout/app_scaffold.dart';
-import 'features/users/presentation/screens/users_screen.dart';
+import 'features/members/presentation/screens/members_screen.dart';
 import 'features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'features/reports/presentation/screens/reports_screen.dart';
 import 'features/approval/presentation/screens/approval_screen.dart';
@@ -50,7 +50,7 @@ final _router = GoRouter(
         GoRoute(
           path: '/members',
           name: 'members',
-          builder: (context, state) => const UsersScreen(),
+          builder: (context, state) => const MembersScreen(),
         ),
         GoRoute(
           path: '/approval',

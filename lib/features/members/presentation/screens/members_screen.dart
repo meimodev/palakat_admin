@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../widgets/users_table.dart';
-import '../state/users_providers.dart';
+import '../widgets/members_table.dart';
+import '../widgets/edit_member_drawer.dart';
+import '../state/members_providers.dart';
 
-class UsersScreen extends ConsumerWidget {
-  const UsersScreen({super.key});
+class MembersScreen extends ConsumerWidget {
+  const MembersScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -13,7 +14,30 @@ class UsersScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Members', style: Theme.of(context).textTheme.headlineMedium),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Members', style: Theme.of(context).textTheme.headlineMedium),
+              FilledButton.icon(
+                onPressed: () {
+                  showEditMemberDrawer(
+                    context,
+                    member: const Membership(
+                      name: '',
+                      email: '',
+                      phone: '',
+                      positions: [],
+                      isBaptized: false,
+                      isSidi: false,
+                      isLinked: false,
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('New Member'),
+              ),
+            ],
+          ),
           const SizedBox(height: 16),
           Card(
             child: Padding(
@@ -22,8 +46,6 @@ class UsersScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Filters row
-                  _FiltersBar(),
-                  const SizedBox(height: 12),
                   Wrap(
                     spacing: 12,
                     runSpacing: 12,
@@ -33,8 +55,11 @@ class UsersScreen extends ConsumerWidget {
                       _QuickStat(label: 'Pending', value: '86'),
                     ],
                   ),
+                  const SizedBox(height: 12),
+                  _FiltersBar(),
+
                   const SizedBox(height: 16),
-                  const UsersTable(),
+                  const MembersTable(),
                   const SizedBox(height: 8),
                   const _PaginationBar(),
                 ],
@@ -50,7 +75,6 @@ class UsersScreen extends ConsumerWidget {
 class _FiltersBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final filters = ref.watch(usersFilterProvider);
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -59,35 +83,15 @@ class _FiltersBar extends ConsumerWidget {
         SizedBox(
           width: 260,
           child: TextField(
-            decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Search name or email'),
-            onChanged: (v) => ref.read(usersFilterProvider.notifier).setSearch(v),
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.search),
+              hintText: 'Search name or email',
+            ),
+            onChanged: (v) =>
+                ref.read(membersFilterProvider.notifier).setSearch(v),
           ),
         ),
-        DropdownButton<String>(
-          value: filters.role,
-          items: const [
-            DropdownMenuItem(value: 'All', child: Text('All Roles')),
-            DropdownMenuItem(value: 'Admin', child: Text('Admin')),
-            DropdownMenuItem(value: 'Member', child: Text('Member')),
-          ],
-          onChanged: (v) => v != null ? ref.read(usersFilterProvider.notifier).setRole(v) : null,
-        ),
-        DropdownButton<String>(
-          value: filters.status,
-          items: const [
-            DropdownMenuItem(value: 'All', child: Text('All Status')),
-            DropdownMenuItem(value: 'Active', child: Text('Active')),
-            DropdownMenuItem(value: 'Pending', child: Text('Pending')),
-          ],
-          onChanged: (v) => v != null ? ref.read(usersFilterProvider.notifier).setStatus(v) : null,
-        ),
-        DropdownButton<int>(
-          value: filters.rowsPerPage,
-          items: const [10, 20, 30]
-              .map((e) => DropdownMenuItem(value: e, child: Text('Rows: $e')))
-              .toList(),
-          onChanged: (v) => v != null ? ref.read(usersFilterProvider.notifier).setRowsPerPage(v) : null,
-        ),
+
       ],
     );
   }
@@ -95,20 +99,41 @@ class _FiltersBar extends ConsumerWidget {
 
 class _PaginationBar extends ConsumerWidget {
   const _PaginationBar();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final slice = ref.watch(usersPageProvider);
-    final filters = ref.watch(usersFilterProvider);
-    final totalPages = (slice.total / filters.rowsPerPage).ceil().clamp(1, 9999);
+    final slice = ref.watch(membersPageProvider);
+    final filters = ref.watch(membersFilterProvider);
+    final totalPages = (slice.total / filters.rowsPerPage).ceil().clamp(
+      1,
+      9999,
+    );
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text('Showing ${slice.rows.length} of ${slice.total}'),
-        Row(
+        Row(children: [
+
+          Text('Showing ${slice.rows.length} of ${slice.total}'),
+          const SizedBox(width: 12),
+          DropdownButton<int>(
+            value: filters.rowsPerPage,
+            items: const [10, 20, 30]
+                .map((e) => DropdownMenuItem(value: e, child: Text('Rows: $e')))
+                .toList(),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            onChanged: (v) => v != null
+                ? ref.read(membersFilterProvider.notifier).setRowsPerPage(v)
+                : null,
+          ),
+
+        ],),
+         Row(
           children: [
             IconButton(
               tooltip: 'Prev',
-              onPressed: filters.page == 0 ? null : () => ref.read(usersFilterProvider.notifier).prevPage(),
+              onPressed: filters.page == 0
+                  ? null
+                  : () => ref.read(membersFilterProvider.notifier).prevPage(),
               icon: const Icon(Icons.chevron_left),
             ),
             Text('Page ${filters.page + 1} / $totalPages'),
@@ -116,7 +141,9 @@ class _PaginationBar extends ConsumerWidget {
               tooltip: 'Next',
               onPressed: (filters.page + 1) >= totalPages
                   ? null
-                  : () => ref.read(usersFilterProvider.notifier).nextPage(slice.total),
+                  : () => ref
+                        .read(membersFilterProvider.notifier)
+                        .nextPage(slice.total),
               icon: const Icon(Icons.chevron_right),
             ),
           ],
@@ -128,6 +155,7 @@ class _PaginationBar extends ConsumerWidget {
 
 class _QuickStat extends StatelessWidget {
   const _QuickStat({required this.label, required this.value});
+
   final String label;
   final String value;
 
@@ -145,7 +173,12 @@ class _QuickStat extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 6),
           Text(value, style: theme.textTheme.titleLarge),
         ],

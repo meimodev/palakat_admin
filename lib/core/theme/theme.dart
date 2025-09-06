@@ -21,8 +21,8 @@ ThemeData buildAppTheme() {
     ),
     appBarTheme: AppBarTheme(
       elevation: 0,
-      backgroundColor: base.colorScheme.background,
-      foregroundColor: base.colorScheme.onBackground,
+      backgroundColor: base.colorScheme.surface,
+      foregroundColor: base.colorScheme.onSurface,
       centerTitle: false,
     ),
     inputDecorationTheme: const InputDecorationTheme(

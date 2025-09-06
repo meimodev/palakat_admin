@@ -56,8 +56,8 @@ class _StatusChip extends StatelessWidget {
     final color = isLow ? Colors.orange : Colors.green;
     return Chip(
       label: Text(status),
-      side: BorderSide(color: color.withOpacity(0.4)),
-      backgroundColor: color.withOpacity(0.08),
+      side: BorderSide(color: color.withValues(alpha: 0.4)),
+      backgroundColor: color.withValues(alpha: 0.08),
       labelStyle: TextStyle(color: color.shade700, fontWeight: FontWeight.w600),
     );
   }
