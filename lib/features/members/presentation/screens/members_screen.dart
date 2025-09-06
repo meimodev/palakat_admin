@@ -52,8 +52,9 @@ class MembersScreen extends ConsumerWidget {
                     runSpacing: 12,
                     children: const [
                       _QuickStat(label: 'Total Members', value: '1,248'),
-                      _QuickStat(label: 'Active', value: '1,102'),
-                      _QuickStat(label: 'Pending', value: '86'),
+                      _QuickStat(label: 'Claimed Members', value: '1,248'),
+                      _QuickStat(label: 'Baptize', value: '1,102'),
+                      _QuickStat(label: 'Sidi', value: '86'),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -165,6 +166,7 @@ class _QuickStat extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(12),
+      width: 150,
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(12),

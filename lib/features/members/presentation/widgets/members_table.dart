@@ -56,16 +56,16 @@ class MembersTable extends ConsumerWidget {
                             const SizedBox(width: 8),
                           if (u.isBaptized)
                             const Icon(
-                              Icons.water_drop,
-                              size: 14,
+                              Icons.water_drop_outlined,
+                              size: 16,
                               color: Colors.blue,
                             ),
                           if (u.isSidi)
                             const Padding(
                               padding: EdgeInsets.only(left: 4.0),
                               child: Icon(
-                                Icons.emoji_people,
-                                size: 14,
+                                Icons.emoji_people_outlined,
+                                size: 16,
                                 color: Colors.green,
                               ),
                             ),
@@ -73,8 +73,8 @@ class MembersTable extends ConsumerWidget {
                             const Padding(
                               padding: EdgeInsets.only(left: 4.0),
                               child: Icon(
-                                Icons.link,
-                                size: 14,
+                                Icons.phone_android_outlined,
+                                size: 16,
                                 color: Colors.purple,
                               ),
                             ),
