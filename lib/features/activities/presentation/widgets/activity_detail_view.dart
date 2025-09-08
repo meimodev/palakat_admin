@@ -134,16 +134,6 @@ class ActivityDetailView extends StatelessWidget {
     );
   }
 
-  String _formatDuration(Duration duration) {
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-
-    if (hours > 0) {
-      return minutes > 0 ? '${hours}h ${minutes}m' : '${hours}h';
-    } else {
-      return '${minutes}m';
-    }
-  }
 }
 
 class _InfoSection extends StatelessWidget {
@@ -237,7 +227,7 @@ class _ActivityTypeChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: fg.withOpacity(0.2)),
+        border: Border.all(color: fg.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -253,51 +243,6 @@ class _ActivityTypeChip extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ActivityStatusChip extends StatelessWidget {
-  final ActivityStatus status;
-
-  const _ActivityStatusChip({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    final (bg, fg, label) = switch (status) {
-      ActivityStatus.planned => (
-        Colors.blue.shade50,
-        Colors.blue.shade700,
-        'Planned',
-      ),
-      ActivityStatus.ongoing => (
-        Colors.orange.shade50,
-        Colors.orange.shade700,
-        'Ongoing',
-      ),
-      ActivityStatus.completed => (
-        Colors.green.shade50,
-        Colors.green.shade700,
-        'Completed',
-      ),
-      ActivityStatus.cancelled => (
-        Colors.red.shade50,
-        Colors.red.shade700,
-        'Cancelled',
-      ),
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: fg.withOpacity(0.2)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(color: fg, fontWeight: FontWeight.w500, fontSize: 12),
       ),
     );
   }

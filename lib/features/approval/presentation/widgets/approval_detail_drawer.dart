@@ -21,7 +21,6 @@ class ApprovalDetailDrawer extends StatefulWidget {
 
 class _ApprovalDetailDrawerState extends State<ApprovalDetailDrawer> {
   late ApprovalRequest _currentRequest;
-  String? _comment;
 
   @override
   void initState() {
@@ -32,7 +31,6 @@ class _ApprovalDetailDrawerState extends State<ApprovalDetailDrawer> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isPending = _currentRequest.status == RequestStatus.pending;
 
     return SideDrawer(
       title: 'Approval Details',
@@ -116,48 +114,6 @@ class _ApprovalDetailDrawerState extends State<ApprovalDetailDrawer> {
     );
   }
 
-  void _handleAction(AuthorizerDecision decision) {
-    // In a real app, you would update the request status here
-    // For now, we'll just update the local state
-    setState(() {
-      _currentRequest = ApprovalRequest(
-        date: _currentRequest.date,
-        description: _currentRequest.description,
-        type: _currentRequest.type,
-        requester: _currentRequest.requester,
-        authorizers: _currentRequest.authorizers,
-        status: decision == AuthorizerDecision.approved
-            ? RequestStatus.approved
-            : RequestStatus.rejected,
-        note: _comment?.isNotEmpty == true ? _comment : _currentRequest.note,
-        id: _currentRequest.id,
-      );
-    });
-
-    // Notify parent of the update
-    widget.onUpdate(_currentRequest);
-
-    // Show confirmation
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          decision == AuthorizerDecision.approved
-              ? 'Request approved successfully'
-              : 'Request rejected',
-        ),
-        backgroundColor: decision == AuthorizerDecision.approved
-            ? Colors.green
-            : Colors.red,
-      ),
-    );
-
-    // Close drawer after a short delay
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) {
-        widget.onClose();
-      }
-    });
-  }
 
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';

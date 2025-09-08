@@ -34,23 +34,6 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     _allEntries = _mockEntries();
   }
 
-  Future<void> _pickDateRange() async {
-    final now = DateTime.now();
-    final initial = _dateRange ?? DateTimeRange(start: now.subtract(const Duration(days: 7)), end: now);
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2000, 1, 1),
-      lastDate: DateTime(2100, 12, 31),
-      initialDateRange: initial,
-    );
-    if (picked != null) {
-      setState(() {
-        _dateRange = picked;
-        _page = 0;
-      });
-    }
-  }
-
   @override
   void dispose() {
     _searchController.dispose();
@@ -242,7 +225,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         approvalStatus: ApprovalStatus.pending,
         approvedAt: null,
         approvers: const [
-          ApproverDecision(name: 'Administrator', positions: const ['Administrator'], decision: ApprovalStatus.pending),
+          ApproverDecision(name: 'Administrator', positions: ['Administrator'], decision: ApprovalStatus.pending),
         ],
       ),
       ExpenseEntry(

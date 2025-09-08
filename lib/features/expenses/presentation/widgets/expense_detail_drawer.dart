@@ -7,12 +7,16 @@ import 'package:palakat_admin/core/models/approval_status.dart';
 class ExpenseDetailDrawer extends StatelessWidget {
   final ExpenseEntry entry;
   final VoidCallback onClose;
-  const ExpenseDetailDrawer({super.key, required this.entry, required this.onClose});
+  const ExpenseDetailDrawer({
+    super.key,
+    required this.entry,
+    required this.onClose,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return SideDrawer(
       title: 'Expense Details',
       subtitle: 'View detailed information about this expense entry',
@@ -25,8 +29,17 @@ class ExpenseDetailDrawer extends StatelessWidget {
             title: 'Basic Information',
             children: [
               _InfoRow(label: 'Account ID', value: entry.accountId),
-              _InfoRow(label: 'Date', value: DateFormat('y-MM-dd').format(entry.date)),
-              _InfoRow(label: 'Amount', value: NumberFormat.currency(locale: 'en_PH', symbol: '₱ ').format(entry.amount)),
+              _InfoRow(
+                label: 'Date',
+                value: DateFormat('y-MM-dd').format(entry.date),
+              ),
+              _InfoRow(
+                label: 'Amount',
+                value: NumberFormat.currency(
+                  locale: 'en_PH',
+                  symbol: '₱ ',
+                ).format(entry.amount),
+              ),
             ],
           ),
 
@@ -44,10 +57,7 @@ class ExpenseDetailDrawer extends StatelessWidget {
                   child: _CompactStatusChip(status: entry.approvalStatus),
                 ),
               ),
-              _InfoRow(
-                label: 'Approval ID',
-                value: entry.approvalId,
-              ),
+              _InfoRow(label: 'Approval ID', value: entry.approvalId),
               _InfoRow(
                 label: 'Approved Date',
                 value: entry.approvedAt != null
@@ -81,10 +91,7 @@ class ExpenseDetailDrawer extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: theme.colorScheme.outlineVariant),
                 ),
-                child: Text(
-                  entry.notes,
-                  style: theme.textTheme.bodyMedium,
-                ),
+                child: Text(entry.notes, style: theme.textTheme.bodyMedium),
               ),
             ],
           ),
@@ -101,18 +108,13 @@ class ExpenseDetailDrawer extends StatelessWidget {
       ),
     );
   }
-
- 
 }
 
 class _InfoSection extends StatelessWidget {
   final String title;
   final List<Widget> children;
 
-  const _InfoSection({
-    required this.title,
-    required this.children,
-  });
+  const _InfoSection({required this.title, required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -137,61 +139,40 @@ class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
   final Widget? valueWidget;
-  final bool isMultiline;
-
-  const _InfoRow({
-    required this.label,
-    required this.value,
-    this.valueWidget,
-    this.isMultiline = false,
-  });
+  const _InfoRow({required this.label, required this.value, this.valueWidget});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: isMultiline
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                valueWidget ?? Text(value, style: theme.textTheme.bodyMedium),
-              ],
-            )
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 120,
-                  child: Text(
-                    label,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: valueWidget ?? Text(value, style: theme.textTheme.bodyMedium),
-                ),
-              ],
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
             ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child:
+                valueWidget ?? Text(value, style: theme.textTheme.bodyMedium),
+          ),
+        ],
+      ),
     );
   }
 }
 
 class _CompactStatusChip extends StatelessWidget {
   final ApprovalStatus status;
-  
+
   const _CompactStatusChip({required this.status});
 
   @override
@@ -218,15 +199,11 @@ class _CompactStatusChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: fg.withOpacity(0.2)),
+        border: Border.all(color: fg.withValues(alpha: 0.2)),
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: fg, 
-          fontWeight: FontWeight.w500,
-          fontSize: 12,
-        ),
+        style: TextStyle(color: fg, fontWeight: FontWeight.w500, fontSize: 12),
       ),
     );
   }
@@ -279,16 +256,18 @@ class _ApproverCard extends StatelessWidget {
               children: [
                 for (final position in approver.positions)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.surface,
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: theme.colorScheme.outlineVariant),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant,
+                      ),
                     ),
-                    child: Text(
-                      position,
-                      style: theme.textTheme.labelSmall,
-                    ),
+                    child: Text(position, style: theme.textTheme.labelSmall),
                   ),
               ],
             ),

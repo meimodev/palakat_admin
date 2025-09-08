@@ -980,12 +980,8 @@ class _RouteEditorSheetState extends State<_RouteEditorSheet> {
 
           const Spacer(),
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              OutlinedButton(
-                onPressed: widget.onCancel,
-                child: const Text('Cancel'),
-              ),
-              const SizedBox(width: 12),
               FilledButton(
                 onPressed: _nameCtrl.text.trim().isEmpty || _positions.isEmpty
                     ? null

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:palakat_admin/core/widgets/surface_card.dart';
 import 'package:palakat_admin/core/widgets/pagination_bar.dart';
- 
+import 'package:palakat_admin/features/reports/presentation/widgets/report_generate_drawer.dart';
+
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -57,27 +58,42 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 _GenerateCard(
                   title: 'Incoming Document Report',
                   description: 'Generate a report for documents received.',
-                  onGenerate: () => _showGenerated(context, 'Incoming Document Report'),
+                  onGenerate: () => _openGenerateDrawer(
+                    'Incoming Document Report',
+                    'Generate a report for documents received.',
+                  ),
                 ),
                 _GenerateCard(
                   title: 'Congregation Report',
                   description: 'Generate a report on the congregation.',
-                  onGenerate: () => _showGenerated(context, 'Congregation Report'),
+                  onGenerate: () => _openGenerateDrawer(
+                    'Congregation Report',
+                    'Generate a report on the congregation.',
+                  ),
                 ),
                 _GenerateCard(
                   title: 'Services Report',
                   description: 'Generate a report of all services.',
-                  onGenerate: () => _showGenerated(context, 'Services Report'),
+                  onGenerate: () => _openGenerateDrawer(
+                    'Services Report',
+                    'Generate a report of all services.',
+                  ),
                 ),
                 _GenerateCard(
                   title: 'Activity Report',
                   description: 'Generate a report of all activities.',
-                  onGenerate: () => _showGenerated(context, 'Activity Report'),
+                  onGenerate: () => _openGenerateDrawer(
+                    'Activity Report',
+                    'Generate a report of all activities.',
+                  ),
                 ),
                 _GenerateCard(
                   title: 'Inventory Report',
                   description: 'Generate a report of all inventory.',
-                  onGenerate: () => _showGenerated(context, 'Inventory Report'),
+                  onGenerate: () => _openGenerateDrawer(
+                    'Inventory Report',
+                    'Generate a report of all inventory.',
+                  ),
                 ),
               ],
             ),
@@ -136,6 +152,55 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _openGenerateDrawer(String reportTitle, String description) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Close',
+      pageBuilder: (ctx, anim, secAnim) => const SizedBox.shrink(),
+      transitionBuilder: (ctx, anim, secAnim, child) {
+        final curved = CurvedAnimation(
+          parent: anim,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+        return Stack(
+          children: [
+            Opacity(
+              opacity: 0.4 * curved.value,
+              child: const ModalBarrier(dismissible: true, color: Colors.black54),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(curved),
+                child: ReportGenerateDrawer(
+                  reportTitle: reportTitle,
+                  description: description,
+                  onClose: () => Navigator.of(ctx).pop(),
+                  onGenerate: (range) {
+                    Navigator.of(ctx).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Generating $reportTitle${range == null ? '' : ' for ${DateFormat('y-MM-dd').format(range.start)} - ${DateFormat('y-MM-dd').format(range.end)}'}',
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 300),
     );
   }
 
@@ -227,12 +292,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
       ),
     ];
   }
-}
-
-void _showGenerated(BuildContext context, String which) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text('$which generated (dummy).')),
-  );
 }
 
 void _downloadReport(BuildContext context, String reportName) {

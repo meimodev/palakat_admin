@@ -287,19 +287,11 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
           ),
         ),
         footer: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: FilledButton(
-                onPressed: _saveChanges,
-                child: Text(isNewMember ? 'Add Member' : 'Save Changes'),
-              ),
+            FilledButton(
+              onPressed: _saveChanges,
+              child: Text(isNewMember ? 'Add Member' : 'Save Changes'),
             ),
           ],
         ),
