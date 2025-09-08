@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:palakat_admin/core/widgets/surface_card.dart';
+import 'package:palakat_admin/core/widgets/pagination_bar.dart';
+ 
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -8,141 +11,221 @@ class ReportsScreen extends StatefulWidget {
   State<ReportsScreen> createState() => _ReportsScreenState();
 }
 
-class _ReportsScreenState extends State<ReportsScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  DateTimeRange? _range;
+class _ReportsScreenState extends State<ReportsScreen> {
+  final TextEditingController _historySearchController = TextEditingController();
+  String? _selectedGenerator;
+  
+  int _historyRowsPerPage = 10;
+  int _historyPage = 0;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    final now = DateTime.now();
-    _range = DateTimeRange(
-      start: DateTime(now.year, now.month, 1),
-      end: DateTime(now.year, now.month + 1, 0),
-    );
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _historySearchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final dateText = _range == null
-        ? 'All time'
-        : '${DateFormat('MMM d, y').format(_range!.start)} - ${DateFormat('MMM d, y').format(_range!.end)}';
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Reports', style: theme.textTheme.headlineMedium),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            OutlinedButton.icon(
-              onPressed: () async {
-                final picked = await showDateRangePicker(
-                  context: context,
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime(2100),
-                  initialDateRange: _range,
-                );
-                if (picked != null) setState(() => _range = picked);
-              },
-              icon: const Icon(Icons.date_range),
-              label: Text(dateText),
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Reports', style: theme.textTheme.headlineMedium),
+          const SizedBox(height: 8),
+          Text(
+            'Generate and view comprehensive reports across all modules.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
-            const SizedBox(width: 12),
-            OutlinedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.file_download_outlined),
-              label: const Text('Export CSV'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: theme.colorScheme.outlineVariant),
           ),
-          child: Column(
-            children: [
-              TabBar(
-                controller: _tabController,
-                labelColor: theme.colorScheme.primary,
-                unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-                tabs: const [
-                  Tab(text: 'Income'),
-                  Tab(text: 'Expenses'),
-                  Tab(text: 'Inventory'),
-                ],
-              ),
-              SizedBox(
-                height: 420,
-                child: TabBarView(
-                  controller: _tabController,
-                  children: const [
-                    _ReportTable(kind: 'Income'),
-                    _ReportTable(kind: 'Expenses'),
-                    _ReportTable(kind: 'Inventory'),
+          const SizedBox(height: 16),
+
+          SurfaceCard(
+            title: 'Generate Reports',
+            subtitle: 'Create custom reports for different modules.',
+            child: Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: [
+                _GenerateCard(
+                  title: 'Incoming Document Report',
+                  description: 'Generate a report for documents received.',
+                  onGenerate: () => _showGenerated(context, 'Incoming Document Report'),
+                ),
+                _GenerateCard(
+                  title: 'Congregation Report',
+                  description: 'Generate a report on the congregation.',
+                  onGenerate: () => _showGenerated(context, 'Congregation Report'),
+                ),
+                _GenerateCard(
+                  title: 'Services Report',
+                  description: 'Generate a report of all services.',
+                  onGenerate: () => _showGenerated(context, 'Services Report'),
+                ),
+                _GenerateCard(
+                  title: 'Activity Report',
+                  description: 'Generate a report of all activities.',
+                  onGenerate: () => _showGenerated(context, 'Activity Report'),
+                ),
+                _GenerateCard(
+                  title: 'Inventory Report',
+                  description: 'Generate a report of all inventory.',
+                  onGenerate: () => _showGenerated(context, 'Inventory Report'),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          SurfaceCard(
+            title: 'Generated Reports History',
+            subtitle: 'View and manage previously generated reports.',
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _historySearchController,
+                        decoration: const InputDecoration(
+                          hintText: 'Search by report name...',
+                          prefixIcon: Icon(Icons.search),
+                        ),
+                        onChanged: (_) => setState(() => _historyPage = 0),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    DropdownButton<String>(
+                      value: _selectedGenerator,
+                      hint: const Text('All Generators'),
+                      items: ['Manual', 'System']
+                          .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedGenerator = value;
+                          _historyPage = 0;
+                        });
+                      },
+                    ),
+                    
                   ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+
+                const _ReportHistoryHeader(),
+                const Divider(height: 1),
+
+                ..._getFilteredHistoryRows().map((report) => _ReportHistoryRow(
+                  report: report,
+                  onDownload: () => _downloadReport(context, report.name),
+                )),
+
+                const SizedBox(height: 8),
+                _buildHistoryPagination(),
+              ],
+            ),
           ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Generate report cards section
-        Wrap(
-          spacing: 16,
-          runSpacing: 16,
-          children: [
-            _GenerateCard(
-              title: 'Incoming Document Report',
-              description: 'Generate a report for documents received.',
-              onGenerate: () => _showGenerated(context, 'Incoming Document Report'),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 16,
-          runSpacing: 16,
-          children: [
-            _GenerateCard(
-              title: 'Congregation Report',
-              description: 'Generate a report on the congregation.',
-              onGenerate: () => _showGenerated(context, 'Congregation Report'),
-            ),
-            _GenerateCard(
-              title: 'Services Report',
-              description: 'Generate a report of all services.',
-              onGenerate: () => _showGenerated(context, 'Services Report'),
-            ),
-            _GenerateCard(
-              title: 'Activity Report',
-              description: 'Generate a report of all activities.',
-              onGenerate: () => _showGenerated(context, 'Activity Report'),
-            ),
-            _GenerateCard(
-              title: 'Inventory Report',
-              description: 'Generate a report of all inventory.',
-              onGenerate: () => _showGenerated(context, 'Inventory Report'),
-            ),
-          ],
-        ),
-      ],
+        ],
+      ),
     );
+  }
+
+  List<_GeneratedReport> _getFilteredHistoryRows() {
+    final allReports = _mockGeneratedReports();
+    final query = _historySearchController.text.toLowerCase();
+
+    final filtered = allReports.where((report) {
+      final nameMatches = report.name.toLowerCase().contains(query);
+      final generatorMatches = _selectedGenerator == null || report.generator == _selectedGenerator;
+      return nameMatches && generatorMatches;
+    }).toList();
+
+    final total = filtered.length;
+    final start = (_historyPage * _historyRowsPerPage).clamp(0, total);
+    final end = (start + _historyRowsPerPage).clamp(0, total);
+    return start < end ? filtered.sublist(start, end) : [];
+  }
+
+  Widget _buildHistoryPagination() {
+    final allReports = _mockGeneratedReports();
+    final query = _historySearchController.text.toLowerCase();
+
+    final filtered = allReports.where((report) {
+      final nameMatches = report.name.toLowerCase().contains(query);
+      final generatorMatches = _selectedGenerator == null || report.generator == _selectedGenerator;
+      return nameMatches && generatorMatches;
+    }).toList();
+
+    final total = filtered.length;
+    final showing = _getFilteredHistoryRows().length;
+
+    return PaginationBar(
+      showingCount: showing,
+      totalCount: total,
+      rowsPerPage: _historyRowsPerPage,
+      page: _historyPage,
+      pageCount: (total / _historyRowsPerPage).ceil().clamp(1, 9999),
+      onRowsPerPageChanged: (v) => setState(() {
+        _historyRowsPerPage = v;
+        _historyPage = 0;
+      }),
+      onPrev: () => setState(() {
+        if (_historyPage > 0) _historyPage -= 1;
+      }),
+      onNext: () => setState(() {
+        final maxPage = (total / _historyRowsPerPage).ceil() - 1;
+        if (_historyPage < maxPage) _historyPage += 1;
+      }),
+    );
+  }
+
+  List<_GeneratedReport> _mockGeneratedReports() {
+    return [
+      _GeneratedReport(
+        name: 'Congregation Report - December 2024',
+        generator: 'Manual',
+        generatedAt: DateTime.now().subtract(const Duration(days: 1)),
+        status: 'Ready',
+        fileSize: '2.3 MB',
+      ),
+      _GeneratedReport(
+        name: 'Services Report - November 2024',
+        generator: 'System',
+        generatedAt: DateTime.now().subtract(const Duration(days: 3)),
+        status: 'Ready',
+        fileSize: '1.8 MB',
+      ),
+      _GeneratedReport(
+        name: 'Activity Report - October 2024',
+        generator: 'Manual',
+        generatedAt: DateTime.now().subtract(const Duration(days: 7)),
+        status: 'Ready',
+        fileSize: '3.1 MB',
+      ),
+      _GeneratedReport(
+        name: 'Inventory Report - September 2024',
+        generator: 'System',
+        generatedAt: DateTime.now().subtract(const Duration(days: 14)),
+        status: 'Ready',
+        fileSize: '1.2 MB',
+      ),
+      _GeneratedReport(
+        name: 'Incoming Document Report - August 2024',
+        generator: 'Manual',
+        generatedAt: DateTime.now().subtract(const Duration(days: 21)),
+        status: 'Ready',
+        fileSize: '4.7 MB',
+      ),
+    ];
   }
 }
 
@@ -151,6 +234,13 @@ void _showGenerated(BuildContext context, String which) {
     SnackBar(content: Text('$which generated (dummy).')),
   );
 }
+
+void _downloadReport(BuildContext context, String reportName) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('Downloading $reportName...')),
+  );
+}
+
 
 class _GenerateCard extends StatelessWidget {
   const _GenerateCard({
@@ -195,75 +285,134 @@ class _GenerateCard extends StatelessWidget {
   }
 }
 
-class _ReportTable extends StatelessWidget {
-  const _ReportTable({required this.kind});
-  final String kind;
+class _GeneratedReport {
+  final String name;
+  final String generator;
+  final DateTime generatedAt;
+  final String status;
+  final String fileSize;
+
+  const _GeneratedReport({
+    required this.name,
+    required this.generator,
+    required this.generatedAt,
+    required this.status,
+    required this.fileSize,
+  });
+}
+
+class _ReportHistoryHeader extends StatelessWidget {
+  const _ReportHistoryHeader();
 
   @override
   Widget build(BuildContext context) {
-    final rows = List.generate(15, (i) {
-      final date = DateTime.now().subtract(Duration(days: i * 2));
-      return _ReportRow(
-        date: DateFormat('y-MM-dd').format(date),
-        description: '$kind item ${i + 1}',
-        amount: (i * 1234.56) + 1000,
-        status: i % 3 == 0 ? 'Pending' : 'Completed',
-      );
-    });
-
+    final style = Theme.of(context).textTheme.labelLarge;
     return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: SingleChildScrollView(
-        child: DataTable(
-          columns: const [
-            DataColumn(label: Text('Date')),
-            DataColumn(label: Text('Description')),
-            DataColumn(label: Text('Amount')),
-            DataColumn(label: Text('Status')),
-          ],
-          rows: [
-            for (final r in rows)
-              DataRow(
-                cells: [
-                  DataCell(Text(r.date)),
-                  DataCell(Text(r.description)),
-                  DataCell(Text(NumberFormat.currency(locale: 'en_PH', symbol: '₱ ').format(r.amount))),
-                  DataCell(_StatusChip(status: r.status)),
-                ],
-              ),
-          ],
-        ),
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+      child: Row(
+        children: [
+          _cell(const Text('Report Name'), flex: 4, style: style),
+          _cell(const Text('Generator'), flex: 2, style: style),
+          _cell(const Text('Generated'), flex: 2, style: style),
+          _cell(const Text('Size'), flex: 1, style: style),
+          _cell(const Text('Actions'), flex: 2, style: style),
+        ],
+      ),
+    );
+  }
+
+  Widget _cell(Widget child, {int flex = 1, TextStyle? style}) {
+    return Expanded(
+      flex: flex,
+      child: DefaultTextStyle(
+        style: style ?? const TextStyle(),
+        child: child,
       ),
     );
   }
 }
 
-class _ReportRow {
-  final String date;
-  final String description;
-  final double amount;
-  final String status;
-  const _ReportRow({
-    required this.date,
-    required this.description,
-    required this.amount,
-    required this.status,
-  });
-}
+class _ReportHistoryRow extends StatelessWidget {
+  final _GeneratedReport report;
+  final VoidCallback onDownload;
 
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.status});
-  final String status;
+  const _ReportHistoryRow({
+    required this.report,
+    required this.onDownload,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final isCompleted = status.toLowerCase() == 'completed';
-    final color = isCompleted ? Colors.green : Colors.orange;
-    return Chip(
-      label: Text(status),
-      side: BorderSide(color: color.withValues(alpha: 0.4)),
-      backgroundColor: color.withValues(alpha: 0.08),
-      labelStyle: TextStyle(color: color.shade700, fontWeight: FontWeight.w600),
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      child: Row(
+        children: [
+          _cell(
+            Text(
+              report.name,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            flex: 4,
+          ),
+          _cell(
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  report.generator,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+            flex: 2,
+          ),
+          _cell(
+            Text(
+              DateFormat('MMM d, y, h:mm a').format(report.generatedAt),
+              style: theme.textTheme.bodyMedium,
+            ),
+            flex: 2,
+          ),
+          _cell(
+            Text(
+              report.fileSize,
+              style: theme.textTheme.bodyMedium,
+            ),
+            flex: 1,
+          ),
+          _cell(
+            Align(
+              alignment: Alignment.centerLeft,
+              child: IconButton(
+                onPressed: onDownload,
+                icon: const Icon(Icons.download),
+                color: theme.colorScheme.primary,
+                tooltip: 'Download',
+              ),
+            ),
+            flex: 2,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _cell(Widget child, {int flex = 1}) {
+    return Expanded(
+      flex: flex,
+      child: child,
     );
   }
 }

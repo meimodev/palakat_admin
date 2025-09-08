@@ -49,7 +49,10 @@ class _ApprovalDetailDrawerState extends State<ApprovalDetailDrawer> {
               _InfoRow(
                 label: 'Type',
                 value: _currentRequest.type,
-                valueWidget: _TypeChip(label: _currentRequest.type),
+                valueWidget: Align(
+                  alignment: Alignment.centerLeft,
+                  child: _TypeChip(label: _currentRequest.type),
+                ),
               ),
               _InfoRow(label: 'Requester', value: _currentRequest.requester),
               _InfoRow(

@@ -272,7 +272,13 @@ class _InventoryRow extends StatelessWidget {
                   flex: 3,
                 ),
                 _cell(Text(item.location), flex: 2),
-                _cell(_ConditionBadge(condition: item.condition), flex: 2),
+                _cell(
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: _ConditionBadge(condition: item.condition),
+                  ),
+                  flex: 2,
+                ),
                 _cell(Text('${item.quantity}'), flex: 1),
                 _cell(
                   Column(

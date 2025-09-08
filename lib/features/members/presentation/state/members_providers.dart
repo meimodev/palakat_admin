@@ -65,17 +65,25 @@ final membersAllProvider = Provider<List<Membership>>((ref) {
 @immutable
 class MembersFilterState {
   final String search;
+  final String? selectedPosition;
   final int page; // zero-based
   final int rowsPerPage;
   const MembersFilterState({
     this.search = '',
+    this.selectedPosition,
     this.page = 0,
     this.rowsPerPage = 10,
   });
 
-  MembersFilterState copyWith({String? search, int? page, int? rowsPerPage}) =>
+  MembersFilterState copyWith({
+    String? search,
+    String? selectedPosition,
+    int? page,
+    int? rowsPerPage,
+  }) =>
       MembersFilterState(
         search: search ?? this.search,
+        selectedPosition: selectedPosition ?? this.selectedPosition,
         page: page ?? this.page,
         rowsPerPage: rowsPerPage ?? this.rowsPerPage,
       );
@@ -86,6 +94,8 @@ class MembersFilterNotifier extends StateNotifier<MembersFilterState> {
 
   void setSearch(String value) =>
       state = state.copyWith(search: value, page: 0);
+  void setPosition(String? value) =>
+      state = state.copyWith(selectedPosition: value, page: 0);
   void setRowsPerPage(int value) =>
       state = state.copyWith(rowsPerPage: value, page: 0);
   void nextPage(int total) {
@@ -107,10 +117,25 @@ final membersFilteredProvider = Provider<List<Membership>>((ref) {
   final filters = ref.watch(membersFilterProvider);
   final all = ref.watch(membersAllProvider);
   return all.where((u) {
-    return filters.search.isEmpty ||
+    final matchesSearch = filters.search.isEmpty ||
         u.name.toLowerCase().contains(filters.search.toLowerCase()) ||
         u.email.toLowerCase().contains(filters.search.toLowerCase());
+    
+    final matchesPosition = filters.selectedPosition == null ||
+        u.positions.contains(filters.selectedPosition!);
+    
+    return matchesSearch && matchesPosition;
   }).toList();
+});
+
+// Provider for available positions
+final availablePositionsProvider = Provider<List<String>>((ref) {
+  final all = ref.watch(membersAllProvider);
+  final allPositions = <String>{};
+  for (final member in all) {
+    allPositions.addAll(member.positions);
+  }
+  return allPositions.toList()..sort();
 });
 
 class MembersPageSlice {

@@ -15,6 +15,8 @@ class InventoryDetailDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return SideDrawer(
       title: 'Inventory Details',
       subtitle: 'View detailed information about this item',
@@ -31,7 +33,10 @@ class InventoryDetailDrawer extends StatelessWidget {
               _InfoRow(
                 label: 'Condition',
                 value: item.condition.displayName,
-                valueWidget: _ConditionBadge(condition: item.condition),
+                valueWidget: Align(
+                  alignment: Alignment.centerLeft,
+                  child: _ConditionBadge(condition: item.condition),
+                ),
               ),
               _InfoRow(label: 'Quantity', value: '${item.quantity}'),
             ],
@@ -66,22 +71,26 @@ class InventoryDetailDrawer extends StatelessWidget {
           ),
         ],
       ),
-      footer: Row(
-        children: [
-          OutlinedButton.icon(
-            onPressed: onClose,
-            icon: const Icon(Icons.close),
-            label: const Text('Close'),
-          ),
-          const SizedBox(width: 8),
-          FilledButton.icon(
-            onPressed: () {
-              // Placeholder for future actions (e.g., edit, export)
-            },
-            icon: const Icon(Icons.edit),
-            label: const Text('Edit Item'),
-          ),
-        ],
+      footer: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.info_outline, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Inventory management can be managed through mobile app',
+                style: theme.textTheme.bodyMedium,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

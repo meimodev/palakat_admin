@@ -175,50 +175,94 @@ class _PositionsCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     if (positions.isEmpty) return const Text('-');
-    if (positions.length == 1) {
-      return Text(positions.first, style: theme.textTheme.bodyMedium);
-    }
-
-    return InkWell(
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('All Positions'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+    
+    // Show up to 2 position chips, then a "+N more" chip if there are more
+    const maxVisible = 2;
+    final visiblePositions = positions.take(maxVisible).toList();
+    final remainingCount = positions.length - maxVisible;
+    
+    return Wrap(
+      spacing: 4,
+      runSpacing: 4,
+      children: [
+        // Show visible position chips
+        for (final position in visiblePositions)
+          _PositionChip(position: position),
+        
+        // Show "+N more" chip if there are remaining positions
+        if (remainingCount > 0)
+          InkWell(
+            onTap: () => _showAllPositions(context, positions),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Text(
+                '+$remainingCount',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onPrimaryContainer,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+  
+  void _showAllPositions(BuildContext context, List<String> positions) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('All Positions'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: positions
-                  .map(
-                    (pos) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4.0),
-                      child: Text('• $pos'),
-                    ),
-                  )
+                  .map((pos) => _PositionChip(position: pos))
                   .toList(),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Close'),
-              ),
-            ],
-          ),
-        );
-      },
-      child: RichText(
-        text: TextSpan(
-          style: theme.textTheme.bodyMedium,
-          children: [
-            TextSpan(text: '${positions.first} '),
-            TextSpan(
-              text: '+${positions.length - 1}',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
           ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PositionChip extends StatelessWidget {
+  final String position;
+  const _PositionChip({required this.position});
+  
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Text(
+        position,
+        style: theme.textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.w500,
         ),
       ),
     );

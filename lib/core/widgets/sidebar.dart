@@ -62,6 +62,13 @@ class AppSidebar extends StatelessWidget {
                     onTap: () => context.go('/approval'),
                     color: Colors.cyan,
                   ),
+                  _NavItem(
+                    icon: Icons.event_note,
+                    label: 'Activities',
+                    selected: route.startsWith('/activities'),
+                    onTap: () => context.go('/activities'),
+                    color: Colors.deepOrange,
+                  ),
                   const Padding(
                     padding: EdgeInsets.fromLTRB(12, 16, 12, 8),
                     child: Text('Reports', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black54)),

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../widgets/approval_detail_drawer.dart';
+import 'package:palakat_admin/core/widgets/surface_card.dart';
+import 'package:palakat_admin/core/widgets/pagination_bar.dart';
+import 'package:palakat_admin/core/widgets/date_range_filter.dart';
 
 class ApprovalScreen extends StatefulWidget {
   const ApprovalScreen({super.key});
@@ -13,6 +17,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
   final TextEditingController _searchController = TextEditingController();
   int _rowsPerPage = 5;
   int _page = 0; // zero-based
+  DateTimeRange? _dateRange;
 
   late final List<ApprovalRequest> _allRequests;
 
@@ -32,13 +37,29 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    bool inDateRange(DateTime d) {
+      if (_dateRange == null) return true;
+      final s = DateUtils.dateOnly(_dateRange!.start);
+      final e = DateUtils.dateOnly(_dateRange!.end);
+      final dd = DateUtils.dateOnly(d);
+      final afterStart = dd.isAtSameMomentAs(s) || dd.isAfter(s);
+      final beforeEnd = dd.isAtSameMomentAs(e) || dd.isBefore(e);
+      return afterStart && beforeEnd;
+    }
+
     final filtered = _allRequests.where((r) {
       final q = _searchController.text.trim().toLowerCase();
-      if (q.isEmpty) return true;
-      return r.description.toLowerCase().contains(q) ||
+      final dateStr = DateFormat('y-MM-dd').format(r.date).toLowerCase();
+      final matchesQuery =
+          q.isEmpty ||
+          r.id.toLowerCase().contains(q) ||
+          r.description.toLowerCase().contains(q) ||
           r.type.toLowerCase().contains(q) ||
           r.requester.toLowerCase().contains(q) ||
+          r.status.name.toLowerCase().contains(q) ||
+          dateStr.contains(q) ||
           r.authorizers.any((a) => a.name.toLowerCase().contains(q));
+      return matchesQuery && inDateRange(r.date);
     }).toList();
 
     final total = filtered.length;
@@ -53,21 +74,48 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Approvals', style: theme.textTheme.headlineMedium),
+          const SizedBox(height: 8),
+          Text(
+            'Manage and track approval requests.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 16),
-          _ApprovalCard(
+          SurfaceCard(
+            title: 'Approval Requests',
+            subtitle: 'A record of all approval requests.',
             child: Column(
               children: [
-                // Search bar
-                TextField(
-                  controller: _searchController,
-                  decoration: const InputDecoration(
-                    hintText: 'Search approvals...',
-                    prefixIcon: Icon(Icons.search),
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: (v) => setState(() {
-                    _page = 0; // reset to first page on new search
-                  }),
+                // Search + Date Range
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: const InputDecoration(
+                          hintText: 'Search approvals...',
+                          prefixIcon: Icon(Icons.search),
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (_) => setState(() {
+                          _page = 0;
+                        }),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    DateRangeFilter(
+                      value: _dateRange,
+                      onChanged: (r) => setState(() {
+                        _dateRange = r;
+                        _page = 0;
+                      }),
+                      onClear: () => setState(() {
+                        _dateRange = null;
+                        _page = 0;
+                      }),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
 
@@ -85,8 +133,8 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
                 ],
 
                 const SizedBox(height: 8),
-                // Pagination bar
-                _PaginationBar(
+                // Pagination
+                PaginationBar(
                   showingCount: pageRows.length,
                   totalCount: total,
                   rowsPerPage: _rowsPerPage,
@@ -110,7 +158,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
 
           const SizedBox(height: 16),
 
-          _ApprovalCard(
+          SurfaceCard(
             title: 'Approval Routing',
             subtitle: 'Map approval types to authorizer positions.',
             trailing: FilledButton.icon(
@@ -378,77 +426,16 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
         description: 'Mission trip funding',
         type: 'Income',
         requester: 'Chris Lee',
-        authorizers: [Authorizer(
-          'Pastor John',
-          AuthorizerDecision.approved,
-          now.subtract(const Duration(days: 4, hours: 4)),
-        )],
+        authorizers: [
+          Authorizer(
+            'Pastor John',
+            AuthorizerDecision.approved,
+            now.subtract(const Duration(days: 4, hours: 4)),
+          ),
+        ],
         status: RequestStatus.approved,
       ),
     ];
-  }
-}
-
-class _ApprovalCard extends StatelessWidget {
-  final Widget child;
-  final Widget? trailing;
-  final String? title;
-  final String? subtitle;
-  const _ApprovalCard({
-    required this.child,
-    this.trailing,
-    this.title,
-    this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (title != null || trailing != null)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (title != null)
-                        Text(
-                          title!,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      if (subtitle != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          subtitle!,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                if (trailing != null) trailing!,
-              ],
-            ),
-          const SizedBox(height: 12),
-          child,
-        ],
-      ),
-    );
   }
 }
 
@@ -481,6 +468,7 @@ class _RequestsHeader extends StatelessWidget {
 class _RequestRow extends StatelessWidget {
   final ApprovalRequest req;
   final VoidCallback onTap;
+
   const _RequestRow({required this.req, required this.onTap});
 
   @override
@@ -499,7 +487,9 @@ class _RequestRow extends StatelessWidget {
                 _cell(
                   Text(
                     req.id,
-                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   flex: 2,
                 ),
@@ -533,7 +523,13 @@ class _RequestRow extends StatelessWidget {
                   ),
                   flex: 4,
                 ),
-                _cell(_TypeChip(label: req.type), flex: 2),
+                _cell(
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: _TypeChip(label: req.type),
+                  ),
+                  flex: 2,
+                ),
                 _cell(Text(req.requester), flex: 2),
                 _cell(
                   Wrap(
@@ -547,7 +543,6 @@ class _RequestRow extends StatelessWidget {
                   flex: 3,
                 ),
                 _cell(_StatusChip(status: req.status), flex: 2),
-
               ],
             ),
           ),
@@ -567,6 +562,7 @@ class _RequestRow extends StatelessWidget {
 
 class _TypeChip extends StatelessWidget {
   final String label;
+
   const _TypeChip({required this.label});
 
   @override
@@ -586,6 +582,7 @@ class _TypeChip extends StatelessWidget {
 
 class _StatusChip extends StatelessWidget {
   final RequestStatus status;
+
   const _StatusChip({required this.status});
 
   @override
@@ -624,6 +621,7 @@ class _StatusChip extends StatelessWidget {
 
 class _AuthorizerChip extends StatelessWidget {
   final Authorizer authorizer;
+
   const _AuthorizerChip({required this.authorizer});
 
   @override
@@ -638,7 +636,8 @@ class _AuthorizerChip extends StatelessWidget {
         color = Colors.green;
         if (authorizer.decisionAt != null) {
           final d = authorizer.decisionAt!;
-          dateText = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+          dateText =
+              '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
         }
         break;
       case AuthorizerDecision.rejected:
@@ -646,7 +645,8 @@ class _AuthorizerChip extends StatelessWidget {
         color = Colors.red;
         if (authorizer.decisionAt != null) {
           final d = authorizer.decisionAt!;
-          dateText = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+          dateText =
+              '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
         }
         break;
       case AuthorizerDecision.pending:
@@ -661,84 +661,26 @@ class _AuthorizerChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Wrap(
+        spacing: 3,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          const Icon(Icons.badge, size: 16),
-          const SizedBox(width: 6),
-          Text(authorizer.name, style: theme.textTheme.labelMedium),
-          if (dateText != null) ...[
-            const SizedBox(width: 6),
-            Text(
-              dateText,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-          const SizedBox(width: 6),
-          Icon(icon, size: 14, color: color),
-        ],
-      ),
-    );
-  }
-}
-
-class _PaginationBar extends StatelessWidget {
-  final int showingCount;
-  final int totalCount;
-  final int rowsPerPage;
-  final int page;
-  final int pageCount;
-  final ValueChanged<int> onRowsPerPageChanged;
-  final VoidCallback onPrev;
-  final VoidCallback onNext;
-  const _PaginationBar({
-    required this.showingCount,
-    required this.totalCount,
-    required this.rowsPerPage,
-    required this.page,
-    required this.pageCount,
-    required this.onRowsPerPageChanged,
-    required this.onPrev,
-    required this.onNext,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text('Showing $showingCount of $totalCount requests'),
-          Row(
+          const Icon(Icons.person, size: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  const Text('Rows per page'),
-                  const SizedBox(width: 8),
-                  DropdownButton<int>(
-                    value: rowsPerPage,
-                    items: const [5, 10, 20]
-                        .map(
-                          (e) => DropdownMenuItem(value: e, child: Text('$e')),
-                        )
-                        .toList(),
-                    onChanged: (v) {
-                      if (v != null) onRowsPerPageChanged(v);
-                    },
+              Text(authorizer.name, style: theme.textTheme.labelMedium),
+              if (dateText != null) ...[
+                Text(
+                  dateText,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
-                ],
-              ),
-              const SizedBox(width: 16),
-              Text('Page ${page + 1} of $pageCount'),
-              const SizedBox(width: 8),
-              OutlinedButton(onPressed: onPrev, child: const Text('Previous')),
-              const SizedBox(width: 8),
-              OutlinedButton(onPressed: onNext, child: const Text('Next')),
+                ),
+              ],
             ],
           ),
+          Icon(icon, size: 14, color: color),
         ],
       ),
     );
@@ -749,6 +691,7 @@ class _RouteSection extends StatelessWidget {
   final String title;
   final List<ApprovalRoute> routes;
   final ValueChanged<ApprovalRoute> onTapRoute;
+
   const _RouteSection({
     required this.title,
     required this.routes,
@@ -799,6 +742,7 @@ class _RouteSection extends StatelessWidget {
 class _RouteRow extends StatelessWidget {
   final ApprovalRoute route;
   final VoidCallback onTap;
+
   const _RouteRow({required this.route, required this.onTap});
 
   @override
@@ -848,6 +792,7 @@ class ApprovalRoute {
   final String name;
   final String type; // Section, e.g., Income, Expense
   final List<String> positions;
+
   ApprovalRoute({
     String? id,
     required this.name,
@@ -871,6 +816,7 @@ class _RouteEditorSheet extends StatefulWidget {
   final ApprovalRoute? initial;
   final VoidCallback onCancel;
   final ValueChanged<ApprovalRoute> onSubmit;
+
   const _RouteEditorSheet({
     required this.initial,
     required this.onCancel,
@@ -997,10 +943,10 @@ class _RouteEditorSheetState extends State<_RouteEditorSheet> {
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  key: ValueKey(
-                    _positions.length,
-                  ), // Force rebuild when positions change
-                  value: null, // Always null to allow selection
+                  key: ValueKey(_positions.length),
+                  // Force rebuild when positions change
+                  value: null,
+                  // Always null to allow selection
                   items: _availablePositions
                       .where((p) => !_positions.contains(p))
                       .map((e) => DropdownMenuItem(value: e, child: Text(e)))
@@ -1080,6 +1026,7 @@ class ApprovalRequest {
   final List<Authorizer> authorizers;
   final RequestStatus status;
   final String? note;
+
   ApprovalRequest({
     required this.id,
     required this.date,
@@ -1096,6 +1043,7 @@ class Authorizer {
   final String name;
   final AuthorizerDecision decision;
   final DateTime? decisionAt;
+
   Authorizer(this.name, this.decision, [this.decisionAt]);
 }
 

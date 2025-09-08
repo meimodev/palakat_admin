@@ -15,6 +15,7 @@ import 'features/income/presentation/screens/income_screen.dart';
 import 'features/expenses/presentation/screens/expenses_screen.dart';
 import 'features/inventory/presentation/screens/inventory_screen.dart';
 import 'features/account/presentation/screens/account_screen.dart';
+import 'features/activities/presentation/screens/activities_screen.dart';
 
 void main() {
   runApp(const ProviderScope(child: PalakatAdminApp()));
@@ -56,6 +57,11 @@ final _router = GoRouter(
           path: '/approval',
           name: 'approval',
           builder: (context, state) => const ApprovalScreen(),
+        ),
+        GoRoute(
+          path: '/activities',
+          name: 'activities',
+          builder: (context, state) => const ActivitiesScreen(),
         ),
         GoRoute(
           path: '/billing',

@@ -5,19 +5,31 @@ import 'package:palakat_admin/core/models/membership.dart';
 import '../widgets/members_table.dart';
 import '../widgets/edit_member_drawer.dart';
 import '../state/members_providers.dart';
+import 'package:palakat_admin/core/widgets/surface_card.dart';
+import 'package:palakat_admin/core/widgets/pagination_bar.dart';
 
 class MembersScreen extends ConsumerWidget {
   const MembersScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Members', style: Theme.of(context).textTheme.headlineMedium),
+          Text('Members', style: theme.textTheme.headlineMedium),
+          const SizedBox(height: 8),
+          Text(
+            'Manage church members and their information.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 16),
-          _MembersCard(
+          SurfaceCard(
+            title: 'Member Directory',
+            subtitle: 'A record of all church members.',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -53,39 +65,75 @@ class MembersScreen extends ConsumerWidget {
 class _FiltersBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Row(
+    final filters = ref.watch(membersFilterProvider);
+    final availablePositions = ref.watch(availablePositionsProvider);
+    
+    return Column(
       children: [
-        Expanded(
-          child: SizedBox(
-            width: 260,
-            child: TextField(
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search),
-                hintText: 'Search name or email',
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.search),
+                  hintText: 'Search members...',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (v) =>
+                    ref.read(membersFilterProvider.notifier).setSearch(v),
               ),
-              onChanged: (v) =>
-                  ref.read(membersFilterProvider.notifier).setSearch(v),
             ),
-          ),
-        ),
-        const SizedBox(width: 16),
-        FilledButton.icon(
-          onPressed: () {
-            showEditMemberDrawer(
-              context,
-              member: const Membership(
-                name: '',
-                email: '',
-                phone: '',
-                positions: [],
-                isBaptized: false,
-                isSidi: false,
-                isLinked: false,
+            const SizedBox(width: 8),
+            IntrinsicWidth(
+              child: DropdownButtonFormField<String?>(
+                value: filters.selectedPosition,
+                decoration: const InputDecoration(
+                  labelText: 'Filter by Position',
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                items: [
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text(
+                      'All Positions',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  ...availablePositions.map(
+                    (position) => DropdownMenuItem<String?>(
+                      value: position,
+                      child: Text(
+                        position,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ],
+                onChanged: (value) =>
+                    ref.read(membersFilterProvider.notifier).setPosition(value),
               ),
-            );
-          },
-          icon: const Icon(Icons.add, size: 18),
-          label: const Text('New Member'),
+            ),
+            const SizedBox(width: 16),
+            FilledButton.icon(
+              onPressed: () {
+                showEditMemberDrawer(
+                  context,
+                  member: const Membership(
+                    name: '',
+                    email: '',
+                    phone: '',
+                    positions: [],
+                    isBaptized: false,
+                    isSidi: false,
+                    isLinked: false,
+                  ),
+                );
+              },
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('New Member'),
+            ),
+          ],
         ),
       ],
     );
@@ -103,49 +151,18 @@ class _PaginationBar extends ConsumerWidget {
       1,
       9999,
     );
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Text('Showing ${slice.rows.length} of ${slice.total}'),
-            const SizedBox(width: 12),
-            DropdownButton<int>(
-              value: filters.rowsPerPage,
-              items: const [10, 20, 30]
-                  .map(
-                    (e) => DropdownMenuItem(value: e, child: Text('Rows: $e')),
-                  )
-                  .toList(),
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              onChanged: (v) => v != null
-                  ? ref.read(membersFilterProvider.notifier).setRowsPerPage(v)
-                  : null,
-            ),
-          ],
-        ),
-        Row(
-          children: [
-            IconButton(
-              tooltip: 'Prev',
-              onPressed: filters.page == 0
-                  ? null
-                  : () => ref.read(membersFilterProvider.notifier).prevPage(),
-              icon: const Icon(Icons.chevron_left),
-            ),
-            Text('Page ${filters.page + 1} / $totalPages'),
-            IconButton(
-              tooltip: 'Next',
-              onPressed: (filters.page + 1) >= totalPages
-                  ? null
-                  : () => ref
-                        .read(membersFilterProvider.notifier)
-                        .nextPage(slice.total),
-              icon: const Icon(Icons.chevron_right),
-            ),
-          ],
-        ),
-      ],
+    return PaginationBar(
+      showingCount: slice.rows.length,
+      totalCount: slice.total,
+      rowsPerPage: filters.rowsPerPage,
+      page: filters.page,
+      pageCount: totalPages,
+      onRowsPerPageChanged: (v) => 
+          ref.read(membersFilterProvider.notifier).setRowsPerPage(v),
+      onPrev: () => ref.read(membersFilterProvider.notifier).prevPage(),
+      onNext: () => ref
+          .read(membersFilterProvider.notifier)
+          .nextPage(slice.total),
     );
   }
 }
@@ -185,22 +202,3 @@ class _QuickStat extends StatelessWidget {
   }
 }
 
-class _MembersCard extends StatelessWidget {
-  const _MembersCard({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
-      child: child,
-    );
-  }
-}

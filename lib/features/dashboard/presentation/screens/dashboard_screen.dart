@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/surface_card.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -51,44 +52,23 @@ class DashboardScreen extends StatelessWidget {
         const SizedBox(height: 16),
 
         // Recent Activity card
-        Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: theme.colorScheme.outlineVariant),
+        SurfaceCard(
+          title: 'Recent Activity',
+          subtitle:
+              'Recent transactions and member updates will be shown here.',
+          trailing: Icon(
+            Icons.show_chart,
+            color: theme.colorScheme.onSurfaceVariant,
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.show_chart, color: theme.colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 8),
-                    Text('Recent Activity', style: theme.textTheme.titleLarge),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Recent transactions and member updates will be shown here.',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 32),
-                  alignment: Alignment.center,
-                  child: Text(
-                    'No recent activity to display.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ],
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            alignment: Alignment.center,
+            child: Text(
+              'No recent activity to display.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         ),
@@ -118,6 +98,13 @@ class _StatCard extends StatelessWidget {
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: theme.colorScheme.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,21 +124,23 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             value,
-            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
           ),
           const SizedBox(height: 2),
           Text(
             title == 'Total Members'
                 ? '+20 from last month'
                 : title == 'Total Income'
-                    ? '+12.5% from last month'
-                    : title == 'Total Expenses'
-                        ? '+8.1% from last month'
-                        : 'Check stock levels',
+                ? '+12.5% from last month'
+                : title == 'Total Expenses'
+                ? '+8.1% from last month'
+                : 'Check stock levels',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
-          )
+          ),
         ],
       ),
     );
