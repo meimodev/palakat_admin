@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'core/theme/theme.dart';
 import 'core/layout/app_scaffold.dart';
+import 'core/navigation/page_transitions.dart';
 import 'features/members/presentation/screens/members_screen.dart';
 import 'features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'features/reports/presentation/screens/reports_screen.dart';
@@ -45,62 +46,110 @@ final _router = GoRouter(
         GoRoute(
           path: '/dashboard',
           name: 'dashboard',
-          builder: (context, state) => const DashboardScreen(),
+          pageBuilder: (context, state) => SmoothPageTransition<void>(
+            key: state.pageKey,
+            name: 'dashboard',
+            child: const DashboardScreen(),
+          ),
         ),
         GoRoute(
           path: '/members',
           name: 'members',
-          builder: (context, state) => const MembersScreen(),
+          pageBuilder: (context, state) => SmoothPageTransition<void>(
+            key: state.pageKey,
+            name: 'members',
+            child: const MembersScreen(),
+          ),
         ),
         GoRoute(
           path: '/approval',
           name: 'approval',
-          builder: (context, state) => const ApprovalScreen(),
+          pageBuilder: (context, state) => SmoothPageTransition<void>(
+            key: state.pageKey,
+            name: 'approval',
+            child: const ApprovalScreen(),
+          ),
         ),
         GoRoute(
           path: '/activities',
           name: 'activities',
-          builder: (context, state) => const ActivitiesScreen(),
+          pageBuilder: (context, state) => SmoothPageTransition<void>(
+            key: state.pageKey,
+            name: 'activities',
+            child: const ActivitiesScreen(),
+          ),
         ),
         GoRoute(
           path: '/billing',
           name: 'billing',
-          builder: (context, state) => const BillingScreen(),
+          pageBuilder: (context, state) => SmoothPageTransition<void>(
+            key: state.pageKey,
+            name: 'billing',
+            child: const BillingScreen(),
+          ),
         ),
         GoRoute(
           path: '/church',
           name: 'church',
-          builder: (context, state) => const ChurchScreen(),
+          pageBuilder: (context, state) => SmoothPageTransition<void>(
+            key: state.pageKey,
+            name: 'church',
+            child: const ChurchScreen(),
+          ),
         ),
         GoRoute(
           path: '/document',
           name: 'document',
-          builder: (context, state) => const DocumentScreen(),
+          pageBuilder: (context, state) => SmoothPageTransition<void>(
+            key: state.pageKey,
+            name: 'document',
+            child: const DocumentScreen(),
+          ),
         ),
         GoRoute(
           path: '/income',
           name: 'income',
-          builder: (context, state) => const IncomeScreen(),
+          pageBuilder: (context, state) => SmoothPageTransition<void>(
+            key: state.pageKey,
+            name: 'income',
+            child: const IncomeScreen(),
+          ),
         ),
         GoRoute(
           path: '/expenses',
           name: 'expenses',
-          builder: (context, state) => const ExpensesScreen(),
+          pageBuilder: (context, state) => SmoothPageTransition<void>(
+            key: state.pageKey,
+            name: 'expenses',
+            child: const ExpensesScreen(),
+          ),
         ),
         GoRoute(
           path: '/inventory',
           name: 'inventory',
-          builder: (context, state) => const InventoryScreen(),
+          pageBuilder: (context, state) => SmoothPageTransition<void>(
+            key: state.pageKey,
+            name: 'inventory',
+            child: const InventoryScreen(),
+          ),
         ),
         GoRoute(
           path: '/reports',
           name: 'reports',
-          builder: (context, state) => const ReportsScreen(),
+          pageBuilder: (context, state) => SmoothPageTransition<void>(
+            key: state.pageKey,
+            name: 'reports',
+            child: const ReportsScreen(),
+          ),
         ),
         GoRoute(
           path: '/account',
           name: 'account',
-          builder: (context, state) => const AccountScreen(),
+          pageBuilder: (context, state) => SmoothPageTransition<void>(
+            key: state.pageKey,
+            name: 'account',
+            child: const AccountScreen(),
+          ),
         ),
       ],
     ),

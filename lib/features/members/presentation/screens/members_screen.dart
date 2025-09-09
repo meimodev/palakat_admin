@@ -36,13 +36,33 @@ class MembersScreen extends ConsumerWidget {
                 children: [
                   // Quick stats row
                   Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
+                    spacing: 16,
+                    runSpacing: 16,
                     children: const [
-                      _QuickStat(label: 'Total Members', value: '1,248'),
-                      _QuickStat(label: 'Claimed Members', value: '1,248'),
-                      _QuickStat(label: 'Baptize', value: '1,102'),
-                      _QuickStat(label: 'Sidi', value: '86'),
+                      _QuickStat(
+                        label: 'Total Members',
+                        value: '1,248',
+                        icon: Icons.groups_outlined,
+                        subtitle: 'All registered members',
+                      ),
+                      _QuickStat(
+                        label: 'App Linked',
+                        value: '1,248',
+                        icon: Icons.phone_android_outlined,
+                        subtitle: 'Connected to mobile app',
+                      ),
+                      _QuickStat(
+                        label: 'Baptized',
+                        value: '1,102',
+                        icon: Icons.water_drop_outlined,
+                        subtitle: 'Baptized members',
+                      ),
+                      _QuickStat(
+                        label: 'Sidi',
+                        value: '86',
+                        icon: Icons.emoji_people_outlined,
+                        subtitle: 'Confirmed members',
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -69,7 +89,7 @@ class _FiltersBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final filters = ref.watch(membersFilterProvider);
     final availablePositions = ref.watch(availablePositionsProvider);
-    
+
     return Column(
       children: [
         Row(
@@ -92,7 +112,10 @@ class _FiltersBar extends ConsumerWidget {
                 decoration: const InputDecoration(
                   labelText: 'Filter by Position',
                   border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                 ),
                 items: [
                   const DropdownMenuItem<String?>(
@@ -105,10 +128,7 @@ class _FiltersBar extends ConsumerWidget {
                   ...availablePositions.map(
                     (position) => DropdownMenuItem<String?>(
                       value: position,
-                      child: Text(
-                        position,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      child: Text(position, overflow: TextOverflow.ellipsis),
                     ),
                   ),
                 ],
@@ -159,48 +179,88 @@ class _PaginationBar extends ConsumerWidget {
       rowsPerPage: filters.rowsPerPage,
       page: filters.page,
       pageCount: totalPages,
-      onRowsPerPageChanged: (v) => 
+      onRowsPerPageChanged: (v) =>
           ref.read(membersFilterProvider.notifier).setRowsPerPage(v),
       onPrev: () => ref.read(membersFilterProvider.notifier).prevPage(),
-      onNext: () => ref
-          .read(membersFilterProvider.notifier)
-          .nextPage(slice.total),
+      onNext: () =>
+          ref.read(membersFilterProvider.notifier).nextPage(slice.total),
     );
   }
 }
 
 class _QuickStat extends StatelessWidget {
-  const _QuickStat({required this.label, required this.value});
+  const _QuickStat({
+    required this.label,
+    required this.value,
+    this.icon,
+    this.subtitle,
+  });
 
   final String label;
   final String value;
+  final IconData? icon;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(12),
-      width: 150,
+      width: 200,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: theme.colorScheme.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (icon != null)
+                Icon(
+                  icon!,
+                  size: 20,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
           Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            value,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 6),
-          Text(value, style: theme.textTheme.titleLarge),
+          if (subtitle != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              subtitle!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 }
-

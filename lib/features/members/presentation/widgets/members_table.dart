@@ -14,7 +14,6 @@ class MembersTable extends ConsumerWidget {
     return Column(
       children: [
         const _MembersHeader(),
-        const Divider(height: 1),
         for (final u in slice.rows)
           _MemberRow(member: u, onTap: () => _editMember(context, u, ref)),
       ],
@@ -48,23 +47,32 @@ class _MembersHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textStyle = Theme.of(context).textTheme.labelLarge;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+    final theme = Theme.of(context);
+    final textStyle = theme.textTheme.labelLarge?.copyWith(
+      fontWeight: FontWeight.w600,
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLowest,
+        border: Border(
+          bottom: BorderSide(color: theme.colorScheme.outlineVariant, width: 1),
+        ),
+      ),
       child: Row(
         children: [
-          _cell(const Text('Name'), flex: 4, style: textStyle),
-          _cell(const Text('Phone'), flex: 3, style: textStyle),
-          _cell(const Text('Positions'), flex: 3, style: textStyle),
+          _cell(Text('Name', style: textStyle), flex: 4),
+          _cell(Text('Phone', style: textStyle), flex: 3),
+          _cell(Text('Positions', style: textStyle), flex: 3),
+          const SizedBox(width: 20), // Space for chevron
         ],
       ),
     );
   }
 
-  Widget _cell(Widget child, {int flex = 1, TextStyle? style}) => Expanded(
-    flex: flex,
-    child: DefaultTextStyle.merge(style: style, child: child),
-  );
+  Widget _cell(Widget child, {int flex = 1}) =>
+      Expanded(flex: flex, child: child);
 }
 
 class _MemberRow extends StatelessWidget {
@@ -75,7 +83,8 @@ class _MemberRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hoverColor = theme.colorScheme.primary.withOpacity(0.04);
+    final hoverColor = theme.colorScheme.surfaceContainerHighest;
+
     return Column(
       children: [
         MouseRegion(
@@ -86,88 +95,91 @@ class _MemberRow extends StatelessWidget {
               onTap: onTap,
               hoverColor: hoverColor,
               borderRadius: BorderRadius.circular(8),
-              child: Padding(
+              child: Container(
                 padding: const EdgeInsets.symmetric(
-                  vertical: 10,
-                  horizontal: 8,
+                  vertical: 12,
+                  horizontal: 12,
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     _cell(
-                      Row(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      member.name,
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'Member',
-                                      style: theme.textTheme.bodySmall
-                                          ?.copyWith(
-                                            color: theme
-                                                .colorScheme
-                                                .onSurfaceVariant,
-                                          ),
-                                    ),
-                                  ],
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  member.name,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                Row(
-                                  children: [
-                                    if (member.isBaptized ||
-                                        member.isSidi ||
-                                        member.isLinked)
-                                      const SizedBox(width: 8),
-                                    if (member.isBaptized)
-                                      const Icon(
-                                        Icons.water_drop_outlined,
-                                        size: 16,
-                                        color: Colors.blue,
+                              ),
+                              const SizedBox(width: 8),
+                              // Status badges
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (member.isBaptized)
+                                    _StatusBadge(
+                                      icon: Icons.water_drop,
+                                      color: Colors.blue.shade600,
+                                      backgroundColor: Colors.blue.shade50,
+                                      tooltip: 'Baptized',
+                                    ),
+                                  if (member.isSidi)
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 4.0),
+                                      child: _StatusBadge(
+                                        icon: Icons.emoji_people,
+                                        color: Colors.green.shade600,
+                                        backgroundColor: Colors.green.shade50,
+                                        tooltip: 'Sidi',
                                       ),
-                                    if (member.isSidi)
-                                      const Padding(
-                                        padding: EdgeInsets.only(left: 4.0),
-                                        child: Icon(
-                                          Icons.emoji_people_outlined,
-                                          size: 16,
-                                          color: Colors.green,
-                                        ),
+                                    ),
+                                  if (member.isLinked)
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 4.0),
+                                      child: _StatusBadge(
+                                        icon: Icons.phone_android,
+                                        color: Colors.purple.shade600,
+                                        backgroundColor: Colors.purple.shade50,
+                                        tooltip: 'App Linked',
                                       ),
-                                    if (member.isLinked)
-                                      const Padding(
-                                        padding: EdgeInsets.only(left: 4.0),
-                                        child: Icon(
-                                          Icons.phone_android_outlined,
-                                          size: 16,
-                                          color: Colors.purple,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ],
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Member',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
                       ),
                       flex: 4,
                     ),
-                    _cell(Text(member.phone), flex: 3),
+                    _cell(
+                      Text(
+                        member.phone,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      flex: 3,
+                    ),
                     _cell(_PositionsCell(positions: member.positions), flex: 3),
-                    const Icon(
+                    Icon(
                       Icons.chevron_right,
-                      size: 18,
-                      color: Colors.black54,
+                      size: 20,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ],
                 ),
@@ -175,7 +187,7 @@ class _MemberRow extends StatelessWidget {
             ),
           ),
         ),
-        const Divider(height: 1),
+        Divider(height: 1, color: theme.colorScheme.outlineVariant),
       ],
     );
   }
@@ -193,70 +205,54 @@ class _PositionsCell extends StatelessWidget {
     final theme = Theme.of(context);
     if (positions.isEmpty) return const Text('-');
 
-    // Show up to 2 position chips, then a "+N more" chip if there are more
-    const maxVisible = 2;
-    final visiblePositions = positions.take(maxVisible).toList();
-    final remainingCount = positions.length - maxVisible;
+    // Show only 1 position, then a "+N" text if there are more
+    final firstPosition = positions.first;
+    final remainingCount = positions.length - 1;
 
-    return Wrap(
-      spacing: 4,
-      runSpacing: 4,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        // Show visible position chips
-        for (final position in visiblePositions)
-          _PositionChip(position: position),
-
-        // Show "+N more" chip if there are remaining positions
-        if (remainingCount > 0)
-          InkWell(
-            onTap: () => _showAllPositions(context, positions),
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Text(
-                '+$remainingCount',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onPrimaryContainer,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+        _PositionChip(position: firstPosition),
+        if (remainingCount > 0) ...[
+          const SizedBox(width: 6),
+          Text(
+            '+$remainingCount',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
             ),
           ),
+        ],
       ],
     );
   }
+}
 
-  void _showAllPositions(BuildContext context, List<String> positions) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('All Positions'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: positions
-                  .map((pos) => _PositionChip(position: pos))
-                  .toList(),
-            ),
-          ],
+class _StatusBadge extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final Color backgroundColor;
+  final String tooltip;
+
+  const _StatusBadge({
+    required this.icon,
+    required this.color,
+    required this.backgroundColor,
+    required this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
+        child: Icon(icon, size: 14, color: color),
       ),
     );
   }
@@ -270,16 +266,17 @@ class _PositionChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.colorScheme.outlineVariant, width: 1),
       ),
       child: Text(
         position,
         style: theme.textTheme.labelSmall?.copyWith(
           fontWeight: FontWeight.w500,
+          color: theme.colorScheme.onSurfaceVariant,
         ),
       ),
     );

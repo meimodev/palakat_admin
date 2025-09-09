@@ -351,7 +351,7 @@ class _ActivityRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hoverColor = theme.colorScheme.primary.withOpacity(0.04);
+    final hoverColor = theme.colorScheme.primary.withValues(alpha: 0.04);
     return Column(
       children: [
         MouseRegion(

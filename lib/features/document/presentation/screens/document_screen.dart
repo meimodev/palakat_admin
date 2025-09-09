@@ -271,10 +271,23 @@ class _DocumentRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       child: Row(
         children: [
-          _cell(Text(document.name, overflow: TextOverflow.ellipsis, style: textStyle), flex: 3),
+          _cell(
+            Text(
+              document.name,
+              overflow: TextOverflow.ellipsis,
+              style: textStyle,
+            ),
+            flex: 3,
+          ),
           _cell(Text(document.identityNumber, style: textStyle), flex: 2),
           _cell(Text(document.type, style: textStyle), flex: 2),
-          _cell(Text(DateFormat('y-MM-dd').format(document.approvedDate), style: textStyle), flex: 2),
+          _cell(
+            Text(
+              DateFormat('y-MM-dd').format(document.approvedDate),
+              style: textStyle,
+            ),
+            flex: 2,
+          ),
         ],
       ),
     );
@@ -303,7 +316,8 @@ class _IdentityNumberEditDrawer extends StatefulWidget {
   });
 
   @override
-  State<_IdentityNumberEditDrawer> createState() => _IdentityNumberEditDrawerState();
+  State<_IdentityNumberEditDrawer> createState() =>
+      _IdentityNumberEditDrawerState();
 }
 
 class _IdentityNumberEditDrawerState extends State<_IdentityNumberEditDrawer> {
@@ -351,13 +365,19 @@ class _IdentityNumberEditDrawerState extends State<_IdentityNumberEditDrawer> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+              color: theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.3,
+              ),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.info_outline, size: 18, color: theme.colorScheme.primary),
+                Icon(
+                  Icons.info_outline,
+                  size: 18,
+                  color: theme.colorScheme.primary,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(

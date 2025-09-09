@@ -128,10 +128,12 @@ class _ColumnEditDrawerState extends State<ColumnEditDrawer> {
                       fillColor: theme.colorScheme.surface,
                     ),
                     validator: (value) {
-                      if (value?.isEmpty == true)
+                      if (value?.isEmpty == true) {
                         return 'Column number is required';
-                      if (int.tryParse(value!) == null)
+                      }
+                      if (int.tryParse(value!) == null) {
                         return 'Please enter a valid number';
+                      }
                       return null;
                     },
                   ),

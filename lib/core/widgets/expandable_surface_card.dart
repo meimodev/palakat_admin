@@ -38,7 +38,7 @@ class _ExpandableSurfaceCardState extends State<ExpandableSurfaceCard>
       parent: _animationController,
       curve: Curves.easeInOut,
     );
-    
+
     if (_isExpanded) {
       _animationController.value = 1.0;
     }
@@ -64,7 +64,7 @@ class _ExpandableSurfaceCardState extends State<ExpandableSurfaceCard>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -73,7 +73,7 @@ class _ExpandableSurfaceCardState extends State<ExpandableSurfaceCard>
         border: Border.all(color: theme.colorScheme.outlineVariant),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -95,7 +95,10 @@ class _ExpandableSurfaceCardState extends State<ExpandableSurfaceCard>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (widget.title != null)
-                          Text(widget.title!, style: theme.textTheme.titleLarge),
+                          Text(
+                            widget.title!,
+                            style: theme.textTheme.titleLarge,
+                          ),
                         if (widget.subtitle != null)
                           Text(
                             widget.subtitle!,
@@ -122,7 +125,7 @@ class _ExpandableSurfaceCardState extends State<ExpandableSurfaceCard>
               ),
             ),
           ),
-          
+
           // Expandable content
           SizeTransition(
             sizeFactor: _expandAnimation,

@@ -4,6 +4,14 @@ import 'package:go_router/go_router.dart';
 class AppSidebar extends StatelessWidget {
   const AppSidebar({super.key});
 
+  // Helper method to get name initials
+  String _getNameInitials(String name) {
+    final words = name.trim().split(' ');
+    if (words.isEmpty) return 'U';
+    if (words.length == 1) return words[0][0].toUpperCase();
+    return '${words[0][0]}${words[words.length - 1][0]}'.toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
     final route = GoRouterState.of(context).uri.toString();
@@ -24,10 +32,15 @@ class AppSidebar extends StatelessWidget {
                       height: 40,
                       width: 40,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(Icons.church, color: Theme.of(context).colorScheme.primary),
+                      child: Icon(
+                        Icons.church,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Text(
@@ -72,7 +85,14 @@ class AppSidebar extends StatelessWidget {
                     ),
                     const Padding(
                       padding: EdgeInsets.fromLTRB(12, 16, 12, 8),
-                      child: Text('Reports', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black54)),
+                      child: Text(
+                        'Reports',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black54,
+                        ),
+                      ),
                     ),
                     _NavItem(
                       icon: Icons.attach_money,
@@ -104,7 +124,14 @@ class AppSidebar extends StatelessWidget {
                     ),
                     const Padding(
                       padding: EdgeInsets.fromLTRB(12, 16, 12, 8),
-                      child: Text('Administration', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black54)),
+                      child: Text(
+                        'Administration',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black54,
+                        ),
+                      ),
                     ),
                     _NavItem(
                       icon: Icons.account_balance,
@@ -132,11 +159,18 @@ class AppSidebar extends StatelessWidget {
               ),
               const Divider(height: 1),
               ListTile(
-                leading: const CircleAvatar(
-                  backgroundImage: NetworkImage('https://placehold.co/100x100.png'),
+                leading: CircleAvatar(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  child: Text(
+                    _getNameInitials('Admin User'),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
                 title: const Text('Admin User'),
-                subtitle: const Text('admin@palakat.com'),
+                subtitle: const Text('+62 812-3456-7890'),
                 onTap: () => context.go('/account'),
               ),
             ],
@@ -147,7 +181,7 @@ class AppSidebar extends StatelessWidget {
   }
 }
 
-class _NavItem extends StatelessWidget {
+class _NavItem extends StatefulWidget {
   const _NavItem({
     required this.icon,
     required this.label,
@@ -163,25 +197,151 @@ class _NavItem extends StatelessWidget {
   final Color color;
 
   @override
+  State<_NavItem> createState() => _NavItemState();
+}
+
+class _NavItemState extends State<_NavItem>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _iconScaleAnimation;
+  bool _isHovered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.02,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+    _iconScaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.1,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleHover(bool isHovered) {
+    setState(() {
+      _isHovered = isHovered;
+    });
+
+    if (isHovered && !widget.selected) {
+      _controller.forward();
+    } else {
+      _controller.reverse();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: ListTile(
-        leading: Container(
-          height: 32,
-          width: 32,
-          decoration: BoxDecoration(
-            color: selected ? theme.colorScheme.primary : color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, size: 18, color: selected ? theme.colorScheme.onPrimary : color),
-        ),
-        title: Text(label),
-        selected: selected,
-        selectedTileColor: theme.colorScheme.primary.withValues(alpha: 0.08),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        onTap: onTap,
+      child: AnimatedBuilder(
+        animation: _scaleAnimation,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: MouseRegion(
+              onEnter: (_) => _handleHover(true),
+              onExit: (_) => _handleHover(false),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                decoration: BoxDecoration(
+                  color: widget.selected
+                      ? theme.colorScheme.primary.withValues(alpha: 0.08)
+                      : _isHovered
+                      ? theme.colorScheme.primary.withValues(alpha: 0.04)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: _isHovered && !widget.selected
+                      ? [
+                          BoxShadow(
+                            color: theme.colorScheme.primary.withValues(
+                              alpha: 0.1,
+                            ),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: ListTile(
+                  leading: AnimatedBuilder(
+                    animation: _iconScaleAnimation,
+                    builder: (context, child) {
+                      return Transform.scale(
+                        scale: _iconScaleAnimation.value,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          height: 32,
+                          width: 32,
+                          decoration: BoxDecoration(
+                            color: widget.selected
+                                ? theme.colorScheme.primary
+                                : _isHovered
+                                ? widget.color.withValues(alpha: 0.2)
+                                : widget.color.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            widget.icon,
+                            size: 18,
+                            color: widget.selected
+                                ? theme.colorScheme.onPrimary
+                                : widget.color,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  title: AnimatedDefaultTextStyle(
+                    duration: const Duration(milliseconds: 200),
+                    style: theme.textTheme.bodyMedium!.copyWith(
+                      fontWeight: widget.selected
+                          ? FontWeight.w600
+                          : _isHovered
+                          ? FontWeight.w500
+                          : FontWeight.normal,
+                      color: widget.selected
+                          ? theme.colorScheme.primary
+                          : _isHovered
+                          ? theme.colorScheme.onSurface
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                    ),
+                    child: Text(widget.label),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  onTap: () {
+                    // Add haptic feedback for better UX
+                    if (theme.platform == TargetPlatform.iOS ||
+                        theme.platform == TargetPlatform.android) {
+                      // Note: You might want to add haptic feedback here
+                      // HapticFeedback.lightImpact();
+                    }
+                    widget.onTap();
+                  },
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

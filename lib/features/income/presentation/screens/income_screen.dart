@@ -384,7 +384,7 @@ class _IncomeRow extends StatelessWidget {
       symbol: '₱ ',
     ).format(entry.amount);
 
-    final hoverColor = theme.colorScheme.primary.withOpacity(0.04);
+    final hoverColor = theme.colorScheme.primary.withValues(alpha: 0.04);
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: Material(

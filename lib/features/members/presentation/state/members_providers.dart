@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:palakat_admin/core/models/membership.dart';
@@ -34,7 +36,7 @@ class MembersNotifier extends StateNotifier<List<Membership>> {
       ).toSet().toList(); // Ensure unique positions
 
       return Membership(
-        name: 'Member ${i + 1}',
+        name: 'Member ${(i + 1)* Random(10).nextInt(1000000)}',
         email: 'member${i + 1}@example.com',
         phone: '+1 (555) ${100 + (i % 900)}-${1000 + (i % 9000)}',
         positions: positions,

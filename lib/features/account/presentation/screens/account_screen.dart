@@ -14,7 +14,6 @@ class _AccountScreenState extends State<AccountScreen> {
   late Account _currentAccount;
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
-  late TextEditingController _departmentController;
   late TextEditingController _positionController;
 
   @override
@@ -82,9 +81,6 @@ class _AccountScreenState extends State<AccountScreen> {
   void _openEditAccountDrawer() {
     final nameCtrl = TextEditingController(text: _currentAccount.name);
     final phoneCtrl = TextEditingController(text: _currentAccount.phone);
-    final deptCtrl = TextEditingController(
-      text: _currentAccount.department ?? '',
-    );
     final posCtrl = TextEditingController(text: _currentAccount.position ?? '');
 
     final theme = Theme.of(context);
@@ -126,21 +122,6 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Department',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 6),
-          TextField(
-            controller: deptCtrl,
-            decoration: const InputDecoration(
-              hintText: 'Enter your department',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
             'Position',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
@@ -172,7 +153,6 @@ class _AccountScreenState extends State<AccountScreen> {
                   _currentAccount = _currentAccount.copyWith(
                     name: nameCtrl.text,
                     phone: phoneCtrl.text,
-                    department: deptCtrl.text.isEmpty ? null : deptCtrl.text,
                     position: posCtrl.text.isEmpty ? null : posCtrl.text,
                   );
                 });
@@ -303,9 +283,6 @@ class _AccountScreenState extends State<AccountScreen> {
   void _initializeControllers() {
     _nameController = TextEditingController(text: _currentAccount.name);
     _phoneController = TextEditingController(text: _currentAccount.phone);
-    _departmentController = TextEditingController(
-      text: _currentAccount.department ?? '',
-    );
     _positionController = TextEditingController(
       text: _currentAccount.position ?? '',
     );
@@ -315,12 +292,55 @@ class _AccountScreenState extends State<AccountScreen> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
-    _departmentController.dispose();
     _positionController.dispose();
     super.dispose();
   }
 
-  // Removed inline editing; using side drawer instead
+  // Helper method to get name initials
+  String _getNameInitials(String name) {
+    final words = name.trim().split(' ');
+    if (words.isEmpty) return 'U';
+    if (words.length == 1) return words[0][0].toUpperCase();
+    return '${words[0][0]}${words[words.length - 1][0]}'.toUpperCase();
+  }
+
+  // Helper method to build info field widgets
+  Widget _buildInfoField(
+    ThemeData theme,
+    String label,
+    String value, {
+    IconData? icon,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                value,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            if (icon != null) ...[
+              const SizedBox(width: 6),
+              Icon(icon, color: Colors.green, size: 16),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
 
   void _signOut() {
     showDialog(
@@ -365,7 +385,7 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
             ),
             const SizedBox(height: 24),
-      
+
             // Account Information Card
             SurfaceCard(
               title: 'Account Information',
@@ -382,124 +402,24 @@ class _AccountScreenState extends State<AccountScreen> {
                     children: [
                       CircleAvatar(
                         radius: 40,
-                        backgroundImage: NetworkImage(
-                          _currentAccount.profileImageUrl ??
-                              'https://placehold.co/100x100.png',
+                        backgroundColor: theme.colorScheme.primary,
+                        child: Text(
+                          _getNameInitials(_currentAccount.name),
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            color: theme.colorScheme.onPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 20),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               _currentAccount.name,
-                              style: theme.textTheme.titleLarge,
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _currentAccount.statusColor
-                                        .withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    _currentAccount.roleDisplayName,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: _currentAccount.statusColor,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _currentAccount.statusColor
-                                        .withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    _currentAccount.statusDisplayName,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: _currentAccount.statusColor,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-      
-                  // Account Information Fields (read-only display)
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Full Name',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _currentAccount.name,
-                              style: theme.textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Last Login',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _currentAccount.lastLogin != null
-                                  ? '${_currentAccount.lastLogin!.day}/${_currentAccount.lastLogin!.month}/${_currentAccount.lastLogin!.year}'
-                                  : 'Never',
-                              style: theme.textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Phone Number',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -507,11 +427,13 @@ class _AccountScreenState extends State<AccountScreen> {
                               children: [
                                 Text(
                                   _currentAccount.phone,
-                                  style: theme.textTheme.bodyMedium,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
                                 ),
                                 if (_currentAccount.phoneVerified) ...[
                                   const SizedBox(width: 6),
-                                  const Icon(
+                                  Icon(
                                     Icons.verified,
                                     color: Colors.green,
                                     size: 16,
@@ -522,60 +444,36 @@ class _AccountScreenState extends State<AccountScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Department',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _currentAccount.department ?? '-',
-                              style: theme.textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 32),
+
+                  // Account Information Fields
                   Row(
                     children: [
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Position',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _currentAccount.position ?? '-',
-                              style: theme.textTheme.bodyMedium,
-                            ),
-                          ],
+                        child: _buildInfoField(
+                          theme,
+                          'Full Name',
+                          _currentAccount.name,
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      const Expanded(
-                        child: SizedBox(),
-                      ), // Empty space for alignment
+                      const SizedBox(width: 24),
+                      Expanded(
+                        child: _buildInfoField(
+                          theme,
+                          'Position',
+                          _currentAccount.position ?? '-',
+                        ),
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
-      
+
             const SizedBox(height: 16),
-      
+
             // Security Settings Card
             SurfaceCard(
               title: 'Security Settings',
@@ -618,9 +516,9 @@ class _AccountScreenState extends State<AccountScreen> {
                 ],
               ),
             ),
-      
+
             const SizedBox(height: 16),
-      
+
             // Account Actions Card
             SurfaceCard(
               title: 'Account Actions',
@@ -663,7 +561,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 ],
               ),
             ),
-      
+
             const SizedBox(height: 24),
           ],
         ),

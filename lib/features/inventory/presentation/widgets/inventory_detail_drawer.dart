@@ -16,7 +16,7 @@ class InventoryDetailDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return SideDrawer(
       title: 'Inventory Details',
       subtitle: 'View detailed information about this item',
@@ -65,9 +65,7 @@ class InventoryDetailDrawer extends StatelessWidget {
           // Item Status
           _InfoSection(
             title: 'Item Status',
-            children: [
-              _StatusCard(item: item),
-            ],
+            children: [_StatusCard(item: item)],
           ),
         ],
       ),
@@ -145,11 +143,7 @@ class _InfoRow extends StatelessWidget {
   final String value;
   final Widget? valueWidget;
 
-  const _InfoRow({
-    required this.label,
-    required this.value,
-    this.valueWidget,
-  });
+  const _InfoRow({required this.label, required this.value, this.valueWidget});
 
   @override
   Widget build(BuildContext context) {
@@ -171,7 +165,8 @@ class _InfoRow extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: valueWidget ?? Text(value, style: theme.textTheme.bodyMedium),
+            child:
+                valueWidget ?? Text(value, style: theme.textTheme.bodyMedium),
           ),
         ],
       ),
@@ -181,7 +176,7 @@ class _InfoRow extends StatelessWidget {
 
 class _ConditionBadge extends StatelessWidget {
   const _ConditionBadge({required this.condition});
-  
+
   final InventoryCondition condition;
 
   @override
@@ -236,13 +231,13 @@ class _StatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     // Determine status based on quantity and condition
     Color backgroundColor;
     Color foregroundColor;
     IconData icon;
     String statusText;
-    
+
     if (item.quantity == 0) {
       backgroundColor = Colors.red.shade50;
       foregroundColor = Colors.red.shade700;
@@ -265,7 +260,7 @@ class _StatusCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: foregroundColor.withOpacity(0.2)),
+        border: Border.all(color: foregroundColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -286,7 +281,7 @@ class _StatusCard extends StatelessWidget {
                 Text(
                   '${item.quantity} items available',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: foregroundColor.withOpacity(0.8),
+                    color: foregroundColor.withValues(alpha: 0.8),
                   ),
                 ),
               ],
