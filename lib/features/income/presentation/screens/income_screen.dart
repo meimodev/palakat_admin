@@ -56,7 +56,8 @@ class _IncomeScreenState extends State<IncomeScreen> {
       final approvedStr = e.approvedAt != null
           ? DateFormat('y-MM-dd').format(e.approvedAt!).toLowerCase()
           : '';
-      final matchesQuery = q.isEmpty ||
+      final matchesQuery =
+          q.isEmpty ||
           e.accountId.toLowerCase().contains(q) ||
           e.notes.toLowerCase().contains(q) ||
           e.approvalId.toLowerCase().contains(q) ||
@@ -73,92 +74,94 @@ class _IncomeScreenState extends State<IncomeScreen> {
         ? filtered.sublist(start, end)
         : <IncomeEntry>[];
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Income', style: theme.textTheme.headlineMedium),
-          const SizedBox(height: 8),
-          Text(
-            'Track and manage all income sources.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+    return Material(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Income', style: theme.textTheme.headlineMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Track and manage all income sources.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // Card container similar to Approval page
-          SurfaceCard(
-            title: 'Income Log',
-            subtitle: 'A record of all logged income.',
-            child: Column(
-              children: [
-                // Search + Date Range
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: const InputDecoration(
-                          hintText: 'Search income...',
-                          prefixIcon: Icon(Icons.search),
-                          border: OutlineInputBorder(),
+            // Card container similar to Approval page
+            SurfaceCard(
+              title: 'Income Log',
+              subtitle: 'A record of all logged income.',
+              child: Column(
+                children: [
+                  // Search + Date Range
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: const InputDecoration(
+                            hintText: 'Search income...',
+                            prefixIcon: Icon(Icons.search),
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged: (_) => setState(() {
+                            _page = 0;
+                          }),
                         ),
-                        onChanged: (_) => setState(() {
+                      ),
+                      const SizedBox(width: 8),
+                      DateRangeFilter(
+                        value: _dateRange,
+                        onChanged: (r) => setState(() {
+                          _dateRange = r;
+                          _page = 0;
+                        }),
+                        onClear: () => setState(() {
+                          _dateRange = null;
                           _page = 0;
                         }),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    DateRangeFilter(
-                      value: _dateRange,
-                      onChanged: (r) => setState(() {
-                        _dateRange = r;
-                        _page = 0;
-                      }),
-                      onClear: () => setState(() {
-                        _dateRange = null;
-                        _page = 0;
-                      }),
-                    ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Header
+                  const _IncomeHeader(),
+                  const Divider(height: 1),
+
+                  // Rows
+                  ...[
+                    for (final e in pageRows)
+                      _IncomeRow(entry: e, onTap: () => _showIncomeDetail(e)),
                   ],
-                ),
-                const SizedBox(height: 12),
 
-                // Header
-                const _IncomeHeader(),
-                const Divider(height: 1),
-
-                // Rows
-                ...[
-                  for (final e in pageRows)
-                    _IncomeRow(entry: e, onTap: () => _showIncomeDetail(e)),
+                  const SizedBox(height: 8),
+                  // Pagination
+                  PaginationBar(
+                    showingCount: pageRows.length,
+                    totalCount: total,
+                    rowsPerPage: _rowsPerPage,
+                    page: _page,
+                    pageCount: (total / _rowsPerPage).ceil().clamp(1, 9999),
+                    onRowsPerPageChanged: (v) => setState(() {
+                      _rowsPerPage = v;
+                      _page = 0;
+                    }),
+                    onPrev: () => setState(() {
+                      if (_page > 0) _page -= 1;
+                    }),
+                    onNext: () => setState(() {
+                      final maxPage = (total / _rowsPerPage).ceil() - 1;
+                      if (_page < maxPage) _page += 1;
+                    }),
+                  ),
                 ],
-
-                const SizedBox(height: 8),
-                // Pagination
-                PaginationBar(
-                  showingCount: pageRows.length,
-                  totalCount: total,
-                  rowsPerPage: _rowsPerPage,
-                  page: _page,
-                  pageCount: (total / _rowsPerPage).ceil().clamp(1, 9999),
-                  onRowsPerPageChanged: (v) => setState(() {
-                    _rowsPerPage = v;
-                    _page = 0;
-                  }),
-                  onPrev: () => setState(() {
-                    if (_page > 0) _page -= 1;
-                  }),
-                  onNext: () => setState(() {
-                    final maxPage = (total / _rowsPerPage).ceil() - 1;
-                    if (_page < maxPage) _page += 1;
-                  }),
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -325,8 +328,6 @@ class _IncomeScreenState extends State<IncomeScreen> {
         ),
     ];
   }
-
-  
 }
 
 class _IncomeHeader extends StatelessWidget {
@@ -383,33 +384,53 @@ class _IncomeRow extends StatelessWidget {
       symbol: '₱ ',
     ).format(entry.amount);
 
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        child: Row(
-          children: [
-            _cell(Text(entry.accountId), flex: 2),
-            _cell(Text(DateFormat('y-MM-dd').format(entry.date)), flex: 2),
-            _cell(
-              ApprovalIdCell(
-                approvedAt: entry.approvedAt,
-                approvalId: entry.approvalId,
-              ),
-              flex: 4,
-            ),
-            _cell(Text(entry.notes, overflow: TextOverflow.ellipsis), flex: 6),
-            _cell(
-              Text(
-                amountText,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+    final hoverColor = theme.colorScheme.primary.withOpacity(0.04);
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          hoverColor: hoverColor,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            child: Row(
+              children: [
+                _cell(Text(entry.accountId), flex: 2),
+                _cell(Text(DateFormat('y-MM-dd').format(entry.date)), flex: 2),
+                _cell(
+                  ApprovalIdCell(
+                    approvedAt: entry.approvedAt,
+                    approvalId: entry.approvalId,
+                  ),
+                  flex: 4,
                 ),
-              ),
-              flex: 2,
-              alignEnd: true,
+                _cell(
+                  Text(entry.notes, overflow: TextOverflow.ellipsis),
+                  flex: 6,
+                ),
+                _cell(
+                  Text(
+                    amountText,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  flex: 2,
+                  alignEnd: true,
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(left: 8),
+                  child: Icon(
+                    Icons.chevron_right,
+                    size: 18,
+                    color: Colors.black54,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

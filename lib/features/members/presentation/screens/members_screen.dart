@@ -14,49 +14,51 @@ class MembersScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Members', style: theme.textTheme.headlineMedium),
-          const SizedBox(height: 8),
-          Text(
-            'Manage church members and their information.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+    return Material(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Members', style: theme.textTheme.headlineMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Manage church members and their information.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          SurfaceCard(
-            title: 'Member Directory',
-            subtitle: 'A record of all church members.',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Quick stats row
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: const [
-                    _QuickStat(label: 'Total Members', value: '1,248'),
-                    _QuickStat(label: 'Claimed Members', value: '1,248'),
-                    _QuickStat(label: 'Baptize', value: '1,102'),
-                    _QuickStat(label: 'Sidi', value: '86'),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                // Search / filters
-                _FiltersBar(),
-                const SizedBox(height: 16),
-                // Table-like list
-                const MembersTable(),
-                const SizedBox(height: 8),
-                // Pagination bar
-                const _PaginationBar(),
-              ],
+            const SizedBox(height: 16),
+            SurfaceCard(
+              title: 'Member Directory',
+              subtitle: 'A record of all church members.',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Quick stats row
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: const [
+                      _QuickStat(label: 'Total Members', value: '1,248'),
+                      _QuickStat(label: 'Claimed Members', value: '1,248'),
+                      _QuickStat(label: 'Baptize', value: '1,102'),
+                      _QuickStat(label: 'Sidi', value: '86'),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Search / filters
+                  _FiltersBar(),
+                  const SizedBox(height: 16),
+                  // Table-like list
+                  const MembersTable(),
+                  const SizedBox(height: 8),
+                  // Pagination bar
+                  const _PaginationBar(),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

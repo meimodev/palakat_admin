@@ -21,9 +21,7 @@ class AppScaffold extends StatelessWidget {
                   onPressed: () => Scaffold.of(context).openDrawer(),
                 ),
               ),
-              actions: [
-                _AvatarMenu(onProfile: () => context.go('/account')),
-              ],
+              actions: [_AvatarMenu(onProfile: () => context.go('/account'))],
             )
           : null,
       drawer: isSmall ? const AppSidebar() : null,

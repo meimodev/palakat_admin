@@ -27,8 +27,7 @@ class PalakatAdminApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = _router;
-    return MaterialApp.router
-      (
+    return MaterialApp.router(
       title: 'Palakat Admin',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),

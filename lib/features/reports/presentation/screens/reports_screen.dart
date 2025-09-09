@@ -4,7 +4,6 @@ import 'package:palakat_admin/core/widgets/surface_card.dart';
 import 'package:palakat_admin/core/widgets/pagination_bar.dart';
 import 'package:palakat_admin/features/reports/presentation/widgets/report_generate_drawer.dart';
 
-
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
 
@@ -13,9 +12,10 @@ class ReportsScreen extends StatefulWidget {
 }
 
 class _ReportsScreenState extends State<ReportsScreen> {
-  final TextEditingController _historySearchController = TextEditingController();
+  final TextEditingController _historySearchController =
+      TextEditingController();
   String? _selectedGenerator;
-  
+
   int _historyRowsPerPage = 10;
   int _historyPage = 0;
 
@@ -34,123 +34,128 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Reports', style: theme.textTheme.headlineMedium),
-          const SizedBox(height: 8),
-          Text(
-            'Generate and view comprehensive reports across all modules.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+    return Material(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Reports', style: theme.textTheme.headlineMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Generate and view comprehensive reports across all modules.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          SurfaceCard(
-            title: 'Generate Reports',
-            subtitle: 'Create custom reports for different modules.',
-            child: Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              children: [
-                _GenerateCard(
-                  title: 'Incoming Document Report',
-                  description: 'Generate a report for documents received.',
-                  onGenerate: () => _openGenerateDrawer(
-                    'Incoming Document Report',
-                    'Generate a report for documents received.',
+            SurfaceCard(
+              title: 'Generate Reports',
+              subtitle: 'Create custom reports for different modules.',
+              child: Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: [
+                  _GenerateCard(
+                    title: 'Incoming Document Report',
+                    description: 'Generate a report for documents received.',
+                    onGenerate: () => _openGenerateDrawer(
+                      'Incoming Document Report',
+                      'Generate a report for documents received.',
+                    ),
                   ),
-                ),
-                _GenerateCard(
-                  title: 'Congregation Report',
-                  description: 'Generate a report on the congregation.',
-                  onGenerate: () => _openGenerateDrawer(
-                    'Congregation Report',
-                    'Generate a report on the congregation.',
+                  _GenerateCard(
+                    title: 'Congregation Report',
+                    description: 'Generate a report on the congregation.',
+                    onGenerate: () => _openGenerateDrawer(
+                      'Congregation Report',
+                      'Generate a report on the congregation.',
+                    ),
                   ),
-                ),
-                _GenerateCard(
-                  title: 'Services Report',
-                  description: 'Generate a report of all services.',
-                  onGenerate: () => _openGenerateDrawer(
-                    'Services Report',
-                    'Generate a report of all services.',
+                  _GenerateCard(
+                    title: 'Services Report',
+                    description: 'Generate a report of all services.',
+                    onGenerate: () => _openGenerateDrawer(
+                      'Services Report',
+                      'Generate a report of all services.',
+                    ),
                   ),
-                ),
-                _GenerateCard(
-                  title: 'Activity Report',
-                  description: 'Generate a report of all activities.',
-                  onGenerate: () => _openGenerateDrawer(
-                    'Activity Report',
-                    'Generate a report of all activities.',
+                  _GenerateCard(
+                    title: 'Activity Report',
+                    description: 'Generate a report of all activities.',
+                    onGenerate: () => _openGenerateDrawer(
+                      'Activity Report',
+                      'Generate a report of all activities.',
+                    ),
                   ),
-                ),
-                _GenerateCard(
-                  title: 'Inventory Report',
-                  description: 'Generate a report of all inventory.',
-                  onGenerate: () => _openGenerateDrawer(
-                    'Inventory Report',
-                    'Generate a report of all inventory.',
+                  _GenerateCard(
+                    title: 'Inventory Report',
+                    description: 'Generate a report of all inventory.',
+                    onGenerate: () => _openGenerateDrawer(
+                      'Inventory Report',
+                      'Generate a report of all inventory.',
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          SurfaceCard(
-            title: 'Generated Reports History',
-            subtitle: 'View and manage previously generated reports.',
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _historySearchController,
-                        decoration: const InputDecoration(
-                          hintText: 'Search by report name...',
-                          prefixIcon: Icon(Icons.search),
+            SurfaceCard(
+              title: 'Generated Reports History',
+              subtitle: 'View and manage previously generated reports.',
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _historySearchController,
+                          decoration: const InputDecoration(
+                            hintText: 'Search by report name...',
+                            prefixIcon: Icon(Icons.search),
+                          ),
+                          onChanged: (_) => setState(() => _historyPage = 0),
                         ),
-                        onChanged: (_) => setState(() => _historyPage = 0),
                       ),
+                      const SizedBox(width: 16),
+                      DropdownButton<String>(
+                        value: _selectedGenerator,
+                        hint: const Text('All Generators'),
+                        items: ['Manual', 'System']
+                            .map(
+                              (g) => DropdownMenuItem(value: g, child: Text(g)),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedGenerator = value;
+                            _historyPage = 0;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  const _ReportHistoryHeader(),
+                  const Divider(height: 1),
+
+                  ..._getFilteredHistoryRows().map(
+                    (report) => _ReportHistoryRow(
+                      report: report,
+                      onDownload: () => _downloadReport(context, report.name),
                     ),
-                    const SizedBox(width: 16),
-                    DropdownButton<String>(
-                      value: _selectedGenerator,
-                      hint: const Text('All Generators'),
-                      items: ['Manual', 'System']
-                          .map((g) => DropdownMenuItem(value: g, child: Text(g)))
-                          .toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedGenerator = value;
-                          _historyPage = 0;
-                        });
-                      },
-                    ),
-                    
-                  ],
-                ),
-                const SizedBox(height: 16),
+                  ),
 
-                const _ReportHistoryHeader(),
-                const Divider(height: 1),
-
-                ..._getFilteredHistoryRows().map((report) => _ReportHistoryRow(
-                  report: report,
-                  onDownload: () => _downloadReport(context, report.name),
-                )),
-
-                const SizedBox(height: 8),
-                _buildHistoryPagination(),
-              ],
+                  const SizedBox(height: 8),
+                  _buildHistoryPagination(),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -171,7 +176,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
           children: [
             Opacity(
               opacity: 0.4 * curved.value,
-              child: const ModalBarrier(dismissible: true, color: Colors.black54),
+              child: const ModalBarrier(
+                dismissible: true,
+                color: Colors.black54,
+              ),
             ),
             Align(
               alignment: Alignment.centerRight,
@@ -210,7 +218,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
     final filtered = allReports.where((report) {
       final nameMatches = report.name.toLowerCase().contains(query);
-      final generatorMatches = _selectedGenerator == null || report.generator == _selectedGenerator;
+      final generatorMatches =
+          _selectedGenerator == null || report.generator == _selectedGenerator;
       return nameMatches && generatorMatches;
     }).toList();
 
@@ -226,7 +235,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
     final filtered = allReports.where((report) {
       final nameMatches = report.name.toLowerCase().contains(query);
-      final generatorMatches = _selectedGenerator == null || report.generator == _selectedGenerator;
+      final generatorMatches =
+          _selectedGenerator == null || report.generator == _selectedGenerator;
       return nameMatches && generatorMatches;
     }).toList();
 
@@ -295,11 +305,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
 }
 
 void _downloadReport(BuildContext context, String reportName) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text('Downloading $reportName...')),
-  );
+  ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text('Downloading $reportName...')));
 }
-
 
 class _GenerateCard extends StatelessWidget {
   const _GenerateCard({
@@ -328,7 +337,12 @@ class _GenerateCard extends StatelessWidget {
           children: [
             Text(title, style: theme.textTheme.titleLarge),
             const SizedBox(height: 6),
-            Text(description, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            Text(
+              description,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -383,10 +397,7 @@ class _ReportHistoryHeader extends StatelessWidget {
   Widget _cell(Widget child, {int flex = 1, TextStyle? style}) {
     return Expanded(
       flex: flex,
-      child: DefaultTextStyle(
-        style: style ?? const TextStyle(),
-        child: child,
-      ),
+      child: DefaultTextStyle(style: style ?? const TextStyle(), child: child),
     );
   }
 }
@@ -395,10 +406,7 @@ class _ReportHistoryRow extends StatelessWidget {
   final _GeneratedReport report;
   final VoidCallback onDownload;
 
-  const _ReportHistoryRow({
-    required this.report,
-    required this.onDownload,
-  });
+  const _ReportHistoryRow({required this.report, required this.onDownload});
 
   @override
   Widget build(BuildContext context) {
@@ -445,10 +453,7 @@ class _ReportHistoryRow extends StatelessWidget {
             flex: 2,
           ),
           _cell(
-            Text(
-              report.fileSize,
-              style: theme.textTheme.bodyMedium,
-            ),
+            Text(report.fileSize, style: theme.textTheme.bodyMedium),
             flex: 1,
           ),
           _cell(
@@ -469,9 +474,6 @@ class _ReportHistoryRow extends StatelessWidget {
   }
 
   Widget _cell(Widget child, {int flex = 1}) {
-    return Expanded(
-      flex: flex,
-      child: child,
-    );
+    return Expanded(flex: flex, child: child);
   }
 }

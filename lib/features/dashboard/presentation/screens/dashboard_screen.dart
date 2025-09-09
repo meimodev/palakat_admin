@@ -7,72 +7,74 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header with title and subtitle
-        Text('Dashboard', style: theme.textTheme.headlineMedium),
-        const SizedBox(height: 4),
-        Text(
-          "An overview of your church's activities.",
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+    return Material(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with title and subtitle
+          Text('Dashboard', style: theme.textTheme.headlineMedium),
+          const SizedBox(height: 4),
+          Text(
+            "An overview of your church's activities.",
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-        // Grid of 4 stat cards
-        Wrap(
-          spacing: 16,
-          runSpacing: 16,
-          children: const [
-            _StatCard(
-              title: 'Total Members',
-              value: '1,234',
-              icon: Icons.groups_outlined,
-            ),
-            _StatCard(
-              title: 'Total Income',
-              value: '\$45,231.89',
-              icon: Icons.attach_money,
-            ),
-            _StatCard(
-              title: 'Total Expenses',
-              value: '\$12,789.45',
-              icon: Icons.credit_card,
-            ),
-            _StatCard(
-              title: 'Inventory Status',
-              value: '5 Items Low on Stock',
-              icon: Icons.inventory_2_outlined,
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 16),
-
-        // Recent Activity card
-        SurfaceCard(
-          title: 'Recent Activity',
-          subtitle:
-              'Recent transactions and member updates will be shown here.',
-          trailing: Icon(
-            Icons.show_chart,
-            color: theme.colorScheme.onSurfaceVariant,
+          // Grid of 4 stat cards
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            children: const [
+              _StatCard(
+                title: 'Total Members',
+                value: '1,234',
+                icon: Icons.groups_outlined,
+              ),
+              _StatCard(
+                title: 'Total Income',
+                value: '\$45,231.89',
+                icon: Icons.attach_money,
+              ),
+              _StatCard(
+                title: 'Total Expenses',
+                value: '\$12,789.45',
+                icon: Icons.credit_card,
+              ),
+              _StatCard(
+                title: 'Inventory Status',
+                value: '5 Items Low on Stock',
+                icon: Icons.inventory_2_outlined,
+              ),
+            ],
           ),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 32),
-            alignment: Alignment.center,
-            child: Text(
-              'No recent activity to display.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+
+          const SizedBox(height: 16),
+
+          // Recent Activity card
+          SurfaceCard(
+            title: 'Recent Activity',
+            subtitle:
+                'Recent transactions and member updates will be shown here.',
+            trailing: Icon(
+              Icons.show_chart,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              alignment: Alignment.center,
+              child: Text(
+                'No recent activity to display.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

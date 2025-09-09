@@ -27,7 +27,9 @@ class _ColumnEditDrawerState extends State<ColumnEditDrawer> {
   @override
   void initState() {
     super.initState();
-    _numberController = TextEditingController(text: widget.column?.number.toString() ?? '');
+    _numberController = TextEditingController(
+      text: widget.column?.number.toString() ?? '',
+    );
   }
 
   @override
@@ -38,20 +40,25 @@ class _ColumnEditDrawerState extends State<ColumnEditDrawer> {
 
   void _saveChanges() {
     if (_formKey.currentState!.validate()) {
-      final column = widget.column?.copyWith(
-        number: int.parse(_numberController.text),
-      ) ?? ChurchColumn(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        number: int.parse(_numberController.text),
-        name: 'Column ${_numberController.text}', // Auto-generate name from number
-        createdAt: DateTime.now(),
-      );
-      
+      final column =
+          widget.column?.copyWith(number: int.parse(_numberController.text)) ??
+          ChurchColumn(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            number: int.parse(_numberController.text),
+            name:
+                'Column ${_numberController.text}', // Auto-generate name from number
+            createdAt: DateTime.now(),
+          );
+
       widget.onSave(column);
       widget.onClose();
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Column ${widget.column == null ? 'added' : 'updated'} successfully')),
+        SnackBar(
+          content: Text(
+            'Column ${widget.column == null ? 'added' : 'updated'} successfully',
+          ),
+        ),
       );
     }
   }
@@ -62,7 +69,9 @@ class _ColumnEditDrawerState extends State<ColumnEditDrawer> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Delete Column'),
-          content: const Text('Are you sure you want to delete this column? This action cannot be undone.'),
+          content: const Text(
+            'Are you sure you want to delete this column? This action cannot be undone.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -91,7 +100,7 @@ class _ColumnEditDrawerState extends State<ColumnEditDrawer> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return SideDrawer(
       title: 'Edit Column',
       subtitle: 'Update column information',
@@ -119,8 +128,10 @@ class _ColumnEditDrawerState extends State<ColumnEditDrawer> {
                       fillColor: theme.colorScheme.surface,
                     ),
                     validator: (value) {
-                      if (value?.isEmpty == true) return 'Column number is required';
-                      if (int.tryParse(value!) == null) return 'Please enter a valid number';
+                      if (value?.isEmpty == true)
+                        return 'Column number is required';
+                      if (int.tryParse(value!) == null)
+                        return 'Please enter a valid number';
                       return null;
                     },
                   ),
@@ -165,10 +176,7 @@ class _InfoSection extends StatelessWidget {
   final String title;
   final List<Widget> children;
 
-  const _InfoSection({
-    required this.title,
-    required this.children,
-  });
+  const _InfoSection({required this.title, required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -193,10 +201,7 @@ class _FormField extends StatelessWidget {
   final String label;
   final Widget child;
 
-  const _FormField({
-    required this.label,
-    required this.child,
-  });
+  const _FormField({required this.label, required this.child});
 
   @override
   Widget build(BuildContext context) {

@@ -38,19 +38,23 @@ class _PositionEditDrawerState extends State<PositionEditDrawer> {
 
   void _saveChanges() {
     if (_formKey.currentState!.validate()) {
-      final position = widget.position?.copyWith(
-        name: _nameController.text,
-      ) ?? ChurchPosition(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: _nameController.text,
-        createdAt: DateTime.now(),
-      );
-      
+      final position =
+          widget.position?.copyWith(name: _nameController.text) ??
+          ChurchPosition(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            name: _nameController.text,
+            createdAt: DateTime.now(),
+          );
+
       widget.onSave(position);
       widget.onClose();
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Position ${widget.position == null ? 'added' : 'updated'} successfully')),
+        SnackBar(
+          content: Text(
+            'Position ${widget.position == null ? 'added' : 'updated'} successfully',
+          ),
+        ),
       );
     }
   }
@@ -61,7 +65,9 @@ class _PositionEditDrawerState extends State<PositionEditDrawer> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Delete Position'),
-          content: const Text('Are you sure you want to delete this position? This action cannot be undone.'),
+          content: const Text(
+            'Are you sure you want to delete this position? This action cannot be undone.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -73,7 +79,9 @@ class _PositionEditDrawerState extends State<PositionEditDrawer> {
                 widget.onDelete!();
                 widget.onClose();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Position deleted successfully')),
+                  const SnackBar(
+                    content: Text('Position deleted successfully'),
+                  ),
                 );
               },
               style: TextButton.styleFrom(
@@ -90,7 +98,7 @@ class _PositionEditDrawerState extends State<PositionEditDrawer> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return SideDrawer(
       title: 'Edit Position',
       subtitle: 'Update position information',
@@ -115,21 +123,21 @@ class _PositionEditDrawerState extends State<PositionEditDrawer> {
                       filled: true,
                       fillColor: theme.colorScheme.surface,
                     ),
-                    validator: (value) => value?.isEmpty == true ? 'Position name is required' : null,
+                    validator: (value) => value?.isEmpty == true
+                        ? 'Position name is required'
+                        : null,
                   ),
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Members using this position
             if (widget.position != null) ...[
               _InfoSection(
                 title: 'Members in this Position',
-                children: [
-                  _MembersListWidget(positionId: widget.position!.id),
-                ],
+                children: [_MembersListWidget(positionId: widget.position!.id)],
               ),
             ],
           ],
@@ -170,10 +178,7 @@ class _InfoSection extends StatelessWidget {
   final String title;
   final List<Widget> children;
 
-  const _InfoSection({
-    required this.title,
-    required this.children,
-  });
+  const _InfoSection({required this.title, required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -198,10 +203,7 @@ class _FormField extends StatelessWidget {
   final String label;
   final Widget child;
 
-  const _FormField({
-    required this.label,
-    required this.child,
-  });
+  const _FormField({required this.label, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -225,9 +227,7 @@ class _FormField extends StatelessWidget {
 class _MembersListWidget extends StatelessWidget {
   final String positionId;
 
-  const _MembersListWidget({
-    required this.positionId,
-  });
+  const _MembersListWidget({required this.positionId});
 
   @override
   Widget build(BuildContext context) {
@@ -240,10 +240,7 @@ class _MembersListWidget extends StatelessWidget {
         decoration: BoxDecoration(
           color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: theme.colorScheme.outlineVariant,
-            width: 1,
-          ),
+          border: Border.all(color: theme.colorScheme.outlineVariant, width: 1),
         ),
         child: Row(
           children: [
@@ -267,10 +264,7 @@ class _MembersListWidget extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant,
-          width: 1,
-        ),
+        border: Border.all(color: theme.colorScheme.outlineVariant, width: 1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -306,16 +300,18 @@ class _MembersListWidget extends StatelessWidget {
             final index = entry.key;
             final member = entry.value;
             final isLast = index == members.length - 1;
-            
+
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                border: isLast ? null : Border(
-                  bottom: BorderSide(
-                    color: theme.colorScheme.outlineVariant,
-                    width: 0.5,
-                  ),
-                ),
+                border: isLast
+                    ? null
+                    : Border(
+                        bottom: BorderSide(
+                          color: theme.colorScheme.outlineVariant,
+                          width: 0.5,
+                        ),
+                      ),
               ),
               child: Row(
                 children: [
@@ -333,10 +329,7 @@ class _MembersListWidget extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      member,
-                      style: theme.textTheme.bodyMedium,
-                    ),
+                    child: Text(member, style: theme.textTheme.bodyMedium),
                   ),
                 ],
               ),
@@ -355,7 +348,7 @@ class _MembersListWidget extends StatelessWidget {
       'pos2': ['Mike Johnson', 'Sarah Wilson', 'David Brown'],
       'pos3': ['Emily Davis'],
     };
-    
+
     // For now, return mock data based on position ID
     // In a real app, you'd query your member database
     return mockMembers[positionId] ?? [];

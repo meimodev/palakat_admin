@@ -55,5 +55,19 @@ ThemeData buildAppTheme() {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
     ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: base.colorScheme.inverseSurface,
+      contentTextStyle: base.textTheme.bodyMedium?.copyWith(
+        color: base.colorScheme.onInverseSurface,
+        fontWeight: FontWeight.w600,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 6,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      actionTextColor: base.colorScheme.primary,
+      showCloseIcon: true,
+      closeIconColor: base.colorScheme.onInverseSurface,
+    ),
   );
 }

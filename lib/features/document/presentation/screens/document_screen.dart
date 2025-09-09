@@ -35,71 +35,73 @@ class _DocumentScreenState extends ConsumerState<DocumentScreen> {
 
     final pageRows = _allDocuments;
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Document Settings', style: theme.textTheme.headlineMedium),
-          const SizedBox(height: 8),
-          Text(
-            'Manage document identity numbers and view recent approvals.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+    return Material(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Document Settings', style: theme.textTheme.headlineMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Manage document identity numbers and view recent approvals.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // Document Identity Number card
-          SurfaceCard(
-            title: 'Document Identity Number',
-            subtitle: 'Current template used for new documents.',
-            trailing: FilledButton.icon(
-              onPressed: _openIdentityDrawer,
-              icon: const Icon(Icons.edit),
-              label: const Text('Edit'),
+            // Document Identity Number card
+            SurfaceCard(
+              title: 'Document Identity Number',
+              subtitle: 'Current template used for new documents.',
+              trailing: FilledButton.icon(
+                onPressed: _openIdentityDrawer,
+                icon: const Icon(Icons.edit),
+                label: const Text('Edit'),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                child: Row(
+                  children: [
+                    Text(
+                      'Template:',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _identityNumberTemplate,
+                        style: theme.textTheme.titleMedium,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-              child: Row(
+
+            const SizedBox(height: 16),
+
+            // Recently Approved Documents Section
+            SurfaceCard(
+              title: 'Recently Approved Documents',
+              subtitle: 'A list of the most recently approved documents.',
+              child: Column(
                 children: [
-                  Text(
-                    'Template:',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      _identityNumberTemplate,
-                      style: theme.textTheme.titleMedium,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
+                  // Header
+                  const _DocumentHeader(),
+                  const Divider(height: 1),
+
+                  // Rows
+                  ...[for (final doc in pageRows) _DocumentRow(document: doc)],
                 ],
               ),
             ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Recently Approved Documents Section
-          SurfaceCard(
-            title: 'Recently Approved Documents',
-            subtitle: 'A list of the most recently approved documents.',
-            child: Column(
-              children: [
-                // Header
-                const _DocumentHeader(),
-                const Divider(height: 1),
-
-                // Rows
-                ...[for (final doc in pageRows) _DocumentRow(document: doc)],
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

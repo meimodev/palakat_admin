@@ -62,10 +62,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   List<InventoryItem> get _filteredItems {
     if (_searchQuery.isEmpty) return _inventoryItems;
-    return _inventoryItems.where((item) =>
-      item.itemName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-      item.location.toLowerCase().contains(_searchQuery.toLowerCase())
-    ).toList();
+    return _inventoryItems
+        .where(
+          (item) =>
+              item.itemName.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              ) ||
+              item.location.toLowerCase().contains(_searchQuery.toLowerCase()),
+        )
+        .toList();
   }
 
   List<InventoryItem> get _paginatedItems {
@@ -80,88 +85,90 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Section
-          Text('Inventory', style: theme.textTheme.headlineMedium),
-          const SizedBox(height: 8),
-          Text(
-            'Track church assets and supplies.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+
+    return Material(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header Section
+            Text('Inventory', style: theme.textTheme.headlineMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Track church assets and supplies.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // Main Content Card
-          SurfaceCard(
-            title: 'Inventory List',
-            subtitle: 'All physical assets and supplies.',
-            child: Column(
-              children: [
-                // Search Bar
-                TextField(
-                  controller: _searchController,
-                  decoration: const InputDecoration(
-                    hintText: 'Search inventory...',
-                    prefixIcon: Icon(Icons.search),
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                      _currentPage = 1;
-                    });
-                  },
-                ),
-                const SizedBox(height: 12),
-
-                // Table Header
-                const _InventoryHeader(),
-                const Divider(height: 1),
-
-                // Table Rows
-                ...[
-                  for (final item in _paginatedItems)
-                    _InventoryRow(
-                      item: item,
-                      onTap: () => _showInventoryDetail(item),
+            // Main Content Card
+            SurfaceCard(
+              title: 'Inventory List',
+              subtitle: 'All physical assets and supplies.',
+              child: Column(
+                children: [
+                  // Search Bar
+                  TextField(
+                    controller: _searchController,
+                    decoration: const InputDecoration(
+                      hintText: 'Search inventory...',
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(),
                     ),
-                ],
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                        _currentPage = 1;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
 
-                const SizedBox(height: 8),
-                
-                // Pagination
-                PaginationBar(
-                  showingCount: _paginatedItems.length,
-                  totalCount: _filteredItems.length,
-                  rowsPerPage: _rowsPerPage,
-                  page: _currentPage - 1, // PaginationBar expects zero-based
-                  pageCount: _totalPages,
-                  onRowsPerPageChanged: (value) {
-                    setState(() {
-                      _rowsPerPage = value;
-                      _currentPage = 1;
-                    });
-                  },
-                  onPrev: () {
-                    setState(() {
-                      if (_currentPage > 1) _currentPage--;
-                    });
-                  },
-                  onNext: () {
-                    setState(() {
-                      if (_currentPage < _totalPages) _currentPage++;
-                    });
-                  },
-                ),
-              ],
+                  // Table Header
+                  const _InventoryHeader(),
+                  const Divider(height: 1),
+
+                  // Table Rows
+                  ...[
+                    for (final item in _paginatedItems)
+                      _InventoryRow(
+                        item: item,
+                        onTap: () => _showInventoryDetail(item),
+                      ),
+                  ],
+
+                  const SizedBox(height: 8),
+
+                  // Pagination
+                  PaginationBar(
+                    showingCount: _paginatedItems.length,
+                    totalCount: _filteredItems.length,
+                    rowsPerPage: _rowsPerPage,
+                    page: _currentPage - 1, // PaginationBar expects zero-based
+                    pageCount: _totalPages,
+                    onRowsPerPageChanged: (value) {
+                      setState(() {
+                        _rowsPerPage = value;
+                        _currentPage = 1;
+                      });
+                    },
+                    onPrev: () {
+                      setState(() {
+                        if (_currentPage > 1) _currentPage--;
+                      });
+                    },
+                    onNext: () {
+                      setState(() {
+                        if (_currentPage < _totalPages) _currentPage++;
+                      });
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -228,17 +235,10 @@ class _InventoryHeader extends StatelessWidget {
     );
   }
 
-  Widget _cell(
-    Widget child, {
-    int flex = 1,
-    TextStyle? style,
-  }) {
+  Widget _cell(Widget child, {int flex = 1, TextStyle? style}) {
     return Expanded(
       flex: flex,
-      child: DefaultTextStyle(
-        style: style ?? const TextStyle(),
-        child: child,
-      ),
+      child: DefaultTextStyle(style: style ?? const TextStyle(), child: child),
     );
   }
 }
@@ -252,55 +252,71 @@ class _InventoryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
+    final hoverColor = theme.colorScheme.primary.withOpacity(0.04);
     return Column(
       children: [
-        InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-            child: Row(
-              children: [
-                _cell(
-                  Text(
-                    item.itemName,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  flex: 3,
+        MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              hoverColor: hoverColor,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 8,
                 ),
-                _cell(Text(item.location), flex: 2),
-                _cell(
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: _ConditionBadge(condition: item.condition),
-                  ),
-                  flex: 2,
-                ),
-                _cell(Text('${item.quantity}'), flex: 1),
-                _cell(
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                child: Row(
+                  children: [
+                    _cell(
                       Text(
-                        _formatTimeAgo(item.lastUpdate),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      Text(
-                        item.updatedBy,
+                        item.itemName,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ],
-                  ),
-                  flex: 2,
+                      flex: 3,
+                    ),
+                    _cell(Text(item.location), flex: 2),
+                    _cell(
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: _ConditionBadge(condition: item.condition),
+                      ),
+                      flex: 2,
+                    ),
+                    _cell(Text('${item.quantity}'), flex: 1),
+                    _cell(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _formatTimeAgo(item.lastUpdate),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          Text(
+                            item.updatedBy,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      flex: 2,
+                    ),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: Colors.black54,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -310,10 +326,7 @@ class _InventoryRow extends StatelessWidget {
   }
 
   Widget _cell(Widget child, {int flex = 1}) {
-    return Expanded(
-      flex: flex,
-      child: child,
-    );
+    return Expanded(flex: flex, child: child);
   }
 
   String _formatTimeAgo(DateTime dateTime) {
@@ -338,7 +351,7 @@ class _InventoryRow extends StatelessWidget {
 
 class _ConditionBadge extends StatelessWidget {
   const _ConditionBadge({required this.condition});
-  
+
   final InventoryCondition condition;
 
   @override

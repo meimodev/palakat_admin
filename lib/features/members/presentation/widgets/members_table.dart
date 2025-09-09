@@ -75,86 +75,103 @@ class _MemberRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final hoverColor = theme.colorScheme.primary.withOpacity(0.04);
     return Column(
       children: [
-        InkWell(
-          onTap: onTap,
-          hoverColor: theme.colorScheme.surfaceContainerHighest.withValues(
-            alpha: 0.5,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                _cell(
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  member.name,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Member',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                if (member.isBaptized ||
-                                    member.isSidi ||
-                                    member.isLinked)
-                                  const SizedBox(width: 8),
-                                if (member.isBaptized)
-                                  const Icon(
-                                    Icons.water_drop_outlined,
-                                    size: 16,
-                                    color: Colors.blue,
-                                  ),
-                                if (member.isSidi)
-                                  const Padding(
-                                    padding: EdgeInsets.only(left: 4.0),
-                                    child: Icon(
-                                      Icons.emoji_people_outlined,
-                                      size: 16,
-                                      color: Colors.green,
-                                    ),
-                                  ),
-                                if (member.isLinked)
-                                  const Padding(
-                                    padding: EdgeInsets.only(left: 4.0),
-                                    child: Icon(
-                                      Icons.phone_android_outlined,
-                                      size: 16,
-                                      color: Colors.purple,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-
-                    ],
-                  ),
-                  flex: 4,
+        MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              hoverColor: hoverColor,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 8,
                 ),
-                _cell(Text(member.phone), flex: 3),
-                _cell(_PositionsCell(positions: member.positions), flex: 3),
-              ],
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _cell(
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      member.name,
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Member',
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: theme
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    if (member.isBaptized ||
+                                        member.isSidi ||
+                                        member.isLinked)
+                                      const SizedBox(width: 8),
+                                    if (member.isBaptized)
+                                      const Icon(
+                                        Icons.water_drop_outlined,
+                                        size: 16,
+                                        color: Colors.blue,
+                                      ),
+                                    if (member.isSidi)
+                                      const Padding(
+                                        padding: EdgeInsets.only(left: 4.0),
+                                        child: Icon(
+                                          Icons.emoji_people_outlined,
+                                          size: 16,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                    if (member.isLinked)
+                                      const Padding(
+                                        padding: EdgeInsets.only(left: 4.0),
+                                        child: Icon(
+                                          Icons.phone_android_outlined,
+                                          size: 16,
+                                          color: Colors.purple,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      flex: 4,
+                    ),
+                    _cell(Text(member.phone), flex: 3),
+                    _cell(_PositionsCell(positions: member.positions), flex: 3),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: Colors.black54,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -175,12 +192,12 @@ class _PositionsCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     if (positions.isEmpty) return const Text('-');
-    
+
     // Show up to 2 position chips, then a "+N more" chip if there are more
     const maxVisible = 2;
     final visiblePositions = positions.take(maxVisible).toList();
     final remainingCount = positions.length - maxVisible;
-    
+
     return Wrap(
       spacing: 4,
       runSpacing: 4,
@@ -188,7 +205,7 @@ class _PositionsCell extends StatelessWidget {
         // Show visible position chips
         for (final position in visiblePositions)
           _PositionChip(position: position),
-        
+
         // Show "+N more" chip if there are remaining positions
         if (remainingCount > 0)
           InkWell(
@@ -215,7 +232,7 @@ class _PositionsCell extends StatelessWidget {
       ],
     );
   }
-  
+
   void _showAllPositions(BuildContext context, List<String> positions) {
     showDialog(
       context: context,
@@ -248,7 +265,7 @@ class _PositionsCell extends StatelessWidget {
 class _PositionChip extends StatelessWidget {
   final String position;
   const _PositionChip({required this.position});
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

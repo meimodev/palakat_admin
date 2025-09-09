@@ -55,8 +55,9 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
     return Material(
       child: SideDrawer(
         title: isNewMember ? 'Add New Member' : 'Edit Member',
-        subtitle:
-            isNewMember ? 'Add a new member to the church' : 'Update member information',
+        subtitle: isNewMember
+            ? 'Add a new member to the church'
+            : 'Update member information',
         onClose: () => Navigator.of(context).pop(),
         content: Form(
           key: _formKey,
@@ -216,10 +217,10 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
                           value: null,
                           items: _pos
                               .where((p) => !_positions.contains(p))
-                              .map((p) => DropdownMenuItem(
-                                    value: p,
-                                    child: Text(p),
-                                  ))
+                              .map(
+                                (p) =>
+                                    DropdownMenuItem(value: p, child: Text(p)),
+                              )
                               .toList(),
                           onChanged: (v) {
                             if (v == null) return;
@@ -240,7 +241,8 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
                             for (final p in _positions)
                               Chip(
                                 label: Text(p),
-                                onDeleted: () => setState(() => _positions.remove(p)),
+                                onDeleted: () =>
+                                    setState(() => _positions.remove(p)),
                               ),
                           ],
                         ),
@@ -254,14 +256,14 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                       ),
-                      items: _availableColumns
-                          .map<DropdownMenuItem<String>>((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          })
-                          .toList(),
+                      items: _availableColumns.map<DropdownMenuItem<String>>((
+                        String value,
+                      ) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
                       onChanged: (String? newValue) {
                         setState(() {
                           _selectedColumn = newValue;
@@ -355,7 +357,6 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
               content: Text(
                 'Member ${isNewMember ? 'added' : 'updated'} successfully',
               ),
-              behavior: SnackBarBehavior.floating,
             ),
           );
         }
@@ -371,6 +372,7 @@ Future<Membership?> showEditMemberDrawer(
 }) async {
   return await showGeneralDialog<Membership>(
     context: context,
+
     // pageBuilder: (context, _, _) => Scaffold(
     //   backgroundColor: Colors.transparent,
     //   body: Row(
@@ -386,7 +388,6 @@ Future<Membership?> showEditMemberDrawer(
     //     ],
     //   ),
     // ),
-
     barrierDismissible: true,
     barrierLabel: 'Close',
     transitionDuration: const Duration(milliseconds: 250),
@@ -394,7 +395,6 @@ Future<Membership?> showEditMemberDrawer(
       return const SizedBox.shrink();
     },
     transitionBuilder: (context, anim, secondaryAnimation, child) {
-
       final curved = CurvedAnimation(
         parent: anim,
         curve: Curves.easeOutCubic,
@@ -423,7 +423,6 @@ Future<Membership?> showEditMemberDrawer(
     },
   );
 }
-
 
 class _InfoSection extends StatelessWidget {
   final String title;

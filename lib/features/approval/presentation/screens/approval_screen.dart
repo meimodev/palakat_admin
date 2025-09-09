@@ -69,138 +69,140 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
         ? filtered.sublist(start, end)
         : <ApprovalRequest>[];
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Approvals', style: theme.textTheme.headlineMedium),
-          const SizedBox(height: 8),
-          Text(
-            'Manage and track approval requests.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+    return Material(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Approvals', style: theme.textTheme.headlineMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Manage and track approval requests.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          SurfaceCard(
-            title: 'Approval Requests',
-            subtitle: 'A record of all approval requests.',
-            child: Column(
-              children: [
-                // Search + Date Range
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: const InputDecoration(
-                          hintText: 'Search approvals...',
-                          prefixIcon: Icon(Icons.search),
-                          border: OutlineInputBorder(),
+            const SizedBox(height: 16),
+            SurfaceCard(
+              title: 'Approval Requests',
+              subtitle: 'A record of all approval requests.',
+              child: Column(
+                children: [
+                  // Search + Date Range
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: const InputDecoration(
+                            hintText: 'Search approvals...',
+                            prefixIcon: Icon(Icons.search),
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged: (_) => setState(() {
+                            _page = 0;
+                          }),
                         ),
-                        onChanged: (_) => setState(() {
+                      ),
+                      const SizedBox(width: 8),
+                      DateRangeFilter(
+                        value: _dateRange,
+                        onChanged: (r) => setState(() {
+                          _dateRange = r;
+                          _page = 0;
+                        }),
+                        onClear: () => setState(() {
+                          _dateRange = null;
                           _page = 0;
                         }),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    DateRangeFilter(
-                      value: _dateRange,
-                      onChanged: (r) => setState(() {
-                        _dateRange = r;
-                        _page = 0;
-                      }),
-                      onClear: () => setState(() {
-                        _dateRange = null;
-                        _page = 0;
-                      }),
-                    ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Header Row (table-like)
+                  _RequestsHeader(),
+                  const Divider(height: 1),
+
+                  // Rows
+                  ...[
+                    for (final req in pageRows)
+                      _RequestRow(
+                        req: req,
+                        onTap: () => _showApprovalDetail(req),
+                      ),
                   ],
-                ),
-                const SizedBox(height: 12),
 
-                // Header Row (table-like)
-                _RequestsHeader(),
-                const Divider(height: 1),
-
-                // Rows
-                ...[
-                  for (final req in pageRows)
-                    _RequestRow(
-                      req: req,
-                      onTap: () => _showApprovalDetail(req),
-                    ),
+                  const SizedBox(height: 8),
+                  // Pagination
+                  PaginationBar(
+                    showingCount: pageRows.length,
+                    totalCount: total,
+                    rowsPerPage: _rowsPerPage,
+                    page: _page,
+                    pageCount: (total / _rowsPerPage).ceil().clamp(1, 9999),
+                    onRowsPerPageChanged: (v) => setState(() {
+                      _rowsPerPage = v;
+                      _page = 0;
+                    }),
+                    onPrev: () => setState(() {
+                      if (_page > 0) _page -= 1;
+                    }),
+                    onNext: () => setState(() {
+                      final maxPage = (total / _rowsPerPage).ceil() - 1;
+                      if (_page < maxPage) _page += 1;
+                    }),
+                  ),
                 ],
-
-                const SizedBox(height: 8),
-                // Pagination
-                PaginationBar(
-                  showingCount: pageRows.length,
-                  totalCount: total,
-                  rowsPerPage: _rowsPerPage,
-                  page: _page,
-                  pageCount: (total / _rowsPerPage).ceil().clamp(1, 9999),
-                  onRowsPerPageChanged: (v) => setState(() {
-                    _rowsPerPage = v;
-                    _page = 0;
-                  }),
-                  onPrev: () => setState(() {
-                    if (_page > 0) _page -= 1;
-                  }),
-                  onNext: () => setState(() {
-                    final maxPage = (total / _rowsPerPage).ceil() - 1;
-                    if (_page < maxPage) _page += 1;
-                  }),
-                ),
-              ],
+              ),
             ),
-          ),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          SurfaceCard(
-            title: 'Approval Routing',
-            subtitle: 'Map approval types to authorizer positions.',
-            trailing: FilledButton.icon(
-              onPressed: () => _openRouteEditor(context),
-              icon: const Icon(Icons.add),
-              label: const Text('Add Route'),
+            SurfaceCard(
+              title: 'Approval Routing',
+              subtitle: 'Map approval types to authorizer positions.',
+              trailing: FilledButton.icon(
+                onPressed: () => _openRouteEditor(context),
+                icon: const Icon(Icons.add),
+                label: const Text('Add Route'),
+              ),
+              child: Column(
+                children: [
+                  _RouteSection(
+                    title: 'Income',
+                    routes: _routes['Income'] ?? const [],
+                    onTapRoute: (r) => _openRouteEditor(context, route: r),
+                  ),
+                  const SizedBox(height: 8),
+                  _RouteSection(
+                    title: 'Expense',
+                    routes: _routes['Expense'] ?? const [],
+                    onTapRoute: (r) => _openRouteEditor(context, route: r),
+                  ),
+                  const SizedBox(height: 8),
+                  _RouteSection(
+                    title: 'Document',
+                    routes: _routes['Document'] ?? const [],
+                    onTapRoute: (r) => _openRouteEditor(context, route: r),
+                  ),
+                  const SizedBox(height: 8),
+                  _RouteSection(
+                    title: 'Service',
+                    routes: _routes['Service'] ?? const [],
+                    onTapRoute: (r) => _openRouteEditor(context, route: r),
+                  ),
+                  const SizedBox(height: 8),
+                  _RouteSection(
+                    title: 'Announcement',
+                    routes: _routes['Announcement'] ?? const [],
+                    onTapRoute: (r) => _openRouteEditor(context, route: r),
+                  ),
+                ],
+              ),
             ),
-            child: Column(
-              children: [
-                _RouteSection(
-                  title: 'Income',
-                  routes: _routes['Income'] ?? const [],
-                  onTapRoute: (r) => _openRouteEditor(context, route: r),
-                ),
-                const SizedBox(height: 8),
-                _RouteSection(
-                  title: 'Expense',
-                  routes: _routes['Expense'] ?? const [],
-                  onTapRoute: (r) => _openRouteEditor(context, route: r),
-                ),
-                const SizedBox(height: 8),
-                _RouteSection(
-                  title: 'Document',
-                  routes: _routes['Document'] ?? const [],
-                  onTapRoute: (r) => _openRouteEditor(context, route: r),
-                ),
-                const SizedBox(height: 8),
-                _RouteSection(
-                  title: 'Service',
-                  routes: _routes['Service'] ?? const [],
-                  onTapRoute: (r) => _openRouteEditor(context, route: r),
-                ),
-                const SizedBox(height: 8),
-                _RouteSection(
-                  title: 'Announcement',
-                  routes: _routes['Announcement'] ?? const [],
-                  onTapRoute: (r) => _openRouteEditor(context, route: r),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -474,76 +476,92 @@ class _RequestRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final hoverColor = theme.colorScheme.primary.withOpacity(0.04);
     return Column(
       children: [
-        InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                _cell(
-                  Text(
-                    req.id,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  flex: 2,
+        MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(8),
+              hoverColor: hoverColor,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 8,
                 ),
-                _cell(
-                  Text(
-                    _formatDate(req.date),
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  flex: 2,
-                ),
-                _cell(
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _cell(
                       Text(
-                        req.description,
+                        req.id,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      if (req.note != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          req.note!,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                      flex: 2,
+                    ),
+                    _cell(
+                      Text(
+                        _formatDate(req.date),
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                      flex: 2,
+                    ),
+                    _cell(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            req.description,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  flex: 4,
+                          if (req.note != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              req.note!,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      flex: 4,
+                    ),
+                    _cell(
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: _TypeChip(label: req.type),
+                      ),
+                      flex: 2,
+                    ),
+                    _cell(Text(req.requester), flex: 2),
+                    _cell(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final a in req.authorizers)
+                            _AuthorizerChip(authorizer: a),
+                        ],
+                      ),
+                      flex: 3,
+                    ),
+                    _cell(_StatusChip(status: req.status), flex: 2),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: Colors.black54,
+                    ),
+                  ],
                 ),
-                _cell(
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: _TypeChip(label: req.type),
-                  ),
-                  flex: 2,
-                ),
-                _cell(Text(req.requester), flex: 2),
-                _cell(
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final a in req.authorizers)
-                        _AuthorizerChip(authorizer: a),
-                    ],
-                  ),
-                  flex: 3,
-                ),
-                _cell(_StatusChip(status: req.status), flex: 2),
-              ],
+              ),
             ),
           ),
         ),

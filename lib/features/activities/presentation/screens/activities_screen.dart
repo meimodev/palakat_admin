@@ -78,93 +78,95 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
     final end = (start + _rowsPerPage).clamp(0, total);
     final pageRows = start < end ? filtered.sublist(start, end) : <Activity>[];
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Activities', style: theme.textTheme.headlineMedium),
-          const SizedBox(height: 8),
-          Text(
-            'Monitor and manage all church activities.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+    return Material(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Activities', style: theme.textTheme.headlineMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Monitor and manage all church activities.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          SurfaceCard(
-            title: 'Activities',
-            subtitle: 'Manage church activities and events.',
-            child: Column(
-              children: [
-                // Search + Date Range
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: const InputDecoration(
-                          hintText: 'Search activities...',
-                          prefixIcon: Icon(Icons.search),
-                          border: OutlineInputBorder(),
+            const SizedBox(height: 16),
+            SurfaceCard(
+              title: 'Activities',
+              subtitle: 'Manage church activities and events.',
+              child: Column(
+                children: [
+                  // Search + Date Range
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: const InputDecoration(
+                            hintText: 'Search activities...',
+                            prefixIcon: Icon(Icons.search),
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged: (_) => setState(() {
+                            _page = 0;
+                          }),
                         ),
-                        onChanged: (_) => setState(() {
+                      ),
+                      const SizedBox(width: 8),
+                      DateRangeFilter(
+                        value: _dateRange,
+                        onChanged: (r) => setState(() {
+                          _dateRange = r;
+                          _page = 0;
+                        }),
+                        onClear: () => setState(() {
+                          _dateRange = null;
                           _page = 0;
                         }),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    DateRangeFilter(
-                      value: _dateRange,
-                      onChanged: (r) => setState(() {
-                        _dateRange = r;
-                        _page = 0;
-                      }),
-                      onClear: () => setState(() {
-                        _dateRange = null;
-                        _page = 0;
-                      }),
-                    ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Header Row (table-like)
+                  _ActivitiesHeader(),
+                  const Divider(height: 1),
+
+                  // Rows
+                  ...[
+                    for (final activity in pageRows)
+                      _ActivityRow(
+                        activity: activity,
+                        onTap: () => _showActivityDetail(activity),
+                      ),
                   ],
-                ),
-                const SizedBox(height: 12),
 
-                // Header Row (table-like)
-                _ActivitiesHeader(),
-                const Divider(height: 1),
-
-                // Rows
-                ...[
-                  for (final activity in pageRows)
-                    _ActivityRow(
-                      activity: activity,
-                      onTap: () => _showActivityDetail(activity),
-                    ),
+                  const SizedBox(height: 8),
+                  // Pagination
+                  PaginationBar(
+                    showingCount: pageRows.length,
+                    totalCount: total,
+                    rowsPerPage: _rowsPerPage,
+                    page: _page,
+                    pageCount: (total / _rowsPerPage).ceil().clamp(1, 9999),
+                    onRowsPerPageChanged: (v) => setState(() {
+                      _rowsPerPage = v;
+                      _page = 0;
+                    }),
+                    onPrev: () => setState(() {
+                      if (_page > 0) _page -= 1;
+                    }),
+                    onNext: () => setState(() {
+                      final maxPage = (total / _rowsPerPage).ceil() - 1;
+                      if (_page < maxPage) _page += 1;
+                    }),
+                  ),
                 ],
-
-                const SizedBox(height: 8),
-                // Pagination
-                PaginationBar(
-                  showingCount: pageRows.length,
-                  totalCount: total,
-                  rowsPerPage: _rowsPerPage,
-                  page: _page,
-                  pageCount: (total / _rowsPerPage).ceil().clamp(1, 9999),
-                  onRowsPerPageChanged: (v) => setState(() {
-                    _rowsPerPage = v;
-                    _page = 0;
-                  }),
-                  onPrev: () => setState(() {
-                    if (_page > 0) _page -= 1;
-                  }),
-                  onNext: () => setState(() {
-                    final maxPage = (total / _rowsPerPage).ceil() - 1;
-                    if (_page < maxPage) _page += 1;
-                  }),
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -349,63 +351,79 @@ class _ActivityRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final hoverColor = theme.colorScheme.primary.withOpacity(0.04);
     return Column(
       children: [
-        InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                _cell(
-                  Text(
-                    activity.title,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+        MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(8),
+              hoverColor: hoverColor,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 8,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _cell(
+                      Text(
+                        activity.title,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      flex: 3,
                     ),
-                  ),
-                  flex: 3,
-                ),
-                _cell(
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: _TypeChip(type: activity.type),
-                  ),
-                  flex: 2,
-                ),
-                _cell(
-                  Text(
-                    _formatDate(activity.startDate),
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  flex: 2,
-                ),
-                _cell(
-                  flex: 3,
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: _OrganizerChip(
-                      name: activity.organizer,
-                      positions: activity.organizerPositions,
+                    _cell(
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: _TypeChip(type: activity.type),
+                      ),
+                      flex: 2,
                     ),
-                  ),
-                ),
-                _cell(
-                  Text(
-                    activity.location ?? 'TBD',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: activity.location == null
-                          ? theme.colorScheme.onSurfaceVariant
-                          : null,
+                    _cell(
+                      Text(
+                        _formatDate(activity.startDate),
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                      flex: 2,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  flex: 3,
+                    _cell(
+                      flex: 3,
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: _OrganizerChip(
+                          name: activity.organizer,
+                          positions: activity.organizerPositions,
+                        ),
+                      ),
+                    ),
+                    _cell(
+                      Text(
+                        activity.location ?? 'TBD',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: activity.location == null
+                              ? theme.colorScheme.onSurfaceVariant
+                              : null,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      flex: 3,
+                    ),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: Colors.black54,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
