@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:palakat_admin/core/widgets/side_drawer.dart';
+import 'package:palakat_admin/core/widgets/type_chip.dart';
+import 'package:palakat_admin/core/widgets/status_chip.dart';
+import 'package:palakat_admin/core/widgets/info_section.dart';
+import 'package:palakat_admin/core/widgets/supervisor_card.dart';
+import 'package:palakat_admin/core/widgets/approver_card.dart';
 
 import '../screens/approval_screen.dart';
 
@@ -40,43 +45,114 @@ class _ApprovalDetailDrawerState extends State<ApprovalDetailDrawer> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Request Info
-          _InfoSection(
+          InfoSection(
             title: 'Request Information',
             children: [
-              _InfoRow(label: 'Date', value: _formatDate(_currentRequest.date)),
-              _InfoRow(
+              InfoRow(
+                label: 'Date',
+                value: _formatDate(_currentRequest.date),
+                labelWidth: 100,
+                spacing: 12,
+                contentPadding: const EdgeInsets.only(bottom: 8),
+              ),
+              InfoRow(
                 label: 'Type',
                 value: _currentRequest.type,
                 valueWidget: Align(
                   alignment: Alignment.centerLeft,
-                  child: _TypeChip(label: _currentRequest.type),
+                  child: TypeChip(label: _currentRequest.type),
                 ),
+                labelWidth: 100,
+                spacing: 12,
+                contentPadding: const EdgeInsets.only(bottom: 8),
               ),
-              _InfoRow(label: 'Requester', value: _currentRequest.requester),
-              _InfoRow(
+              InfoRow(
                 label: 'Description',
                 value: _currentRequest.description,
                 isMultiline: true,
+                labelWidth: 100,
+                spacing: 12,
+                contentPadding: const EdgeInsets.only(bottom: 8),
               ),
               if (_currentRequest.note != null)
-                _InfoRow(
+                InfoRow(
                   label: 'Note',
                   value: _currentRequest.note!,
                   isMultiline: true,
+                  labelWidth: 100,
+                  spacing: 12,
+                  contentPadding: const EdgeInsets.only(bottom: 8),
                 ),
             ],
           ),
 
           const SizedBox(height: 24),
 
-          // Authorizers
-          _InfoSection(
-            title: 'Authorizers',
+          // Supervisor Information
+          InfoSection(
+            title: 'Supervisor Information',
             children: [
-              for (final authorizer in _currentRequest.authorizers)
+              SupervisorCard(
+                name: _currentRequest.supervisor,
+                positions: _currentRequest.supervisorPositions,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          // Approvers
+          InfoSection(
+            title: 'Approvers',
+            children: [
+              for (final approver in _currentRequest.approvers)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: _AuthorizerCard(authorizer: authorizer),
+                  child: Builder(
+                    builder: (context) {
+                      IconData icon;
+                      Color color;
+                      String statusText;
+                      String? dateText;
+
+                      switch (approver.decision) {
+                        case ApproverDecision.approved:
+                          icon = Icons.check_circle;
+                          color = Colors.green;
+                          statusText = 'Approved';
+                          if (approver.decisionAt != null) {
+                            final d = approver.decisionAt!;
+                            dateText =
+                                'on ${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+                          }
+                          break;
+                        case ApproverDecision.rejected:
+                          icon = Icons.cancel;
+                          color = Colors.red;
+                          statusText = 'Rejected';
+                          if (approver.decisionAt != null) {
+                            final d = approver.decisionAt!;
+                            dateText =
+                                'on ${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+                          }
+                          break;
+                        case ApproverDecision.pending:
+                          icon = Icons.pending;
+                          color = Colors.orange;
+                          statusText = 'Pending';
+                          break;
+                      }
+
+                      return ApproverCard(
+                        name: approver.name,
+                        statusText: statusText,
+                        statusColor: color,
+                        leadingIcon: icon,
+                        leadingColor: color,
+                        trailingText: dateText,
+                      );
+                    },
+                  ),
                 ),
             ],
           ),
@@ -84,9 +160,36 @@ class _ApprovalDetailDrawerState extends State<ApprovalDetailDrawer> {
           const SizedBox(height: 24),
 
           // Status
-          _InfoSection(
+          InfoSection(
             title: 'Current Status',
-            children: [_StatusCard(status: _currentRequest.status)],
+            children: [
+              Builder(
+                builder: (context) {
+                  final (bg, fg, label) = switch (_currentRequest.status) {
+                    RequestStatus.pending => (
+                      Colors.orange.shade50,
+                      Colors.orange.shade700,
+                      'Pending',
+                    ),
+                    RequestStatus.approved => (
+                      Colors.green.shade50,
+                      Colors.green.shade700,
+                      'Approved',
+                    ),
+                    RequestStatus.rejected => (
+                      Colors.red.shade50,
+                      Colors.red.shade700,
+                      'Rejected',
+                    ),
+                  };
+                  return StatusChip(
+                    label: label,
+                    background: bg,
+                    foreground: fg,
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -104,7 +207,7 @@ class _ApprovalDetailDrawerState extends State<ApprovalDetailDrawer> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Approval can only be approve or reject on mobile app from each of authorizer',
+                'Approval can only be approved or rejected on the mobile app by each approver',
                 style: theme.textTheme.bodyMedium,
               ),
             ),
@@ -120,240 +223,6 @@ class _ApprovalDetailDrawerState extends State<ApprovalDetailDrawer> {
   }
 }
 
-class _InfoSection extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
+ 
 
-  const _InfoSection({required this.title, required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...children,
-      ],
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final Widget? valueWidget;
-  final bool isMultiline;
-
-  const _InfoRow({
-    required this.label,
-    required this.value,
-    this.valueWidget,
-    this.isMultiline = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: isMultiline
-            ? CrossAxisAlignment.start
-            : CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child:
-                valueWidget ?? Text(value, style: theme.textTheme.bodyMedium),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TypeChip extends StatelessWidget {
-  final String label;
-
-  const _TypeChip({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
-      child: Text(label, style: theme.textTheme.labelSmall),
-    );
-  }
-}
-
-class _AuthorizerCard extends StatelessWidget {
-  final Authorizer authorizer;
-
-  const _AuthorizerCard({required this.authorizer});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    IconData icon;
-    Color color;
-    String statusText;
-    String? dateText;
-
-    switch (authorizer.decision) {
-      case AuthorizerDecision.approved:
-        icon = Icons.check_circle;
-        color = Colors.green;
-        statusText = 'Approved';
-        if (authorizer.decisionAt != null) {
-          final d = authorizer.decisionAt!;
-          dateText =
-              'on ${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-        }
-        break;
-      case AuthorizerDecision.rejected:
-        icon = Icons.cancel;
-        color = Colors.red;
-        statusText = 'Rejected';
-        if (authorizer.decisionAt != null) {
-          final d = authorizer.decisionAt!;
-          dateText =
-              'on ${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-        }
-        break;
-      case AuthorizerDecision.pending:
-        icon = Icons.pending;
-        color = Colors.orange;
-        statusText = 'Pending';
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  authorizer.name,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Row(
-                  children: [
-                    Text(
-                      statusText,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: color,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    if (dateText != null) ...[
-                      const SizedBox(width: 6),
-                      Text(
-                        dateText,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatusCard extends StatelessWidget {
-  final RequestStatus status;
-
-  const _StatusCard({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    final (bg, fg, label) = switch (status) {
-      RequestStatus.pending => (
-        Colors.orange.shade50,
-        Colors.orange.shade700,
-        'Pending',
-      ),
-      RequestStatus.approved => (
-        Colors.green.shade50,
-        Colors.green.shade700,
-        'Approved',
-      ),
-      RequestStatus.rejected => (
-        Colors.red.shade50,
-        Colors.red.shade700,
-        'Rejected',
-      ),
-    };
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: fg.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            status == RequestStatus.pending
-                ? Icons.pending
-                : status == RequestStatus.approved
-                ? Icons.check_circle
-                : Icons.cancel,
-            color: fg,
-            size: 24,
-          ),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: TextStyle(
-              color: fg,
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+ 

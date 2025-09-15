@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/side_drawer.dart';
 import '../../../../core/models/church_profile.dart';
+import '../../../../core/widgets/info_section.dart';
 
 class PositionEditDrawer extends StatefulWidget {
   final ChurchPosition? position;
@@ -108,8 +109,9 @@ class _PositionEditDrawerState extends State<PositionEditDrawer> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _InfoSection(
+            InfoSection(
               title: 'Position Information',
+              titleSpacing: 16,
               children: [
                 _FormField(
                   label: 'Position Name',
@@ -135,8 +137,9 @@ class _PositionEditDrawerState extends State<PositionEditDrawer> {
 
             // Members using this position
             if (widget.position != null) ...[
-              _InfoSection(
+              InfoSection(
                 title: 'Members in this Position',
+                titleSpacing: 16,
                 children: [_MembersListWidget(positionId: widget.position!.id)],
               ),
             ],
@@ -174,30 +177,7 @@ class _PositionEditDrawerState extends State<PositionEditDrawer> {
   }
 }
 
-class _InfoSection extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
-
-  const _InfoSection({required this.title, required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 16),
-        ...children,
-      ],
-    );
-  }
-}
+ 
 
 class _FormField extends StatelessWidget {
   final String label;

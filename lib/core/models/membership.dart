@@ -8,6 +8,7 @@ class Membership {
   final bool isLinked;
   final bool isMarried;
   final String? gender;
+  final DateTime? dateOfBirth;
 
   const Membership({
     required this.name,
@@ -19,6 +20,7 @@ class Membership {
     this.isLinked = false,
     this.isMarried = false,
     this.gender,
+    this.dateOfBirth,
   });
 
   Membership copyWith({
@@ -31,6 +33,7 @@ class Membership {
     bool? isLinked,
     bool? isMarried,
     String? gender,
+    DateTime? dateOfBirth,
   }) {
     return Membership(
       name: name ?? this.name,
@@ -42,6 +45,7 @@ class Membership {
       isLinked: isLinked ?? this.isLinked,
       isMarried: isMarried ?? this.isMarried,
       gender: gender ?? this.gender,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
     );
   }
 
@@ -55,6 +59,7 @@ class Membership {
     bool isSidi = false,
     bool isLinked = false,
     bool isMarried = false,
+    DateTime? dateOfBirth,
   }) {
     return Membership(
       name: name,
@@ -65,6 +70,7 @@ class Membership {
       isSidi: isSidi,
       isLinked: isLinked,
       isMarried: isMarried,
+      dateOfBirth: dateOfBirth,
     );
   }
 }

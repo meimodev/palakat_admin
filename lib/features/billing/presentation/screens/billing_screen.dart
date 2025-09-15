@@ -6,6 +6,7 @@ import '../../../../core/widgets/surface_card.dart';
 import '../../../../core/widgets/pagination_bar.dart';
 import '../../../../core/widgets/date_range_filter.dart';
 import '../../../../core/widgets/side_drawer.dart';
+import '../../../../core/widgets/info_section.dart';
 
 class BillingScreen extends StatefulWidget {
   const BillingScreen({super.key});
@@ -821,47 +822,80 @@ class _BillingDetailDrawer extends StatelessWidget {
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _InfoSection(
+          InfoSection(
             title: 'Basic Information',
             children: [
-              _InfoRow(label: 'Description', value: item.description),
-              _InfoRow(label: 'Amount', value: item.formattedAmount),
-              _InfoRow(
+              InfoRow(
+                label: 'Description',
+                value: item.description,
+                labelWidth: 140,
+                spacing: 16,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+              InfoRow(
+                label: 'Amount',
+                value: item.formattedAmount,
+                labelWidth: 140,
+                spacing: 16,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+              InfoRow(
                 label: 'Status',
                 value: item.status.displayName,
                 valueWidget: Align(
                   alignment: Alignment.centerLeft,
                   child: _StatusChip(status: item.status),
                 ),
+                labelWidth: 140,
+                spacing: 16,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
               ),
-              _InfoRow(
+              InfoRow(
                 label: 'Due Date',
                 value: DateFormat('MMM dd, yyyy').format(item.dueDate),
+                labelWidth: 140,
+                spacing: 16,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
               ),
-              _InfoRow(
+              InfoRow(
                 label: 'Paid Date',
                 value: item.paidDate != null
                     ? DateFormat('MMM dd, yyyy').format(item.paidDate!)
                     : '—',
+                labelWidth: 140,
+                spacing: 16,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
               ),
             ],
           ),
 
           const SizedBox(height: 24),
 
-          _InfoSection(
+          InfoSection(
             title: 'Payment Information',
             children: [
-              _InfoRow(
+              InfoRow(
                 label: 'Method',
                 value: item.paymentMethod?.displayName ?? '—',
+                labelWidth: 140,
+                spacing: 16,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
               ),
-              _InfoRow(
+              InfoRow(
                 label: 'Transaction ID',
                 value: item.transactionId ?? '—',
+                labelWidth: 140,
+                spacing: 16,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
               ),
               if (item.notes != null)
-                _InfoRow(label: 'Notes', value: item.notes!),
+                InfoRow(
+                  label: 'Notes',
+                  value: item.notes!,
+                  labelWidth: 140,
+                  spacing: 16,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                ),
             ],
           ),
         ],
@@ -881,65 +915,7 @@ class _BillingDetailDrawer extends StatelessWidget {
   }
 }
 
-class _InfoSection extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
-
-  const _InfoSection({required this.title, required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...children,
-      ],
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final Widget? valueWidget;
-  const _InfoRow({required this.label, required this.value, this.valueWidget});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 140,
-            child: Text(
-              label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child:
-                valueWidget ?? Text(value, style: theme.textTheme.bodyMedium),
-          ),
-        ],
-      ),
-    );
-  }
-}
+ 
 
 class _PaymentDialog extends StatefulWidget {
   final BillingItem item;

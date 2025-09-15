@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:palakat_admin/core/models/membership.dart';
 import 'package:palakat_admin/features/members/presentation/state/members_providers.dart';
 import 'package:palakat_admin/core/widgets/side_drawer.dart';
+import 'package:intl/intl.dart';
 
 class EditMemberDrawer extends ConsumerStatefulWidget {
   final Membership member;
@@ -22,6 +23,7 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
   late bool _isLinked;
   late String _maritalStatus;
   late String _gender;
+  DateTime? _dateOfBirth;
   final List<String> _positions = [];
   // Positions will use the same UX as approval route editor: add via dropdown + chips
   final _formKey = GlobalKey<FormState>();
@@ -38,6 +40,7 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
     _maritalStatus = widget.member.isMarried ? 'Married' : 'Single';
     _gender =
         widget.member.gender ?? 'Male'; // Default to Male if not specified
+    _dateOfBirth = widget.member.dateOfBirth;
     _positions.addAll(widget.member.positions);
   }
 
@@ -198,6 +201,37 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
                             },
                     ),
                   ),
+                  _FormField(
+                    label: 'Date of Birth',
+                    child: InkWell(
+                      onTap: _isLinked ? null : _selectDateOfBirth,
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          border: const OutlineInputBorder(),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                          fillColor: _isLinked ? Colors.grey.shade100 : null,
+                          filled: _isLinked,
+                          suffixIcon: Icon(
+                            Icons.calendar_today,
+                            color: _isLinked ? Colors.grey : null,
+                          ),
+                        ),
+                        child: Text(
+                          _dateOfBirth != null
+                              ? DateFormat('MMM dd, yyyy').format(_dateOfBirth!)
+                              : 'Select date of birth',
+                          style: TextStyle(
+                            color: _dateOfBirth != null
+                                ? Theme.of(context).textTheme.bodyLarge?.color
+                                : Theme.of(context).hintColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
 
@@ -324,6 +358,21 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
     'Deacons',
   ];
 
+  Future<void> _selectDateOfBirth() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _dateOfBirth ?? DateTime.now().subtract(const Duration(days: 365 * 25)), // Default to 25 years ago
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      helpText: 'Select Date of Birth',
+    );
+    if (picked != null && picked != _dateOfBirth) {
+      setState(() {
+        _dateOfBirth = picked;
+      });
+    }
+  }
+
   void _saveChanges() {
     if (_formKey.currentState?.validate() ?? false) {
       final updatedMember = widget.member.copyWith(
@@ -336,6 +385,7 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
         isLinked: _isLinked,
         isMarried: _maritalStatus == 'Married',
         gender: _gender,
+        dateOfBirth: _dateOfBirth,
       );
 
       final membersNotifier = ref.read(membersProvider.notifier);

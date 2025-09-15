@@ -6,6 +6,7 @@ import '../../../../core/widgets/surface_card.dart';
 import '../../../../core/widgets/pagination_bar.dart';
 import '../../../../core/widgets/date_range_filter.dart';
 import '../widgets/activity_detail_view.dart';
+import '../../../../core/widgets/supervisor_chip.dart';
 
 class ActivitiesScreen extends StatefulWidget {
   const ActivitiesScreen({super.key});
@@ -64,7 +65,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
           activity.description.toLowerCase().contains(q) ||
           activity.type.displayName.toLowerCase().contains(q) ||
           activity.status.displayName.toLowerCase().contains(q) ||
-          activity.organizer.toLowerCase().contains(q) ||
+          activity.supervisor.toLowerCase().contains(q) ||
           (activity.location?.toLowerCase().contains(q) ?? false) ||
           startDateStr.contains(q) ||
           endDateStr.contains(q) ||
@@ -225,8 +226,8 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
         endDate: now
             .subtract(const Duration(days: 0))
             .add(const Duration(hours: 2)),
-        organizer: 'Pastor John',
-        organizerPositions: ['Senior Pastor', 'Head of Worship'],
+        supervisor: 'Pastor John',
+        supervisorPositions: ['Senior Pastor', 'Head of Worship'],
         participants: ['Pastor John', 'Worship Team', 'Congregation'],
         location: 'Main Sanctuary',
         notes: 'Special guest speaker this week',
@@ -241,8 +242,8 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
         status: ActivityStatus.planned,
         startDate: now.add(const Duration(days: 2)),
         endDate: now.add(const Duration(days: 2, hours: 1, minutes: 30)),
-        organizer: 'Youth Pastor Sarah',
-        organizerPositions: ['Youth Pastor', 'Education Coordinator'],
+        supervisor: 'Youth Pastor Sarah',
+        supervisorPositions: ['Youth Pastor', 'Education Coordinator'],
         participants: ['Youth Pastor Sarah', 'Teen Group'],
         location: 'Youth Room',
         createdAt: now.subtract(const Duration(days: 5)),
@@ -256,8 +257,8 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
         status: ActivityStatus.completed,
         startDate: now.subtract(const Duration(days: 10)),
         endDate: now.subtract(const Duration(days: 8)),
-        organizer: 'Deacon Mary',
-        organizerPositions: ['Deacon', 'Outreach Coordinator'],
+        supervisor: 'Deacon Mary',
+        supervisorPositions: ['Deacon', 'Outreach Coordinator'],
         participants: ['Deacon Mary', 'Volunteers', 'Community Members'],
         location: 'Church Parking Lot',
         notes: 'Collected 500 pounds of food items',
@@ -274,8 +275,8 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
         endDate: now
             .subtract(const Duration(days: 15))
             .add(const Duration(hours: 2)),
-        organizer: 'Administrator Bob',
-        organizerPositions: ['Administrator', 'Financial Secretary'],
+        supervisor: 'Administrator Bob',
+        supervisorPositions: ['Administrator', 'Financial Secretary'],
         participants: ['Pastor John', 'Deacon Mary', 'Treasurer', 'Secretary'],
         location: 'Conference Room',
         notes: 'Discussed budget and upcoming events',
@@ -290,8 +291,8 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
         status: ActivityStatus.planned,
         startDate: now.add(const Duration(days: 45)),
         endDate: now.add(const Duration(days: 45, hours: 3)),
-        organizer: 'Music Director',
-        organizerPositions: ['Music Director', 'Worship Leader'],
+        supervisor: 'Music Director',
+        supervisorPositions: ['Music Director', 'Worship Leader'],
         participants: ['Choir', 'Orchestra', 'Soloists'],
         location: 'Main Sanctuary',
         notes: 'Rehearsals start next month',
@@ -306,8 +307,8 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
         status: ActivityStatus.planned,
         startDate: now.add(const Duration(days: 7)),
         endDate: now.add(const Duration(days: 7, hours: 2)),
-        organizer: 'Fellowship Committee',
-        organizerPositions: ['Fellowship Coordinator', 'Event Planner'],
+        supervisor: 'Fellowship Committee',
+        supervisorPositions: ['Fellowship Coordinator', 'Event Planner'],
         participants: ['Church Members', 'Families'],
         location:
             'Fellowship Hall - Main dining area with kitchen facilities and seating for up to 200 people',
@@ -329,7 +330,7 @@ class _ActivitiesHeader extends StatelessWidget {
           _cell(const Text('Name'), flex: 3, style: textStyle),
           _cell(const Text('Type'), flex: 2, style: textStyle),
           _cell(const Text('Start Date'), flex: 2, style: textStyle),
-          _cell(const Text('Organizer'), flex: 3, style: textStyle),
+          _cell(const Text('Supervisor'), flex: 3, style: textStyle),
           _cell(const Text('Location'), flex: 3, style: textStyle),
         ],
       ),
@@ -397,9 +398,9 @@ class _ActivityRow extends StatelessWidget {
                       flex: 3,
                       Align(
                         alignment: Alignment.centerLeft,
-                        child: _OrganizerChip(
-                          name: activity.organizer,
-                          positions: activity.organizerPositions,
+                        child: SupervisorChip(
+                          name: activity.supervisor,
+                          positions: activity.supervisorPositions,
                         ),
                       ),
                     ),
@@ -476,141 +477,4 @@ class _TypeChip extends StatelessWidget {
   }
 }
 
-class _OrganizerChip extends StatelessWidget {
-  final String name;
-  final List<String> positions;
 
-  const _OrganizerChip({required this.name, required this.positions});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final hasMultiplePositions = positions.length > 1;
-    final displayPosition = positions.isNotEmpty ? positions.first : '';
-    final additionalCount = positions.length - 1;
-
-    return InkWell(
-      onTap: hasMultiplePositions ? () => _showAllPositions(context) : null,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: theme.colorScheme.outlineVariant),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.person, size: 16),
-            const SizedBox(width: 4),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(name, style: theme.textTheme.labelMedium),
-                if (positions.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        displayPosition,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      if (hasMultiplePositions) ...[
-                        const SizedBox(width: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 1,
-                          ),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withValues(
-                              alpha: 0.1,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '+$additionalCount',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showAllPositions(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        final theme = Theme.of(context);
-        return AlertDialog(
-          title: Row(
-            children: [
-              const Icon(Icons.person, size: 20),
-              const SizedBox(width: 8),
-              Expanded(child: Text(name, style: theme.textTheme.titleMedium)),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Positions:',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ...positions.map(
-                (position) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 4,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          position,
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}

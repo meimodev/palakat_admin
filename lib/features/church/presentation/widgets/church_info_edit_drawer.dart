@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/side_drawer.dart';
 import '../../../../core/models/church_profile.dart';
+import '../../../../core/widgets/info_section.dart';
 
 class ChurchInfoEditDrawer extends StatefulWidget {
   final ChurchProfile churchProfile;
@@ -92,8 +93,9 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Basic Information Section
-            _InfoSection(
+            InfoSection(
               title: 'Basic Information',
+              titleSpacing: 16,
               children: [
                 _FormField(
                   label: 'Church Name',
@@ -199,8 +201,9 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
             const SizedBox(height: 24),
             
             // Location Information Section
-            _InfoSection(
+            InfoSection(
               title: 'Location Information',
+              titleSpacing: 16,
               children: [
                 Row(
                   children: [
@@ -259,8 +262,9 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
             const SizedBox(height: 24),
             
             // Service Information Section
-            _InfoSection(
+            InfoSection(
               title: 'Service Information',
+              titleSpacing: 16,
               children: [
                 _FormField(
                   label: 'General Service Schedule (Optional)',
@@ -300,33 +304,7 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
   }
 }
 
-class _InfoSection extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
-
-  const _InfoSection({
-    required this.title,
-    required this.children,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 16),
-        ...children,
-      ],
-    );
-  }
-}
+ 
 
 class _FormField extends StatelessWidget {
   final String label;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:palakat_admin/core/widgets/side_drawer.dart';
 import 'package:palakat_admin/core/widgets/date_range_filter.dart';
 import 'package:intl/intl.dart';
+import 'package:palakat_admin/core/widgets/info_section.dart';
 
 class ReportGenerateDrawer extends StatefulWidget {
   final String reportTitle;
@@ -45,23 +46,39 @@ class _ReportGenerateDrawerState extends State<ReportGenerateDrawer> {
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _InfoSection(
+          InfoSection(
             title: 'Report Details',
             children: [
-              _InfoRow(label: 'Report', value: widget.reportTitle),
-              _InfoRow(label: 'Description', value: widget.description),
-              _InfoRow(
+              InfoRow(
+                label: 'Report',
+                value: widget.reportTitle,
+                labelWidth: 120,
+                spacing: 16,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+              InfoRow(
+                label: 'Description',
+                value: widget.description,
+                labelWidth: 120,
+                spacing: 16,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+              InfoRow(
                 label: 'Selected Range',
                 value: _dateRange == null
                     ? '—'
                     : '${DateFormat('EEE, dd MMMM y').format(_dateRange!.start)}\n${DateFormat('EEE, dd MMMM y').format(_dateRange!.end)}',
+                isMultiline: true,
+                labelWidth: 120,
+                spacing: 16,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
               ),
             ],
           ),
 
           const SizedBox(height: 24),
 
-          _InfoSection(
+          InfoSection(
             title: 'Filters',
             children: [
               Row(
@@ -135,59 +152,4 @@ class _ReportGenerateDrawerState extends State<ReportGenerateDrawer> {
   }
 }
 
-class _InfoSection extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
-
-  const _InfoSection({required this.title, required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...children,
-      ],
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _InfoRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(child: Text(value, style: theme.textTheme.bodyMedium)),
-        ],
-      ),
-    );
-  }
-}
+ 

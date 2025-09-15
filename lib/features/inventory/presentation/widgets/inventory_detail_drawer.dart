@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/inventory_item.dart';
 import 'package:palakat_admin/core/widgets/side_drawer.dart';
+import 'package:palakat_admin/core/widgets/info_section.dart';
 
 class InventoryDetailDrawer extends StatelessWidget {
   final InventoryItem item;
@@ -25,37 +26,70 @@ class InventoryDetailDrawer extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Basic Information
-          _InfoSection(
+          InfoSection(
             title: 'Basic Information',
             children: [
-              _InfoRow(label: 'Item Name', value: item.itemName),
-              _InfoRow(label: 'Location', value: item.location),
-              _InfoRow(
+              InfoRow(
+                label: 'Item Name',
+                value: item.itemName,
+                labelWidth: 100,
+                spacing: 12,
+                contentPadding: const EdgeInsets.only(bottom: 8),
+              ),
+              InfoRow(
+                label: 'Location',
+                value: item.location,
+                labelWidth: 100,
+                spacing: 12,
+                contentPadding: const EdgeInsets.only(bottom: 8),
+              ),
+              InfoRow(
                 label: 'Condition',
                 value: item.condition.displayName,
                 valueWidget: Align(
                   alignment: Alignment.centerLeft,
                   child: _ConditionBadge(condition: item.condition),
                 ),
+                labelWidth: 100,
+                spacing: 12,
+                contentPadding: const EdgeInsets.only(bottom: 8),
               ),
-              _InfoRow(label: 'Quantity', value: '${item.quantity}'),
+              InfoRow(
+                label: 'Quantity',
+                value: '${item.quantity}',
+                labelWidth: 100,
+                spacing: 12,
+                contentPadding: const EdgeInsets.only(bottom: 8),
+              ),
             ],
           ),
 
           const SizedBox(height: 24),
 
           // Update Information
-          _InfoSection(
+          InfoSection(
             title: 'Last Update',
             children: [
-              _InfoRow(
+              InfoRow(
                 label: 'Date',
                 value: DateFormat('yyyy-MM-dd HH:mm').format(item.lastUpdate),
+                labelWidth: 100,
+                spacing: 12,
+                contentPadding: const EdgeInsets.only(bottom: 8),
               ),
-              _InfoRow(label: 'Updated By', value: item.updatedBy),
-              _InfoRow(
+              InfoRow(
+                label: 'Updated By',
+                value: item.updatedBy,
+                labelWidth: 100,
+                spacing: 12,
+                contentPadding: const EdgeInsets.only(bottom: 8),
+              ),
+              InfoRow(
                 label: 'Time Ago',
                 value: _formatTimeAgo(item.lastUpdate),
+                labelWidth: 100,
+                spacing: 12,
+                contentPadding: const EdgeInsets.only(bottom: 8),
               ),
             ],
           ),
@@ -63,7 +97,7 @@ class InventoryDetailDrawer extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Item Status
-          _InfoSection(
+          InfoSection(
             title: 'Item Status',
             children: [_StatusCard(item: item)],
           ),
@@ -113,66 +147,7 @@ class InventoryDetailDrawer extends StatelessWidget {
   }
 }
 
-class _InfoSection extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
-
-  const _InfoSection({required this.title, required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...children,
-      ],
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final Widget? valueWidget;
-
-  const _InfoRow({required this.label, required this.value, this.valueWidget});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child:
-                valueWidget ?? Text(value, style: theme.textTheme.bodyMedium),
-          ),
-        ],
-      ),
-    );
-  }
-}
+ 
 
 class _ConditionBadge extends StatelessWidget {
   const _ConditionBadge({required this.condition});

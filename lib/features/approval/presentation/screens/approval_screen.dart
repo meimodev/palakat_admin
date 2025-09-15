@@ -5,6 +5,9 @@ import '../widgets/approval_detail_drawer.dart';
 import 'package:palakat_admin/core/widgets/surface_card.dart';
 import 'package:palakat_admin/core/widgets/pagination_bar.dart';
 import 'package:palakat_admin/core/widgets/date_range_filter.dart';
+import 'package:palakat_admin/core/widgets/supervisor_chip.dart';
+import 'package:palakat_admin/core/widgets/type_chip.dart';
+import 'package:palakat_admin/core/widgets/status_chip.dart';
 
 class ApprovalScreen extends StatefulWidget {
   const ApprovalScreen({super.key});
@@ -55,10 +58,10 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
           r.id.toLowerCase().contains(q) ||
           r.description.toLowerCase().contains(q) ||
           r.type.toLowerCase().contains(q) ||
-          r.requester.toLowerCase().contains(q) ||
+          r.supervisor.toLowerCase().contains(q) ||
           r.status.name.toLowerCase().contains(q) ||
           dateStr.contains(q) ||
-          r.authorizers.any((a) => a.name.toLowerCase().contains(q));
+          r.approvers.any((a) => a.name.toLowerCase().contains(q));
       return matchesQuery && inDateRange(r.date);
     }).toList();
 
@@ -161,7 +164,7 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
 
             SurfaceCard(
               title: 'Approval Routing',
-              subtitle: 'Map approval types to authorizer positions.',
+              subtitle: 'Map approval types to approver positions.',
               trailing: FilledButton.icon(
                 onPressed: () => _openRouteEditor(context),
                 icon: const Icon(Icons.add),
@@ -368,8 +371,9 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
         date: now,
         description: 'New sound system purchase',
         type: 'Expense',
-        requester: 'John Doe',
-        authorizers: [Authorizer('Pastor John', AuthorizerDecision.pending)],
+        supervisor: 'John Doe',
+        supervisorPositions: const ['Senior Pastor', 'Head of Worship'],
+        approvers: [Approver('Pastor John', ApproverDecision.pending)],
         status: RequestStatus.pending,
       ),
       ApprovalRequest(
@@ -377,16 +381,17 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
         date: now.subtract(const Duration(days: 1)),
         description: 'Youth group event budget',
         type: 'Expense',
-        requester: 'Jane Smith',
-        authorizers: [
-          Authorizer(
+        supervisor: 'Jane Smith',
+        supervisorPositions: const ['Administrator'],
+        approvers: [
+          Approver(
             'Pastor John',
-            AuthorizerDecision.approved,
+            ApproverDecision.approved,
             now.subtract(const Duration(days: 1, hours: 3)),
           ),
-          Authorizer(
+          Approver(
             'Deacon Mary',
-            AuthorizerDecision.approved,
+            ApproverDecision.approved,
             now.subtract(const Duration(days: 1, hours: 1)),
           ),
         ],
@@ -397,16 +402,17 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
         date: now.subtract(const Duration(days: 2)),
         description: 'Building maintenance contract',
         type: 'Document',
-        requester: 'Sam Wilson',
-        authorizers: [
-          Authorizer(
+        supervisor: 'Sam Wilson',
+        supervisorPositions: const ['Facilities Manager', 'Deacon'],
+        approvers: [
+          Approver(
             'Pastor John',
-            AuthorizerDecision.approved,
+            ApproverDecision.approved,
             now.subtract(const Duration(days: 2, hours: 6)),
           ),
-          Authorizer(
+          Approver(
             'Admin Bob',
-            AuthorizerDecision.rejected,
+            ApproverDecision.rejected,
             now.subtract(const Duration(days: 2, hours: 2)),
           ),
         ],
@@ -418,8 +424,9 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
         date: now.subtract(const Duration(days: 3)),
         description: 'Website redesign proposal',
         type: 'Service',
-        requester: 'Alice Johnson',
-        authorizers: [Authorizer('Deacon Mary', AuthorizerDecision.pending)],
+        supervisor: 'Alice Johnson',
+        supervisorPositions: const ['Project Lead'],
+        approvers: [Approver('Deacon Mary', ApproverDecision.pending)],
         status: RequestStatus.pending,
       ),
       ApprovalRequest(
@@ -427,11 +434,12 @@ class _ApprovalScreenState extends State<ApprovalScreen> {
         date: now.subtract(const Duration(days: 4)),
         description: 'Mission trip funding',
         type: 'Income',
-        requester: 'Chris Lee',
-        authorizers: [
-          Authorizer(
+        supervisor: 'Chris Lee',
+        supervisorPositions: const ['Treasurer'],
+        approvers: [
+          Approver(
             'Pastor John',
-            AuthorizerDecision.approved,
+            ApproverDecision.approved,
             now.subtract(const Duration(days: 4, hours: 4)),
           ),
         ],
@@ -453,8 +461,8 @@ class _RequestsHeader extends StatelessWidget {
           _cell(const Text('Date'), flex: 2, style: textStyle),
           _cell(const Text('Description'), flex: 4, style: textStyle),
           _cell(const Text('Type'), flex: 2, style: textStyle),
-          _cell(const Text('Requester'), flex: 2, style: textStyle),
-          _cell(const Text('Authorizer'), flex: 3, style: textStyle),
+          _cell(const Text('Supervisor'), flex: 2, style: textStyle),
+          _cell(const Text('Approver'), flex: 3, style: textStyle),
           _cell(const Text('Status'), flex: 2, style: textStyle),
         ],
       ),
@@ -537,23 +545,60 @@ class _RequestRow extends StatelessWidget {
                     _cell(
                       Align(
                         alignment: Alignment.centerLeft,
-                        child: _TypeChip(label: req.type),
+                        child: TypeChip(label: req.type),
                       ),
                       flex: 2,
                     ),
-                    _cell(Text(req.requester), flex: 2),
+                    _cell(
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: SupervisorChip(
+                          name: req.supervisor,
+                          positions: req.supervisorPositions,
+                        ),
+                      ),
+                      flex: 2,
+                    ),
                     _cell(
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          for (final a in req.authorizers)
-                            _AuthorizerChip(authorizer: a),
+                          for (final a in req.approvers)
+                            _ApproverChip(approver: a),
                         ],
                       ),
                       flex: 3,
                     ),
-                    _cell(_StatusChip(status: req.status), flex: 2),
+                    _cell(
+                      Builder(
+                        builder: (context) {
+                          final (bg, fg, label) = switch (req.status) {
+                            RequestStatus.pending => (
+                              Colors.orange.shade50,
+                              Colors.orange.shade700,
+                              'Pending',
+                            ),
+                            RequestStatus.approved => (
+                              Colors.green.shade50,
+                              Colors.green.shade700,
+                              'Approved',
+                            ),
+                            RequestStatus.rejected => (
+                              Colors.red.shade50,
+                              Colors.red.shade700,
+                              'Rejected',
+                            ),
+                          };
+                          return StatusChip(
+                            label: label,
+                            background: bg,
+                            foreground: fg,
+                          );
+                        },
+                      ),
+                      flex: 2,
+                    ),
                     const Icon(
                       Icons.chevron_right,
                       size: 18,
@@ -578,69 +623,12 @@ class _RequestRow extends StatelessWidget {
       Expanded(flex: flex, child: child);
 }
 
-class _TypeChip extends StatelessWidget {
-  final String label;
+ 
 
-  const _TypeChip({required this.label});
+class _ApproverChip extends StatelessWidget {
+  final Approver approver;
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
-      child: Text(label, style: theme.textTheme.labelMedium),
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  final RequestStatus status;
-
-  const _StatusChip({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    final (bg, fg, label) = switch (status) {
-      RequestStatus.pending => (
-        Colors.orange.shade50,
-        Colors.orange.shade700,
-        'Pending',
-      ),
-      RequestStatus.approved => (
-        Colors.green.shade50,
-        Colors.green.shade700,
-        'Approved',
-      ),
-      RequestStatus.rejected => (
-        Colors.red.shade50,
-        Colors.red.shade700,
-        'Rejected',
-      ),
-    };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: fg.withValues(alpha: 0.2)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(color: fg, fontWeight: FontWeight.w600),
-      ),
-    );
-  }
-}
-
-class _AuthorizerChip extends StatelessWidget {
-  final Authorizer authorizer;
-
-  const _AuthorizerChip({required this.authorizer});
+  const _ApproverChip({required this.approver});
 
   @override
   Widget build(BuildContext context) {
@@ -648,26 +636,26 @@ class _AuthorizerChip extends StatelessWidget {
     IconData icon;
     Color color;
     String? dateText;
-    switch (authorizer.decision) {
-      case AuthorizerDecision.approved:
+    switch (approver.decision) {
+      case ApproverDecision.approved:
         icon = Icons.check;
         color = Colors.green;
-        if (authorizer.decisionAt != null) {
-          final d = authorizer.decisionAt!;
+        if (approver.decisionAt != null) {
+          final d = approver.decisionAt!;
           dateText =
               '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
         }
         break;
-      case AuthorizerDecision.rejected:
+      case ApproverDecision.rejected:
         icon = Icons.close;
         color = Colors.red;
-        if (authorizer.decisionAt != null) {
-          final d = authorizer.decisionAt!;
+        if (approver.decisionAt != null) {
+          final d = approver.decisionAt!;
           dateText =
               '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
         }
         break;
-      case AuthorizerDecision.pending:
+      case ApproverDecision.pending:
         icon = Icons.watch_later_outlined;
         color = Colors.orange;
         break;
@@ -687,7 +675,7 @@ class _AuthorizerChip extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(authorizer.name, style: theme.textTheme.labelMedium),
+              Text(approver.name, style: theme.textTheme.labelMedium),
               if (dateText != null) ...[
                 Text(
                   dateText,
@@ -954,8 +942,8 @@ class _RouteEditorSheetState extends State<_RouteEditorSheet> {
 
           const SizedBox(height: 16),
 
-          // Authorized Positions
-          Text('Authorized Positions', style: theme.textTheme.labelLarge),
+          // Approver Positions
+          Text('Approver Positions', style: theme.textTheme.labelLarge),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -1036,8 +1024,9 @@ class ApprovalRequest {
   final DateTime date;
   final String description;
   final String type;
-  final String requester;
-  final List<Authorizer> authorizers;
+  final String supervisor;
+  final List<String> supervisorPositions;
+  final List<Approver> approvers;
   final RequestStatus status;
   final String? note;
 
@@ -1046,19 +1035,20 @@ class ApprovalRequest {
     required this.date,
     required this.description,
     required this.type,
-    required this.requester,
-    required this.authorizers,
+    required this.supervisor,
+    required this.supervisorPositions,
+    required this.approvers,
     required this.status,
     this.note,
   });
 }
 
-class Authorizer {
+class Approver {
   final String name;
-  final AuthorizerDecision decision;
+  final ApproverDecision decision;
   final DateTime? decisionAt;
 
-  Authorizer(this.name, this.decision, [this.decisionAt]);
+  Approver(this.name, this.decision, [this.decisionAt]);
 }
 
-enum AuthorizerDecision { pending, approved, rejected }
+enum ApproverDecision { pending, approved, rejected }

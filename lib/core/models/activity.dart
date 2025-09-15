@@ -19,8 +19,8 @@ class Activity {
   final ActivityStatus status;
   final DateTime startDate;
   final DateTime? endDate;
-  final String organizer;
-  final List<String> organizerPositions;
+  final String supervisor;
+  final List<String> supervisorPositions;
   final List<String> participants;
   final String? location;
   final String? notes;
@@ -35,8 +35,8 @@ class Activity {
     required this.status,
     required this.startDate,
     this.endDate,
-    required this.organizer,
-    required this.organizerPositions,
+    required this.supervisor,
+    required this.supervisorPositions,
     required this.participants,
     this.location,
     this.notes,
@@ -52,8 +52,8 @@ class Activity {
     ActivityStatus? status,
     DateTime? startDate,
     DateTime? endDate,
-    String? organizer,
-    List<String>? organizerPositions,
+    String? supervisor,
+    List<String>? supervisorPositions,
     List<String>? participants,
     String? location,
     String? notes,
@@ -68,8 +68,8 @@ class Activity {
       status: status ?? this.status,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
-      organizer: organizer ?? this.organizer,
-      organizerPositions: organizerPositions ?? this.organizerPositions,
+      supervisor: supervisor ?? this.supervisor,
+      supervisorPositions: supervisorPositions ?? this.supervisorPositions,
       participants: participants ?? this.participants,
       location: location ?? this.location,
       notes: notes ?? this.notes,
@@ -106,3 +106,4 @@ extension ActivityStatusExtension on ActivityStatus {
     }
   }
 }
+
