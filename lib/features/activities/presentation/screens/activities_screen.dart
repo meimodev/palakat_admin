@@ -7,12 +7,134 @@ import '../../../../core/widgets/pagination_bar.dart';
 import '../../../../core/widgets/date_range_filter.dart';
 import '../widgets/activity_detail_view.dart';
 import '../../../../core/widgets/supervisor_chip.dart';
+import '../../../../core/widgets/status_chip.dart';
 
 class ActivitiesScreen extends StatefulWidget {
   const ActivitiesScreen({super.key});
 
   @override
   State<ActivitiesScreen> createState() => _ActivitiesScreenState();
+}
+
+// --- Approver model and chip for Activities (mirrors approvals list UI) ---
+
+enum _ActApproverDecision { pending, approved, rejected }
+
+class _ActApprover {
+  final String name;
+  final _ActApproverDecision decision;
+  final DateTime? decisionAt;
+
+  _ActApprover(this.name, this.decision, [this.decisionAt]);
+}
+
+List<_ActApprover> _approversFor(Activity a) {
+  // Mocked approvers per activity, similar to approvals list behavior
+  // You can later replace this with real data from backend
+  switch (a.status) {
+    case ActivityStatus.planned:
+      return [
+        _ActApprover('Pastor John', _ActApproverDecision.pending),
+      ];
+    case ActivityStatus.ongoing:
+      return [
+        _ActApprover(
+          'Pastor John',
+          _ActApproverDecision.approved,
+          a.startDate.subtract(const Duration(hours: 2)),
+        ),
+        _ActApprover('Deacon Mary', _ActApproverDecision.pending),
+      ];
+    case ActivityStatus.completed:
+      return [
+        _ActApprover(
+          'Pastor John',
+          _ActApproverDecision.approved,
+          a.startDate.subtract(const Duration(days: 1, hours: 3)),
+        ),
+        _ActApprover(
+          'Admin Bob',
+          _ActApproverDecision.approved,
+          a.startDate.subtract(const Duration(days: 1, hours: 1)),
+        ),
+      ];
+    case ActivityStatus.cancelled:
+      return [
+        _ActApprover(
+          'Admin Bob',
+          _ActApproverDecision.rejected,
+          a.startDate.subtract(const Duration(hours: 4)),
+        ),
+      ];
+  }
+}
+
+class _ActivityApproverChip extends StatelessWidget {
+  final _ActApprover approver;
+
+  const _ActivityApproverChip({required this.approver});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    IconData icon;
+    Color color;
+    String? dateText;
+    switch (approver.decision) {
+      case _ActApproverDecision.approved:
+        icon = Icons.check;
+        color = Colors.green;
+        if (approver.decisionAt != null) {
+          final d = approver.decisionAt!;
+          dateText =
+              '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+        }
+        break;
+      case _ActApproverDecision.rejected:
+        icon = Icons.close;
+        color = Colors.red;
+        if (approver.decisionAt != null) {
+          final d = approver.decisionAt!;
+          dateText =
+              '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+        }
+        break;
+      case _ActApproverDecision.pending:
+        icon = Icons.watch_later_outlined;
+        color = Colors.orange;
+        break;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Wrap(
+        spacing: 3,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          const Icon(Icons.person, size: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(approver.name, style: theme.textTheme.labelMedium),
+              if (dateText != null) ...[
+                Text(
+                  dateText,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          Icon(icon, size: 14, color: color),
+        ],
+      ),
+    );
+  }
 }
 
 class _ActivitiesScreenState extends State<ActivitiesScreen> {
@@ -331,7 +453,8 @@ class _ActivitiesHeader extends StatelessWidget {
           _cell(const Text('Type'), flex: 2, style: textStyle),
           _cell(const Text('Start Date'), flex: 2, style: textStyle),
           _cell(const Text('Supervisor'), flex: 3, style: textStyle),
-          _cell(const Text('Location'), flex: 3, style: textStyle),
+          _cell(const Text('Approver'), flex: 3, style: textStyle),
+          _cell(const Text('Status'), flex: 2, style: textStyle),
         ],
       ),
     );
@@ -405,17 +528,61 @@ class _ActivityRow extends StatelessWidget {
                       ),
                     ),
                     _cell(
-                      Text(
-                        activity.location ?? 'TBD',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: activity.location == null
-                              ? theme.colorScheme.onSurfaceVariant
-                              : null,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                      Wrap(
+                        spacing: 8,
+                        direction: Axis.vertical,
+                        runSpacing: 8,
+                        children: [
+                          for (final a in _approversFor(activity))
+                            _ActivityApproverChip(approver: a),
+                        ],
                       ),
                       flex: 3,
+                    ),
+                    _cell(
+                      Builder(
+                        builder: (context) {
+                          // Derive overall approval status from approvers
+                          // - Rejected if any approver rejected
+                          // - Approved if all approvers approved
+                          // - Unconfirmed otherwise
+                          final approvers = _approversFor(activity);
+                          final hasRejected = approvers.any(
+                            (a) => a.decision == _ActApproverDecision.rejected,
+                          );
+                          final allApproved = approvers.isNotEmpty && approvers.every(
+                            (a) => a.decision == _ActApproverDecision.approved,
+                          );
+
+                          final (bg, fg, label, icon) = hasRejected
+                              ? (
+                                  Colors.red.shade50,
+                                  Colors.red.shade700,
+                                  'Rejected',
+                                  Icons.cancel,
+                                )
+                              : (allApproved
+                                  ? (
+                                      Colors.green.shade50,
+                                      Colors.green.shade700,
+                                      'Approved',
+                                      Icons.check_circle,
+                                    )
+                                  : (
+                                      Colors.orange.shade50,
+                                      Colors.orange.shade700,
+                                      'Unconfirmed',
+                                      Icons.pending,
+                                    ));
+                          return StatusChip(
+                            label: label,
+                            background: bg,
+                            foreground: fg,
+                            icon: icon,
+                          );
+                        },
+                      ),
+                      flex: 2,
                     ),
                     const Icon(
                       Icons.chevron_right,

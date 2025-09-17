@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import '../../domain/models/income_entry.dart';
 import 'package:palakat_admin/core/widgets/side_drawer.dart';
 import 'package:palakat_admin/core/widgets/info_section.dart';
-import 'package:palakat_admin/core/widgets/compact_status_chip.dart';
+import 'package:palakat_admin/core/widgets/status_chip.dart';
 import 'package:palakat_admin/core/widgets/approver_card.dart';
 import 'package:palakat_admin/core/models/approval_status.dart';
 
@@ -52,20 +52,55 @@ class IncomeDetailDrawer extends StatelessWidget {
           InfoSection(
             title: 'Approval Information',
             children: [
-              InfoRow(
-                label: 'Status',
-                value: entry.approvalStatus.toString(),
-                valueWidget: Align(
-                  alignment: Alignment.centerLeft,
-                  child: CompactStatusChip.forApproval(entry.approvalStatus),
-                ),
-              ),
               InfoRow(label: 'Approval ID', value: entry.approvalId),
               InfoRow(
                 label: 'Approved Date',
                 value: entry.approvedAt != null
                     ? DateFormat('y-MM-dd').format(entry.approvedAt!)
                     : '—',
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          // Current Status (full-width)
+          InfoSection(
+            title: 'Current Status',
+            children: [
+              Builder(
+                builder: (context) {
+                  final (bg, fg, label, icon) = switch (entry.approvalStatus) {
+                    ApprovalStatus.pending => (
+                      Colors.orange.shade100,
+                      Colors.orange.shade800,
+                      'Pending',
+                      Icons.schedule,
+                    ),
+                    ApprovalStatus.approved => (
+                      Colors.green.shade100,
+                      Colors.green.shade800,
+                      'Approved',
+                      Icons.check_circle,
+                    ),
+                    ApprovalStatus.rejected => (
+                      Colors.red.shade100,
+                      Colors.red.shade800,
+                      'Rejected',
+                      Icons.cancel,
+                    ),
+                  };
+                  return StatusChip(
+                    label: label,
+                    background: bg,
+                    foreground: fg,
+                    icon: icon,
+                    elevated: true,
+                    fontSize: 13.5,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                    fullWidth: true,
+                  );
+                },
               ),
             ],
           ),

@@ -70,13 +70,6 @@ class AppSidebar extends StatelessWidget {
                       color: Colors.teal,
                     ),
                     _NavItem(
-                      icon: Icons.check_box_outlined,
-                      label: 'Approvals',
-                      selected: route.startsWith('/approval'),
-                      onTap: () => context.go('/approval'),
-                      color: Colors.cyan,
-                    ),
-                    _NavItem(
                       icon: Icons.event_note,
                       label: 'Activities',
                       selected: route.startsWith('/activities'),
@@ -146,6 +139,13 @@ class AppSidebar extends StatelessWidget {
                       selected: route.startsWith('/document'),
                       onTap: () => context.go('/document'),
                       color: Colors.orange,
+                    ),
+                    _NavItem(
+                      icon: Icons.check_box_outlined,
+                      label: 'Approvals',
+                      selected: route.startsWith('/approval'),
+                      onTap: () => context.go('/approval'),
+                      color: Colors.cyan,
                     ),
                     _NavItem(
                       icon: Icons.receipt_long,
