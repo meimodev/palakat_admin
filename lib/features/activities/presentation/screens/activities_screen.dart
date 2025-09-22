@@ -449,7 +449,7 @@ class _ActivitiesHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
       child: Row(
         children: [
-          _cell(const Text('Name'), flex: 3, style: textStyle),
+          _cell(const Text('Title'), flex: 3, style: textStyle),
           _cell(const Text('Type'), flex: 2, style: textStyle),
           _cell(const Text('Start Date'), flex: 2, style: textStyle),
           _cell(const Text('Supervisor'), flex: 3, style: textStyle),
@@ -495,11 +495,25 @@ class _ActivityRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     _cell(
-                      Text(
-                        activity.title,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            activity.title,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            activity.description,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
                       flex: 3,
                     ),
