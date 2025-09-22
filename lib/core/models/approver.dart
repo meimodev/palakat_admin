@@ -1,14 +1,17 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:palakat_admin/core/models/approval_status.dart';
 
-class ApproverDecision {
-  final String name;
-  final List<String> positions;
-  final ApprovalStatus decision;
-  final DateTime? decisionAt;
-  const ApproverDecision({
-    required this.name,
-    this.positions = const [],
-    required this.decision,
-    this.decisionAt,
-  });
+part 'approver.freezed.dart';
+part 'approver.g.dart';
+
+@freezed
+class ApproverDecision with _$ApproverDecision {
+  const factory ApproverDecision({
+    required String name,
+    @Default([]) List<String> positions,
+    required ApprovalStatus decision,
+    DateTime? decisionAt,
+  }) = _ApproverDecision;
+
+  factory ApproverDecision.fromJson(Map<String, dynamic> json) => _$ApproverDecisionFromJson(json);
 }

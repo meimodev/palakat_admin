@@ -1,119 +1,49 @@
-class ChurchProfile {
-  final String id;
-  final String name;
-  final String address;
-  final String phoneNumber;
-  final String email;
-  final String aboutChurch;
-  final double? latitude;
-  final double? longitude;
-  final String? serviceSchedule;
-  final List<ChurchColumn> columns;
-  final List<ChurchPosition> positions;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  const ChurchProfile({
-    required this.id,
-    required this.name,
-    required this.address,
-    required this.phoneNumber,
-    required this.email,
-    required this.aboutChurch,
-    this.latitude,
-    this.longitude,
-    this.serviceSchedule,
-    required this.columns,
-    required this.positions,
-    required this.createdAt,
-    required this.updatedAt,
-  });
+part 'church_profile.freezed.dart';
+part 'church_profile.g.dart';
 
-  ChurchProfile copyWith({
-    String? id,
-    String? name,
-    String? address,
-    String? phoneNumber,
-    String? email,
-    String? aboutChurch,
+@freezed
+class ChurchProfile with _$ChurchProfile {
+  const factory ChurchProfile({
+    required String id,
+    required String name,
+    required String address,
+    required String phoneNumber,
+    required String email,
+    required String aboutChurch,
     double? latitude,
     double? longitude,
     String? serviceSchedule,
-    List<ChurchColumn>? columns,
-    List<ChurchPosition>? positions,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) {
-    return ChurchProfile(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      address: address ?? this.address,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
-      email: email ?? this.email,
-      aboutChurch: aboutChurch ?? this.aboutChurch,
-      latitude: latitude ?? this.latitude,
-      longitude: longitude ?? this.longitude,
-      serviceSchedule: serviceSchedule ?? this.serviceSchedule,
-      columns: columns ?? this.columns,
-      positions: positions ?? this.positions,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-    );
-  }
+    required List<ChurchColumn> columns,
+    required List<ChurchPosition> positions,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+  }) = _ChurchProfile;
+
+  factory ChurchProfile.fromJson(Map<String, dynamic> json) => _$ChurchProfileFromJson(json);
 }
 
-class ChurchColumn {
-  final String id;
-  final int number;
-  final String name;
-  final DateTime createdAt;
+@freezed
+class ChurchColumn with _$ChurchColumn {
+  const factory ChurchColumn({
+    required String id,
+    required int number,
+    required String name,
+    required DateTime createdAt,
+  }) = _ChurchColumn;
 
-  const ChurchColumn({
-    required this.id,
-    required this.number,
-    required this.name,
-    required this.createdAt,
-  });
-
-  ChurchColumn copyWith({
-    String? id,
-    int? number,
-    String? name,
-    DateTime? createdAt,
-  }) {
-    return ChurchColumn(
-      id: id ?? this.id,
-      number: number ?? this.number,
-      name: name ?? this.name,
-      createdAt: createdAt ?? this.createdAt,
-    );
-  }
+  factory ChurchColumn.fromJson(Map<String, dynamic> json) => _$ChurchColumnFromJson(json);
 }
 
-class ChurchPosition {
-  final String id;
-  final String name;
-  final String? description;
-  final DateTime createdAt;
-
-  const ChurchPosition({
-    required this.id,
-    required this.name,
-    this.description,
-    required this.createdAt,
-  });
-
-  ChurchPosition copyWith({
-    String? id,
-    String? name,
+@freezed
+class ChurchPosition with _$ChurchPosition {
+  const factory ChurchPosition({
+    required String id,
+    required String name,
     String? description,
-    DateTime? createdAt,
-  }) {
-    return ChurchPosition(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      description: description ?? this.description,
-      createdAt: createdAt ?? this.createdAt,
-    );
-  }
+    required DateTime createdAt,
+  }) = _ChurchPosition;
+
+  factory ChurchPosition.fromJson(Map<String, dynamic> json) => _$ChurchPositionFromJson(json);
 }

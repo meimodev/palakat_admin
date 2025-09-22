@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/models/activity.dart';
 import '../../../../core/widgets/side_drawer.dart';
@@ -7,8 +7,11 @@ import '../../../../core/widgets/info_section.dart';
 import '../../../../core/widgets/supervisor_card.dart';
 import '../../../../core/widgets/approver_card.dart';
 import '../../../../core/widgets/status_chip.dart';
+import '../../../../core/services/approver_service.dart';
+import '../../../../core/utils/date_utils.dart';
+import '../../../../core/models/approval_status.dart';
 
-class ActivityDetailView extends StatelessWidget {
+class ActivityDetailView extends ConsumerWidget {
   final Activity activity;
   final VoidCallback onClose;
 
@@ -19,7 +22,11 @@ class ActivityDetailView extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final approvers = ref.watch(activityApproversProvider(activity));
+    final approvalStatus = ref.watch(activityApprovalStatusProvider(activity));
+    final approverService = ref.watch(approverServiceProvider);
+    
     return SideDrawer(
       title: 'Activity Details',
       subtitle: 'View detailed information about this activity',
@@ -50,9 +57,7 @@ class ActivityDetailView extends StatelessWidget {
             children: [
               InfoRow(
                 label: 'Start Date',
-                value: DateFormat(
-                  'MMM dd, yyyy - HH:mm',
-                ).format(activity.startDate),
+                value: AppDateUtils.formatDateTime(activity.startDate),
               ),
             ],
           ),
@@ -72,11 +77,11 @@ class ActivityDetailView extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-          // Approvers (mirrors approval drawer UI)
+          // Approvers (using shared ApproverService)
           InfoSection(
             title: 'Approvers',
             children: [
-              for (final approver in _approversFor(activity))
+              for (final approver in approvers)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Builder(
@@ -87,27 +92,23 @@ class ActivityDetailView extends StatelessWidget {
                       String? dateText;
 
                       switch (approver.decision) {
-                        case _ActApproverDecision.approved:
+                        case ApprovalStatus.approved:
                           icon = Icons.check_circle;
                           color = Colors.green;
                           statusText = 'Approved';
                           if (approver.decisionAt != null) {
-                            final d = approver.decisionAt!;
-                            dateText =
-                                'on ${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+                            dateText = 'on ${AppDateUtils.formatStandardDate(approver.decisionAt!)}';
                           }
                           break;
-                        case _ActApproverDecision.rejected:
+                        case ApprovalStatus.rejected:
                           icon = Icons.cancel;
                           color = Colors.red;
                           statusText = 'Rejected';
                           if (approver.decisionAt != null) {
-                            final d = approver.decisionAt!;
-                            dateText =
-                                'on ${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+                            dateText = 'on ${AppDateUtils.formatStandardDate(approver.decisionAt!)}';
                           }
                           break;
-                        case _ActApproverDecision.pending:
+                        case ApprovalStatus.pending:
                           icon = Icons.pending;
                           color = Colors.orange;
                           statusText = 'Pending';
@@ -168,40 +169,12 @@ class ActivityDetailView extends StatelessWidget {
         children: [
           Builder(
             builder: (context) {
-              final approvers = _approversFor(activity);
-              final hasRejected = approvers.any(
-                    (a) => a.decision == _ActApproverDecision.rejected,
-              );
-              final allApproved = approvers.isNotEmpty && approvers.every(
-                    (a) => a.decision == _ActApproverDecision.approved,
-              );
-
-              final (bg, fg, label, icon) = hasRejected
-                  ? (
-              Colors.red.shade100,
-              Colors.red.shade800,
-              'Rejected',
-              Icons.cancel,
-              )
-                  : (allApproved
-                  ? (
-              Colors.green.shade100,
-              Colors.green.shade800,
-              'Approved',
-              Icons.check_circle,
-              )
-                  : (
-              Colors.orange.shade100,
-              Colors.orange.shade800,
-              'Unconfirmed',
-              Icons.pending,
-              ));
-
+              final statusDisplay = approverService.getStatusDisplay(approvalStatus);
               return StatusChip(
-                label: label,
-                background: bg,
-                foreground: fg,
-                icon: icon,
+                label: statusDisplay.label,
+                background: Color(statusDisplay.colorValue).withValues(alpha: 0.2),
+                foreground: Color(statusDisplay.colorValue),
+                icon: IconData(statusDisplay.iconCodePoint, fontFamily: 'MaterialIcons'),
                 fontSize: 13.5,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                 fullWidth: true,
@@ -308,53 +281,4 @@ class _ActivityTypeChip extends StatelessWidget {
   }
 }
 
-// --- Local approver model and generator for Activity detail (mirrors approvals UI) ---
-
-enum _ActApproverDecision { pending, approved, rejected }
-
-class _ActApprover {
-  final String name;
-  final _ActApproverDecision decision;
-  final DateTime? decisionAt;
-
-  _ActApprover(this.name, this.decision, [this.decisionAt]);
-}
-
-List<_ActApprover> _approversFor(Activity a) {
-  switch (a.status) {
-    case ActivityStatus.planned:
-      return [
-        _ActApprover('Pastor John', _ActApproverDecision.pending),
-      ];
-    case ActivityStatus.ongoing:
-      return [
-        _ActApprover(
-          'Pastor John',
-          _ActApproverDecision.approved,
-          a.startDate.subtract(const Duration(hours: 2)),
-        ),
-        _ActApprover('Deacon Mary', _ActApproverDecision.pending),
-      ];
-    case ActivityStatus.completed:
-      return [
-        _ActApprover(
-          'Pastor John',
-          _ActApproverDecision.approved,
-          a.startDate.subtract(const Duration(days: 1, hours: 3)),
-        ),
-        _ActApprover(
-          'Admin Bob',
-          _ActApproverDecision.approved,
-          a.startDate.subtract(const Duration(days: 1, hours: 1)),
-        ),
-      ];
-    case ActivityStatus.cancelled:
-      return [
-        _ActApprover(
-          'Admin Bob',
-          _ActApproverDecision.rejected,
-          a.startDate.subtract(const Duration(hours: 4)),
-        ),
-      ];
-  }
-}
+// Approver logic moved to shared ApproverService

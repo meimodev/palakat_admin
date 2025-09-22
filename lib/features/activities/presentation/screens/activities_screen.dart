@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/models/activity.dart';
 import '../../../../core/widgets/surface_card.dart';
@@ -8,71 +8,32 @@ import '../../../../core/widgets/date_range_filter.dart';
 import '../widgets/activity_detail_view.dart';
 import '../../../../core/widgets/supervisor_chip.dart';
 import '../../../../core/widgets/status_chip.dart';
+import '../../../../core/services/approver_service.dart';
+import '../../../../core/utils/date_utils.dart';
+import '../../../../core/utils/debouncer.dart';
+import '../../../../core/repositories/activities_repository.dart';
+import '../../../../core/models/approver.dart';
+import '../../../../core/models/approval_status.dart';
+import '../../../../core/models/app_error.dart';
+import '../../../../core/widgets/error_widget.dart';
+import '../../../../core/widgets/loading_widget.dart';
 
-class ActivitiesScreen extends StatefulWidget {
+class ActivitiesScreen extends ConsumerStatefulWidget {
   const ActivitiesScreen({super.key});
 
   @override
-  State<ActivitiesScreen> createState() => _ActivitiesScreenState();
+  ConsumerState<ActivitiesScreen> createState() => _ActivitiesScreenState();
 }
 
-// --- Approver model and chip for Activities (mirrors approvals list UI) ---
-
-enum _ActApproverDecision { pending, approved, rejected }
-
-class _ActApprover {
-  final String name;
-  final _ActApproverDecision decision;
-  final DateTime? decisionAt;
-
-  _ActApprover(this.name, this.decision, [this.decisionAt]);
-}
-
-List<_ActApprover> _approversFor(Activity a) {
-  // Mocked approvers per activity, similar to approvals list behavior
-  // You can later replace this with real data from backend
-  switch (a.status) {
-    case ActivityStatus.planned:
-      return [
-        _ActApprover('Pastor John', _ActApproverDecision.pending),
-      ];
-    case ActivityStatus.ongoing:
-      return [
-        _ActApprover(
-          'Pastor John',
-          _ActApproverDecision.approved,
-          a.startDate.subtract(const Duration(hours: 2)),
-        ),
-        _ActApprover('Deacon Mary', _ActApproverDecision.pending),
-      ];
-    case ActivityStatus.completed:
-      return [
-        _ActApprover(
-          'Pastor John',
-          _ActApproverDecision.approved,
-          a.startDate.subtract(const Duration(days: 1, hours: 3)),
-        ),
-        _ActApprover(
-          'Admin Bob',
-          _ActApproverDecision.approved,
-          a.startDate.subtract(const Duration(days: 1, hours: 1)),
-        ),
-      ];
-    case ActivityStatus.cancelled:
-      return [
-        _ActApprover(
-          'Admin Bob',
-          _ActApproverDecision.rejected,
-          a.startDate.subtract(const Duration(hours: 4)),
-        ),
-      ];
-  }
-}
+// Approver logic moved to shared ApproverService
 
 class _ActivityApproverChip extends StatelessWidget {
-  final _ActApprover approver;
+  final ApproverDecision approver;
 
-  const _ActivityApproverChip({required this.approver});
+  const _ActivityApproverChip({
+    super.key,
+    required this.approver,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -81,25 +42,21 @@ class _ActivityApproverChip extends StatelessWidget {
     Color color;
     String? dateText;
     switch (approver.decision) {
-      case _ActApproverDecision.approved:
+      case ApprovalStatus.approved:
         icon = Icons.check;
         color = Colors.green;
         if (approver.decisionAt != null) {
-          final d = approver.decisionAt!;
-          dateText =
-              '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+          dateText = AppDateUtils.formatStandardDate(approver.decisionAt!);
         }
         break;
-      case _ActApproverDecision.rejected:
+      case ApprovalStatus.rejected:
         icon = Icons.close;
         color = Colors.red;
         if (approver.decisionAt != null) {
-          final d = approver.decisionAt!;
-          dateText =
-              '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+          dateText = AppDateUtils.formatStandardDate(approver.decisionAt!);
         }
         break;
-      case _ActApproverDecision.pending:
+      case ApprovalStatus.pending:
         icon = Icons.watch_later_outlined;
         color = Colors.orange;
         break;
@@ -137,69 +94,81 @@ class _ActivityApproverChip extends StatelessWidget {
   }
 }
 
-class _ActivitiesScreenState extends State<ActivitiesScreen> {
+class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
   final TextEditingController _searchController = TextEditingController();
-  int _rowsPerPage = 5;
-  int _page = 0; // zero-based
-  DateTimeRange? _dateRange;
-
-  late final List<Activity> _allActivities;
+  late final Debouncer _searchDebouncer;
 
   @override
   void initState() {
     super.initState();
-    _allActivities = _generateMockActivities();
+    _searchDebouncer = Debouncer(delay: const Duration(milliseconds: 300));
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchDebouncer.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged() {
+    _searchDebouncer(() {
+      ref.read(activitiesScreenStateProvider.notifier)
+          .updateSearchQuery(_searchController.text);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final screenState = ref.watch(activitiesScreenStateProvider);
+    final activitiesAsync = ref.watch(activitiesAsyncProvider);
+    final screenNotifier = ref.read(activitiesScreenStateProvider.notifier);
+    
+    return Material(
+      color: theme.colorScheme.surface,
+      child: activitiesAsync.when(
+        loading: () => const AppLoadingWidget(
+          message: 'Loading activities...',
+        ),
+        error: (error, stackTrace) => AppErrorWidget(
+          error: error is AppError 
+            ? error 
+            : AppError.unknown('Failed to load activities'),
+          onRetry: () => ref.refresh(activitiesAsyncProvider),
+        ),
+        data: (activities) => _buildActivitiesContent(
+          context, 
+          theme, 
+          screenState, 
+          activities, 
+          screenNotifier,
+        ),
+      ),
+    );
+  }
 
-    bool inDateRange(DateTime d) {
-      if (_dateRange == null) return true;
-      final s = DateUtils.dateOnly(_dateRange!.start);
-      final e = DateUtils.dateOnly(_dateRange!.end);
-      final dd = DateUtils.dateOnly(d);
-      final afterStart = dd.isAtSameMomentAs(s) || dd.isAfter(s);
-      final beforeEnd = dd.isAtSameMomentAs(e) || dd.isBefore(e);
-      return afterStart && beforeEnd;
-    }
-
-    final filtered = _allActivities.where((activity) {
-      final q = _searchController.text.trim().toLowerCase();
-      final startDateStr = DateFormat(
-        'y-MM-dd',
-      ).format(activity.startDate).toLowerCase();
-      final endDateStr = activity.endDate != null
-          ? DateFormat('y-MM-dd').format(activity.endDate!).toLowerCase()
-          : '';
-
-      final matchesQuery =
-          q.isEmpty ||
-          activity.id.toLowerCase().contains(q) ||
-          activity.title.toLowerCase().contains(q) ||
-          activity.description.toLowerCase().contains(q) ||
-          activity.type.displayName.toLowerCase().contains(q) ||
-          activity.status.displayName.toLowerCase().contains(q) ||
-          activity.supervisor.toLowerCase().contains(q) ||
-          (activity.location?.toLowerCase().contains(q) ?? false) ||
-          startDateStr.contains(q) ||
-          endDateStr.contains(q) ||
-          activity.participants.any((p) => p.toLowerCase().contains(q));
-
-      return matchesQuery && inDateRange(activity.startDate);
-    }).toList();
-
-    final total = filtered.length;
-    final start = (_page * _rowsPerPage).clamp(0, total);
-    final end = (start + _rowsPerPage).clamp(0, total);
-    final pageRows = start < end ? filtered.sublist(start, end) : <Activity>[];
+  Widget _buildActivitiesContent(
+    BuildContext context,
+    ThemeData theme,
+    ActivitiesScreenStateData screenState,
+    List<Activity> activities,
+    ActivitiesScreenState screenNotifier,
+  ) {
+    final repository = ref.read(activitiesRepositoryProvider);
+    final filteredActivities = repository.filterActivities(
+      activities,
+      screenState.searchQuery,
+      screenState.dateRange,
+    );
+    final paginatedActivities = repository.getPaginatedActivities(
+      filteredActivities,
+      screenState.page,
+      screenState.rowsPerPage,
+    );
+    
+    final total = filteredActivities.length;
 
     return Material(
       child: SingleChildScrollView(
@@ -231,22 +200,14 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
                             prefixIcon: Icon(Icons.search),
                             border: OutlineInputBorder(),
                           ),
-                          onChanged: (_) => setState(() {
-                            _page = 0;
-                          }),
+                          onChanged: (_) {}, // Handled by debouncer
                         ),
                       ),
                       const SizedBox(width: 8),
                       DateRangeFilter(
-                        value: _dateRange,
-                        onChanged: (r) => setState(() {
-                          _dateRange = r;
-                          _page = 0;
-                        }),
-                        onClear: () => setState(() {
-                          _dateRange = null;
-                          _page = 0;
-                        }),
+                        value: screenState.dateRange,
+                        onChanged: (r) => screenNotifier.updateDateRange(r),
+                        onClear: () => screenNotifier.clearDateRange(),
                       ),
                     ],
                   ),
@@ -258,8 +219,9 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
 
                   // Rows
                   ...[
-                    for (final activity in pageRows)
+                    for (final activity in paginatedActivities)
                       _ActivityRow(
+                        key: ValueKey(activity.id),
                         activity: activity,
                         onTap: () => _showActivityDetail(activity),
                       ),
@@ -268,22 +230,14 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
                   const SizedBox(height: 8),
                   // Pagination
                   PaginationBar(
-                    showingCount: pageRows.length,
+                    showingCount: paginatedActivities.length,
                     totalCount: total,
-                    rowsPerPage: _rowsPerPage,
-                    page: _page,
-                    pageCount: (total / _rowsPerPage).ceil().clamp(1, 9999),
-                    onRowsPerPageChanged: (v) => setState(() {
-                      _rowsPerPage = v;
-                      _page = 0;
-                    }),
-                    onPrev: () => setState(() {
-                      if (_page > 0) _page -= 1;
-                    }),
-                    onNext: () => setState(() {
-                      final maxPage = (total / _rowsPerPage).ceil() - 1;
-                      if (_page < maxPage) _page += 1;
-                    }),
+                    rowsPerPage: screenState.rowsPerPage,
+                    page: screenState.page,
+                    pageCount: (total / screenState.rowsPerPage).ceil().clamp(1, 9999),
+                    onRowsPerPageChanged: (v) => screenNotifier.updateRowsPerPage(v),
+                    onPrev: () => screenNotifier.previousPage(),
+                    onNext: () => screenNotifier.nextPage((total / screenState.rowsPerPage).ceil() - 1),
                   ),
                 ],
               ),
@@ -335,110 +289,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
     );
   }
 
-  List<Activity> _generateMockActivities() {
-    final now = DateTime.now();
-    return [
-      Activity(
-        id: 'ACT-1001',
-        title: 'Sunday Morning Worship',
-        description: 'Weekly worship service with sermon and communion',
-        type: ActivityType.service,
-        status: ActivityStatus.ongoing,
-        startDate: now.subtract(const Duration(days: 0)),
-        endDate: now
-            .subtract(const Duration(days: 0))
-            .add(const Duration(hours: 2)),
-        supervisor: 'Pastor John',
-        supervisorPositions: ['Senior Pastor', 'Head of Worship'],
-        participants: ['Pastor John', 'Worship Team', 'Congregation'],
-        location: 'Main Sanctuary',
-        notes: 'Special guest speaker this week',
-        createdAt: now.subtract(const Duration(days: 7)),
-        updatedAt: now.subtract(const Duration(hours: 1)),
-      ),
-      Activity(
-        id: 'ACT-1002',
-        title: 'Youth Bible Study',
-        description: 'Weekly Bible study for teenagers and young adults',
-        type: ActivityType.service,
-        status: ActivityStatus.planned,
-        startDate: now.add(const Duration(days: 2)),
-        endDate: now.add(const Duration(days: 2, hours: 1, minutes: 30)),
-        supervisor: 'Youth Pastor Sarah',
-        supervisorPositions: ['Youth Pastor', 'Education Coordinator'],
-        participants: ['Youth Pastor Sarah', 'Teen Group'],
-        location: 'Youth Room',
-        createdAt: now.subtract(const Duration(days: 5)),
-        updatedAt: now.subtract(const Duration(days: 2)),
-      ),
-      Activity(
-        id: 'ACT-1003',
-        title: 'Community Food Drive',
-        description: 'Monthly food collection for local food bank',
-        type: ActivityType.event,
-        status: ActivityStatus.completed,
-        startDate: now.subtract(const Duration(days: 10)),
-        endDate: now.subtract(const Duration(days: 8)),
-        supervisor: 'Deacon Mary',
-        supervisorPositions: ['Deacon', 'Outreach Coordinator'],
-        participants: ['Deacon Mary', 'Volunteers', 'Community Members'],
-        location: 'Church Parking Lot',
-        notes: 'Collected 500 pounds of food items',
-        createdAt: now.subtract(const Duration(days: 20)),
-        updatedAt: now.subtract(const Duration(days: 8)),
-      ),
-      Activity(
-        id: 'ACT-1004',
-        title: 'Church Budget Update',
-        description: 'Important announcement regarding church budget changes',
-        type: ActivityType.announcement,
-        status: ActivityStatus.completed,
-        startDate: now.subtract(const Duration(days: 15)),
-        endDate: now
-            .subtract(const Duration(days: 15))
-            .add(const Duration(hours: 2)),
-        supervisor: 'Administrator Bob',
-        supervisorPositions: ['Administrator', 'Financial Secretary'],
-        participants: ['Pastor John', 'Deacon Mary', 'Treasurer', 'Secretary'],
-        location: 'Conference Room',
-        notes: 'Discussed budget and upcoming events',
-        createdAt: now.subtract(const Duration(days: 25)),
-        updatedAt: now.subtract(const Duration(days: 15)),
-      ),
-      Activity(
-        id: 'ACT-1005',
-        title: 'Christmas Concert',
-        description: 'Annual Christmas musical performance',
-        type: ActivityType.event,
-        status: ActivityStatus.planned,
-        startDate: now.add(const Duration(days: 45)),
-        endDate: now.add(const Duration(days: 45, hours: 3)),
-        supervisor: 'Music Director',
-        supervisorPositions: ['Music Director', 'Worship Leader'],
-        participants: ['Choir', 'Orchestra', 'Soloists'],
-        location: 'Main Sanctuary',
-        notes: 'Rehearsals start next month',
-        createdAt: now.subtract(const Duration(days: 30)),
-        updatedAt: now.subtract(const Duration(days: 1)),
-      ),
-      Activity(
-        id: 'ACT-1006',
-        title: 'Fellowship Dinner',
-        description: 'Monthly potluck dinner for church members',
-        type: ActivityType.event,
-        status: ActivityStatus.planned,
-        startDate: now.add(const Duration(days: 7)),
-        endDate: now.add(const Duration(days: 7, hours: 2)),
-        supervisor: 'Fellowship Committee',
-        supervisorPositions: ['Fellowship Coordinator', 'Event Planner'],
-        participants: ['Church Members', 'Families'],
-        location:
-            'Fellowship Hall - Main dining area with kitchen facilities and seating for up to 200 people',
-        createdAt: now.subtract(const Duration(days: 14)),
-        updatedAt: now.subtract(const Duration(days: 3)),
-      ),
-    ];
-  }
+  // Mock data generation moved to ActivitiesRepository
 }
 
 class _ActivitiesHeader extends StatelessWidget {
@@ -466,16 +317,19 @@ class _ActivitiesHeader extends StatelessWidget {
   );
 }
 
-class _ActivityRow extends StatelessWidget {
+class _ActivityRow extends ConsumerWidget {
   final Activity activity;
   final VoidCallback onTap;
 
-  const _ActivityRow({required this.activity, required this.onTap});
+  const _ActivityRow({super.key, required this.activity, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final hoverColor = theme.colorScheme.primary.withValues(alpha: 0.04);
+    final approvers = ref.watch(activityApproversProvider(activity));
+    final approvalStatus = ref.watch(activityApprovalStatusProvider(activity));
+    final approverService = ref.watch(approverServiceProvider);
     return Column(
       children: [
         MouseRegion(
@@ -547,8 +401,8 @@ class _ActivityRow extends StatelessWidget {
                         direction: Axis.vertical,
                         runSpacing: 8,
                         children: [
-                          for (final a in _approversFor(activity))
-                            _ActivityApproverChip(approver: a),
+                          for (final approver in approvers)
+                            _ActivityApproverChip(approver: approver),
                         ],
                       ),
                       flex: 3,
@@ -556,43 +410,12 @@ class _ActivityRow extends StatelessWidget {
                     _cell(
                       Builder(
                         builder: (context) {
-                          // Derive overall approval status from approvers
-                          // - Rejected if any approver rejected
-                          // - Approved if all approvers approved
-                          // - Unconfirmed otherwise
-                          final approvers = _approversFor(activity);
-                          final hasRejected = approvers.any(
-                            (a) => a.decision == _ActApproverDecision.rejected,
-                          );
-                          final allApproved = approvers.isNotEmpty && approvers.every(
-                            (a) => a.decision == _ActApproverDecision.approved,
-                          );
-
-                          final (bg, fg, label, icon) = hasRejected
-                              ? (
-                                  Colors.red.shade50,
-                                  Colors.red.shade700,
-                                  'Rejected',
-                                  Icons.cancel,
-                                )
-                              : (allApproved
-                                  ? (
-                                      Colors.green.shade50,
-                                      Colors.green.shade700,
-                                      'Approved',
-                                      Icons.check_circle,
-                                    )
-                                  : (
-                                      Colors.orange.shade50,
-                                      Colors.orange.shade700,
-                                      'Unconfirmed',
-                                      Icons.pending,
-                                    ));
+                          final statusDisplay = approverService.getStatusDisplay(approvalStatus);
                           return StatusChip(
-                            label: label,
-                            background: bg,
-                            foreground: fg,
-                            icon: icon,
+                            label: statusDisplay.label,
+                            background: Color(statusDisplay.colorValue).withValues(alpha: 0.1),
+                            foreground: Color(statusDisplay.colorValue),
+                            icon: IconData(statusDisplay.iconCodePoint, fontFamily: 'MaterialIcons'),
                           );
                         },
                       ),
@@ -615,7 +438,7 @@ class _ActivityRow extends StatelessWidget {
   }
 
   String _formatDate(DateTime d) {
-    return '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    return AppDateUtils.formatStandardDate(d);
   }
 
   Widget _cell(Widget child, {int flex = 1}) =>

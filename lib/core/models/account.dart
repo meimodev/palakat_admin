@@ -1,83 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'account.freezed.dart';
+part 'account.g.dart';
 
 enum UserRole {
+  @JsonValue('administrator')
   administrator,
+  @JsonValue('moderator')
   moderator,
+  @JsonValue('member')
   member,
 }
 
 enum AccountStatus {
+  @JsonValue('active')
   active,
+  @JsonValue('inactive')
   inactive,
+  @JsonValue('suspended')
   suspended,
 }
 
-class Account {
-  final String id;
-  final String name;
-  final String email;
-  final String phone;
-  final String? profileImageUrl;
-  final UserRole role;
-  final AccountStatus status;
-  final DateTime memberSince;
-  final DateTime? lastLogin;
-  final String? department;
-  final String? position;
-  final bool emailVerified;
-  final bool phoneVerified;
-  final bool twoFactorEnabled;
+@freezed
+class Account with _$Account {
+  const Account._();
 
-  const Account({
-    required this.id,
-    required this.name,
-    required this.email,
-    required this.phone,
-    this.profileImageUrl,
-    required this.role,
-    required this.status,
-    required this.memberSince,
-    this.lastLogin,
-    this.department,
-    this.position,
-    this.emailVerified = false,
-    this.phoneVerified = false,
-    this.twoFactorEnabled = false,
-  });
-
-  Account copyWith({
-    String? id,
-    String? name,
-    String? email,
-    String? phone,
+  const factory Account({
+    required String id,
+    required String name,
+    required String email,
+    required String phone,
     String? profileImageUrl,
-    UserRole? role,
-    AccountStatus? status,
-    DateTime? memberSince,
+    required UserRole role,
+    required AccountStatus status,
+    required DateTime memberSince,
     DateTime? lastLogin,
     String? department,
     String? position,
-    bool? emailVerified,
-    bool? phoneVerified,
-    bool? twoFactorEnabled,
-  }) {
-    return Account(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      email: email ?? this.email,
-      phone: phone ?? this.phone,
-      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
-      role: role ?? this.role,
-      status: status ?? this.status,
-      memberSince: memberSince ?? this.memberSince,
-      lastLogin: lastLogin ?? this.lastLogin,
-      department: department ?? this.department,
-      position: position ?? this.position,
-      emailVerified: emailVerified ?? this.emailVerified,
-      phoneVerified: phoneVerified ?? this.phoneVerified,
-      twoFactorEnabled: twoFactorEnabled ?? this.twoFactorEnabled,
-    );
-  }
+    @Default(false) bool emailVerified,
+    @Default(false) bool phoneVerified,
+    @Default(false) bool twoFactorEnabled,
+  }) = _Account;
+
+  factory Account.fromJson(Map<String, dynamic> json) => _$AccountFromJson(json);
 
   String get roleDisplayName {
     switch (role) {

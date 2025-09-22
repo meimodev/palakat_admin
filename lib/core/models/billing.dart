@@ -1,109 +1,85 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'billing.freezed.dart';
+part 'billing.g.dart';
+
 enum BillingType {
+  @JsonValue('subscription')
   subscription,
+  @JsonValue('oneTime')
   oneTime,
+  @JsonValue('recurring')
   recurring,
 }
 
 enum BillingStatus {
+  @JsonValue('pending')
   pending,
+  @JsonValue('paid')
   paid,
+  @JsonValue('overdue')
   overdue,
+  @JsonValue('cancelled')
   cancelled,
+  @JsonValue('refunded')
   refunded,
 }
 
 enum PaymentMethod {
+  @JsonValue('creditCard')
   creditCard,
+  @JsonValue('bankTransfer')
   bankTransfer,
+  @JsonValue('cash')
   cash,
+  @JsonValue('check')
   check,
+  @JsonValue('digitalWallet')
   digitalWallet,
 }
 
-class BillingItem {
-  final String id;
-  final String description;
-  final double amount;
-  final BillingType type;
-  final BillingStatus status;
-  final DateTime dueDate;
-  final DateTime? paidDate;
-  final PaymentMethod? paymentMethod;
-  final String? transactionId;
-  final String? notes;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+@freezed
+class BillingItem with _$BillingItem {
+  const BillingItem._();
 
-  BillingItem({
-    required this.id,
-    required this.description,
-    required this.amount,
-    required this.type,
-    required this.status,
-    required this.dueDate,
-    this.paidDate,
-    this.paymentMethod,
-    this.transactionId,
-    this.notes,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  BillingItem copyWith({
-    String? id,
-    String? description,
-    double? amount,
-    BillingType? type,
-    BillingStatus? status,
-    DateTime? dueDate,
+  const factory BillingItem({
+    required String id,
+    required String description,
+    required double amount,
+    required BillingType type,
+    required BillingStatus status,
+    required DateTime dueDate,
     DateTime? paidDate,
     PaymentMethod? paymentMethod,
     String? transactionId,
     String? notes,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) {
-    return BillingItem(
-      id: id ?? this.id,
-      description: description ?? this.description,
-      amount: amount ?? this.amount,
-      type: type ?? this.type,
-      status: status ?? this.status,
-      dueDate: dueDate ?? this.dueDate,
-      paidDate: paidDate ?? this.paidDate,
-      paymentMethod: paymentMethod ?? this.paymentMethod,
-      transactionId: transactionId ?? this.transactionId,
-      notes: notes ?? this.notes,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-    );
-  }
+    required DateTime createdAt,
+    required DateTime updatedAt,
+  }) = _BillingItem;
+
+  factory BillingItem.fromJson(Map<String, dynamic> json) => _$BillingItemFromJson(json);
 
   bool get isOverdue => status == BillingStatus.pending && DateTime.now().isAfter(dueDate);
   bool get isPaid => status == BillingStatus.paid;
   String get formattedAmount => '\$${amount.toStringAsFixed(2)}';
 }
 
-class PaymentHistory {
-  final String id;
-  final String billingItemId;
-  final double amount;
-  final PaymentMethod paymentMethod;
-  final String? transactionId;
-  final DateTime paymentDate;
-  final String? notes;
-  final String processedBy;
+@freezed
+class PaymentHistory with _$PaymentHistory {
+  const PaymentHistory._();
 
-  PaymentHistory({
-    required this.id,
-    required this.billingItemId,
-    required this.amount,
-    required this.paymentMethod,
-    this.transactionId,
-    required this.paymentDate,
-    this.notes,
-    required this.processedBy,
-  });
+  const factory PaymentHistory({
+    required String id,
+    required String billingItemId,
+    required double amount,
+    required PaymentMethod paymentMethod,
+    String? transactionId,
+    required DateTime paymentDate,
+    String? notes,
+    required String processedBy,
+  }) = _PaymentHistory;
+
+  factory PaymentHistory.fromJson(Map<String, dynamic> json) => _$PaymentHistoryFromJson(json);
 
   String get formattedAmount => '\$${amount.toStringAsFixed(2)}';
 }

@@ -1,82 +1,48 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'activity.freezed.dart';
+part 'activity.g.dart';
+
 enum ActivityType {
+  @JsonValue('service')
   service,
+  @JsonValue('event')
   event,
+  @JsonValue('announcement')
   announcement,
 }
 
 enum ActivityStatus {
+  @JsonValue('planned')
   planned,
+  @JsonValue('ongoing')
   ongoing,
+  @JsonValue('completed')
   completed,
+  @JsonValue('cancelled')
   cancelled,
 }
 
-class Activity {
-  final String id;
-  final String title;
-  final String description;
-  final ActivityType type;
-  final ActivityStatus status;
-  final DateTime startDate;
-  final DateTime? endDate;
-  final String supervisor;
-  final List<String> supervisorPositions;
-  final List<String> participants;
-  final String? location;
-  final String? notes;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  Activity({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.type,
-    required this.status,
-    required this.startDate,
-    this.endDate,
-    required this.supervisor,
-    required this.supervisorPositions,
-    required this.participants,
-    this.location,
-    this.notes,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  Activity copyWith({
-    String? id,
-    String? title,
-    String? description,
-    ActivityType? type,
-    ActivityStatus? status,
-    DateTime? startDate,
+@freezed
+class Activity with _$Activity {
+  const factory Activity({
+    required String id,
+    required String title,
+    required String description,
+    required ActivityType type,
+    required ActivityStatus status,
+    required DateTime startDate,
     DateTime? endDate,
-    String? supervisor,
-    List<String>? supervisorPositions,
-    List<String>? participants,
+    required String supervisor,
+    required List<String> supervisorPositions,
+    required List<String> participants,
     String? location,
     String? notes,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) {
-    return Activity(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      description: description ?? this.description,
-      type: type ?? this.type,
-      status: status ?? this.status,
-      startDate: startDate ?? this.startDate,
-      endDate: endDate ?? this.endDate,
-      supervisor: supervisor ?? this.supervisor,
-      supervisorPositions: supervisorPositions ?? this.supervisorPositions,
-      participants: participants ?? this.participants,
-      location: location ?? this.location,
-      notes: notes ?? this.notes,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-    );
-  }
+    required DateTime createdAt,
+    required DateTime updatedAt,
+  }) = _Activity;
+
+  factory Activity.fromJson(Map<String, dynamic> json) => _$ActivityFromJson(json);
 }
 
 extension ActivityTypeExtension on ActivityType {

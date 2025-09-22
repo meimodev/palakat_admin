@@ -1,53 +1,26 @@
-class Membership {
-  final String name;
-  final String email;
-  final String phone;
-  final List<String> positions;
-  final bool isBaptized;
-  final bool isSidi;
-  final bool isLinked;
-  final bool isMarried;
-  final String? gender;
-  final DateTime? dateOfBirth;
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  const Membership({
-    required this.name,
-    required this.email,
-    required this.phone,
-    required this.positions,
-    this.isBaptized = false,
-    this.isSidi = false,
-    this.isLinked = false,
-    this.isMarried = false,
-    this.gender,
-    this.dateOfBirth,
-  });
+part 'membership.freezed.dart';
+part 'membership.g.dart';
 
-  Membership copyWith({
-    String? name,
-    String? email,
-    String? phone,
-    List<String>? positions,
-    bool? isBaptized,
-    bool? isSidi,
-    bool? isLinked,
-    bool? isMarried,
+@freezed
+class Membership with _$Membership {
+  const Membership._();
+
+  const factory Membership({
+    required String name,
+    required String email,
+    required String phone,
+    required List<String> positions,
+    @Default(false) bool isBaptized,
+    @Default(false) bool isSidi,
+    @Default(false) bool isLinked,
+    @Default(false) bool isMarried,
     String? gender,
     DateTime? dateOfBirth,
-  }) {
-    return Membership(
-      name: name ?? this.name,
-      email: email ?? this.email,
-      phone: phone ?? this.phone,
-      positions: positions ?? List.from(this.positions),
-      isBaptized: isBaptized ?? this.isBaptized,
-      isSidi: isSidi ?? this.isSidi,
-      isLinked: isLinked ?? this.isLinked,
-      isMarried: isMarried ?? this.isMarried,
-      gender: gender ?? this.gender,
-      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
-    );
-  }
+  }) = _Membership;
+
+  factory Membership.fromJson(Map<String, dynamic> json) => _$MembershipFromJson(json);
 
   // Helper method to create an AppMember with a single position for backward compatibility
   factory Membership.singlePosition({
