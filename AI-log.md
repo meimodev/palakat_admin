@@ -37,3 +37,11 @@
   - Updated ActivitiesRepository with async state handling and proper error management
   - Added activitiesAsyncProvider with FutureProvider for proper async state management
   - Currently updating activities_screen.dart to integrate new error handling and loading states
+
+## 2025-09-22T20:50:22+08:00 — Model: Cascade
+- [prompt] "refactor the print statement in dio interceptor to using dev.log"
+- [actions]
+  - Updated lib/core/services/http_service.dart to replace print statements in Dio interceptors with dart:developer log calls
+  - Added import for dart:developer as dev at the top of the file
+  - Kept PrettyDioLogger interceptor intact
+  - Used appropriate log levels (info ~800, error 1000) and logger name "HttpService"

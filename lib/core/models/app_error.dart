@@ -21,7 +21,7 @@ enum ErrorType {
 }
 
 @freezed
-class AppError with _$AppError {
+abstract class AppError with _$AppError {
   const AppError._();
 
   const factory AppError({

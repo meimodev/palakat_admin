@@ -90,9 +90,6 @@ class _ApprovalScreenState extends ConsumerState<ApprovalScreen> {
       screenState.page,
       screenState.rowsPerPage,
     );
-    
-    final total = filteredRules.length;
-
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

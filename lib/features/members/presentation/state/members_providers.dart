@@ -1,19 +1,18 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:palakat_admin/core/models/membership.dart';
 
+part 'members_providers.g.dart';
 
-
-// Dummy Members
-final membersProvider =
-    StateNotifierProvider<MembersNotifier, List<Membership>>((ref) {
-      return MembersNotifier();
-    });
-
-class MembersNotifier extends StateNotifier<List<Membership>> {
-  MembersNotifier() : super(_generateMembers());
+// Dummy Members using Riverpod 3.x syntax
+@riverpod
+class MembersNotifier extends _$MembersNotifier {
+  @override
+  List<Membership> build() {
+    return _generateMembers();
+  }
 
   static List<Membership> _generateMembers() {
     final allPositions = [
@@ -60,9 +59,10 @@ class MembersNotifier extends StateNotifier<List<Membership>> {
 }
 
 // For backward compatibility
-final membersAllProvider = Provider<List<Membership>>((ref) {
+@riverpod
+List<Membership> membersAll(Ref ref) {
   return ref.watch(membersProvider);
-});
+}
 
 @immutable
 class MembersFilterState {
@@ -91,8 +91,12 @@ class MembersFilterState {
       );
 }
 
-class MembersFilterNotifier extends StateNotifier<MembersFilterState> {
-  MembersFilterNotifier() : super(const MembersFilterState());
+@riverpod
+class MembersFilterNotifier extends _$MembersFilterNotifier {
+  @override
+  MembersFilterState build() {
+    return const MembersFilterState();
+  }
 
   void setSearch(String value) =>
       state = state.copyWith(search: value, page: 0);
@@ -110,12 +114,8 @@ class MembersFilterNotifier extends StateNotifier<MembersFilterState> {
   }
 }
 
-final membersFilterProvider =
-    StateNotifierProvider<MembersFilterNotifier, MembersFilterState>((ref) {
-      return MembersFilterNotifier();
-    });
-
-final membersFilteredProvider = Provider<List<Membership>>((ref) {
+@riverpod
+List<Membership> membersFiltered(Ref ref) {
   final filters = ref.watch(membersFilterProvider);
   final all = ref.watch(membersAllProvider);
   return all.where((u) {
@@ -128,17 +128,18 @@ final membersFilteredProvider = Provider<List<Membership>>((ref) {
     
     return matchesSearch && matchesPosition;
   }).toList();
-});
+}
 
 // Provider for available positions
-final availablePositionsProvider = Provider<List<String>>((ref) {
+@riverpod
+List<String> availablePositions(Ref ref) {
   final all = ref.watch(membersAllProvider);
   final allPositions = <String>{};
   for (final member in all) {
     allPositions.addAll(member.positions);
   }
   return allPositions.toList()..sort();
-});
+}
 
 class MembersPageSlice {
   final List<Membership> rows;
@@ -146,7 +147,8 @@ class MembersPageSlice {
   const MembersPageSlice(this.rows, this.total);
 }
 
-final membersPageProvider = Provider<MembersPageSlice>((ref) {
+@riverpod
+MembersPageSlice membersPage(Ref ref) {
   final filters = ref.watch(membersFilterProvider);
   final list = ref.watch(membersFilteredProvider);
   final start = filters.page * filters.rowsPerPage;
@@ -155,4 +157,4 @@ final membersPageProvider = Provider<MembersPageSlice>((ref) {
       ? <Membership>[]
       : list.sublist(start, end);
   return MembersPageSlice(pageRows, list.length);
-});
+}

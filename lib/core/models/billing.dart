@@ -39,7 +39,7 @@ enum PaymentMethod {
 }
 
 @freezed
-class BillingItem with _$BillingItem {
+abstract class BillingItem with _$BillingItem {
   const BillingItem._();
 
   const factory BillingItem({
@@ -65,7 +65,7 @@ class BillingItem with _$BillingItem {
 }
 
 @freezed
-class PaymentHistory with _$PaymentHistory {
+abstract class PaymentHistory with _$PaymentHistory {
   const PaymentHistory._();
 
   const factory PaymentHistory({
@@ -130,3 +130,4 @@ extension PaymentMethodExtension on PaymentMethod {
     }
   }
 }
+

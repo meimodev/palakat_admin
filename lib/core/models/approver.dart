@@ -5,7 +5,7 @@ part 'approver.freezed.dart';
 part 'approver.g.dart';
 
 @freezed
-class ApproverDecision with _$ApproverDecision {
+abstract class ApproverDecision with _$ApproverDecision {
   const factory ApproverDecision({
     required String name,
     @Default([]) List<String> positions,

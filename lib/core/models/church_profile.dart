@@ -4,7 +4,7 @@ part 'church_profile.freezed.dart';
 part 'church_profile.g.dart';
 
 @freezed
-class ChurchProfile with _$ChurchProfile {
+abstract class ChurchProfile with _$ChurchProfile {
   const factory ChurchProfile({
     required String id,
     required String name,
@@ -25,7 +25,7 @@ class ChurchProfile with _$ChurchProfile {
 }
 
 @freezed
-class ChurchColumn with _$ChurchColumn {
+abstract class ChurchColumn with _$ChurchColumn {
   const factory ChurchColumn({
     required String id,
     required int number,
@@ -37,7 +37,7 @@ class ChurchColumn with _$ChurchColumn {
 }
 
 @freezed
-class ChurchPosition with _$ChurchPosition {
+abstract class ChurchPosition with _$ChurchPosition {
   const factory ChurchPosition({
     required String id,
     required String name,

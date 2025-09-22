@@ -31,7 +31,6 @@ class _ActivityApproverChip extends StatelessWidget {
   final ApproverDecision approver;
 
   const _ActivityApproverChip({
-    super.key,
     required this.approver,
   });
 

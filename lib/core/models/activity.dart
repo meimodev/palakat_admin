@@ -24,7 +24,7 @@ enum ActivityStatus {
 }
 
 @freezed
-class Activity with _$Activity {
+abstract class Activity with _$Activity {
   const factory Activity({
     required String id,
     required String title,

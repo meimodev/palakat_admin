@@ -4,7 +4,7 @@ part 'document.freezed.dart';
 part 'document.g.dart';
 
 @freezed
-class Document with _$Document {
+abstract class Document with _$Document {
   const factory Document({
     required String id,
     required String name,
@@ -18,7 +18,7 @@ class Document with _$Document {
 }
 
 @freezed
-class DocumentSettings with _$DocumentSettings {
+abstract class DocumentSettings with _$DocumentSettings {
   const factory DocumentSettings({
     required String identityNumberTemplate,
   }) = _DocumentSettings;

@@ -22,7 +22,8 @@ sealed class AsyncState<T> with _$AsyncState<T> {
 }
 
 /// Extension methods for AsyncState to make it easier to work with
-extension AsyncStateExtensions<T> on AsyncState<T> {
+/// Note: Renamed to avoid conflicts with Freezed's generated methods
+extension AsyncStateHelpers<T> on AsyncState<T> {
   /// Check if the state is loading
   bool get isLoading => this is AsyncLoading<T>;
   
@@ -33,39 +34,23 @@ extension AsyncStateExtensions<T> on AsyncState<T> {
   bool get hasError => this is AsyncError<T>;
   
   /// Get the data if available, null otherwise
-  T? get data => switch (this) {
+  T? get dataOrNull => switch (this) {
     AsyncSuccess<T> success => success.data,
     _ => null,
   };
   
   /// Get the error if available, null otherwise
-  AppError? get error => switch (this) {
+  AppError? get errorOrNull => switch (this) {
     AsyncError<T> error => error.error,
     _ => null,
   };
   
   /// Transform the data if in success state
-  AsyncState<R> map<R>(R Function(T data) transform) {
+  AsyncState<R> mapData<R>(R Function(T data) transform) {
     return switch (this) {
-      AsyncSuccess<T> success => AsyncSuccess(transform(success.data)),
-      AsyncLoading<T> _ => AsyncLoading<R>(),
-      AsyncError<T> error => AsyncError<R>(error.error),
+      AsyncSuccess<T> success => AsyncState.success(transform(success.data)),
+      AsyncLoading<T> _ => AsyncState.loading(),
+      AsyncError<T> error => AsyncState.error(error.error),
     };
-  }
-  
-  /// Handle different states with callbacks
-  R when<R>({
-    required R Function() loading,
-    required R Function(T data) success,
-    required R Function(AppError error) error,
-  }) {
-    if (this is AsyncLoading<T>) {
-      return loading();
-    } else if (this is AsyncSuccess<T>) {
-      return success((this as AsyncSuccess<T>).data);
-    } else if (this is AsyncError<T>) {
-      return error((this as AsyncError<T>).error);
-    }
-    throw StateError('Unknown AsyncState type');
   }
 }

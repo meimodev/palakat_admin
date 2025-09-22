@@ -1,5 +1,6 @@
+import 'dart:developer' as dev;
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -32,28 +33,33 @@ class HttpService {
   /// Setup interceptors for logging and error handling
   void _setupInterceptors() {
     // Pretty logger interceptor for debugging
-    _dio.interceptors.add(
-      PrettyDioLogger(
-        requestHeader: true,
-        requestBody: true,
-        responseBody: true,
-        responseHeader: false,
-        error: true,
-        compact: true,
-        maxWidth: 90,
-        enabled: true, // Set to false in production
-      ),
-    );
+    if (kDebugMode) {
+      _dio.interceptors.add(
+        PrettyDioLogger(
+          requestHeader: true,
+          requestBody: true,
+          responseBody: true,
+          responseHeader: false,
+          error: true,
+          compact: true,
+          maxWidth: 90,
+          enabled: true, // Set to false in production
+        ),
+      );
+    }
 
     // Custom error interceptor
     _dio.interceptors.add(
       InterceptorsWrapper(
         onError: (error, handler) {
           // Log error details
-          print('🔴 HTTP Error: ${error.message}');
+          dev.log('HTTP Error: ${error.message}',
+              name: 'HttpService', level: 1000, error: error);
           if (error.response != null) {
-            print('🔴 Status Code: ${error.response?.statusCode}');
-            print('🔴 Response Data: ${error.response?.data}');
+            dev.log('Status Code: ${error.response?.statusCode}',
+                name: 'HttpService', level: 1000);
+            dev.log('Response Data: ${error.response?.data}',
+                name: 'HttpService', level: 1000);
           }
           
           // Continue with the error
@@ -63,11 +69,13 @@ class HttpService {
           // Add authentication headers if needed
           // options.headers['Authorization'] = 'Bearer $token';
           
-          print('🚀 Request: ${options.method} ${options.path}');
+          dev.log('Request: ${options.method} ${options.path}',
+              name: 'HttpService', level: 800);
           handler.next(options);
         },
         onResponse: (response, handler) {
-          print('✅ Response: ${response.statusCode} ${response.requestOptions.path}');
+          dev.log('Response: ${response.statusCode} ${response.requestOptions.path}',
+              name: 'HttpService', level: 800);
           handler.next(response);
         },
       ),
