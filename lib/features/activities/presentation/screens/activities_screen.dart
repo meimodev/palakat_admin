@@ -128,7 +128,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
       color: theme.colorScheme.surface,
       child: activitiesAsync.when(
         loading: () => const AppLoadingWidget(message: 'Loading activities...'),
-        error: (error, stackTrace) => AppErrorWidget(
+        error: (error, stackTrace) => CompactErrorWidget(
           error: error is AppError
               ? error
               : AppError.unknown('Failed to load activities'),

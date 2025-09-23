@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:palakat_admin/features/auth/application/auth_controller.dart';
+import 'package:palakat_admin/core/models/app_error.dart';
+import 'package:palakat_admin/core/widgets/error_widget.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
@@ -17,6 +19,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   bool _obscure = true;
 
   @override
+  void initState() {
+    super.initState();
+
+  }
+
+  @override
   void dispose() {
     _identifierCtrl.dispose();
     _passwordCtrl.dispose();
@@ -26,24 +34,54 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final notifier = ref.read(authControllerProvider.notifier);
+    final raw = _identifierCtrl.text.trim();
+    final identifier = raw.contains('@') ? raw : _normalizePhoneDigits(raw);
     await notifier.signIn(
-      identifier: _identifierCtrl.text.trim(),
+      identifier: identifier,
       password: _passwordCtrl.text,
     );
-    final state = ref.watch(authControllerProvider);
-    state.when(
-      data: (auth) {
-        if (auth != null && mounted) {
-          context.go('/dashboard');
-        }
-      },
-      loading: () {},
-      error: (e, st) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sign-in failed: $e')),
-        );
-      },
-    );
+  }
+
+  bool _isValidEmail(String input) {
+    final email = input.trim();
+    if (email.isEmpty) return false;
+    // Simple RFC5322-ish pattern sufficient for validation UI
+    final emailRegex = RegExp(r'^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$', caseSensitive: false);
+    return emailRegex.hasMatch(email);
+  }
+
+  bool _isValidPhone(String input) {
+    // Local phone only: digits only, 12-13 digits, no country code '+'
+    final digits = _normalizePhoneDigits(input);
+    return RegExp(r'^[0-9]{12,13}$').hasMatch(digits);
+  }
+
+  String _normalizePhoneDigits(String input) {
+    return input.replaceAll(RegExp(r'[^0-9]'), '');
+  }
+
+  // Prevent recursive formatting in onChanged
+  bool _isFormatting = false;
+
+  String _formatLocalPhone(String digits) {
+    // Group per 4 digits; when length == 13, last group is 5 digits (4-4-5). Use '-' as separator.
+    if (digits.isEmpty) return digits;
+    final len = digits.length;
+    // Cap at 13 for display
+    final capped = len > 13 ? digits.substring(0, 13) : digits;
+    final n = capped.length;
+
+    if (n <= 4) return capped; // up to 4: raw
+    if (n <= 8) {
+      // 4 + remainder
+      return '${capped.substring(0, 4)}-${capped.substring(4)}';
+    }
+    if (n < 13) {
+      // 9..12: 4-4-remaining (1..4)
+      return '${capped.substring(0, 4)}-${capped.substring(4, 8)}-${capped.substring(8)}';
+    }
+    // n == 13: 4-4-5
+    return '${capped.substring(0, 4)}-${capped.substring(4, 8)}-${capped.substring(8, 13)}';
   }
 
   @override
@@ -51,62 +89,142 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     final asyncAuth = ref.watch(authControllerProvider);
     final isLoading = asyncAuth.isLoading;
 
+    // Listen to auth state changes to handle navigation and errors centrally
+    ref.listen(authControllerProvider, (previous, next) {
+      next.whenOrNull(
+        data: (auth) {
+          if (auth != null && mounted) {
+            context.go('/dashboard');
+          }
+        },
+        error: (e, st) {
+          // No SnackBar here; error will be shown inline below the form
+        },
+      );
+    });
+
+    final theme = Theme.of(context);
     return Scaffold(
       body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: Card(
-            elevation: 3,
-            margin: const EdgeInsets.all(24),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text('Sign in', style: Theme.of(context).textTheme.headlineMedium),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _identifierCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Username / Email / Phone',
-                        border: OutlineInputBorder(),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Card(
+              clipBehavior: Clip.antiAlias,
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: theme.colorScheme.primaryContainer,
+                            child: Icon(Icons.lock_outline, color: theme.colorScheme.onPrimaryContainer),
+                          ),
+                        ],
                       ),
-                      textInputAction: TextInputAction.next,
-                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter your identifier' : null,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _passwordCtrl,
-                      obscureText: _obscure,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        border: const OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon: Icon(_obscure ? Icons.visibility : Icons.visibility_off),
-                          onPressed: () => setState(() => _obscure = !_obscure),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Welcome back',
+                        style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Sign in to your admin account',
+                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Identifier
+                      TextFormField(
+                        controller: _identifierCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Email or Phone',
+                          hintText: 'e.g. name@company.com or 1234-5678-9012',
+                          border: OutlineInputBorder(),
+                        ),
+                        textInputAction: TextInputAction.next,
+                        keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.username, AutofillHints.email],
+                        onChanged: (value) {
+                          if (_isFormatting) return;
+                          // If it contains letters (likely email or mixed), don't format
+                          if (value.contains('@') || RegExp(r'[A-Za-z]').hasMatch(value)) return;
+                          // Strip all non-digits and limit to 13 (no country code)
+                          final digits = _normalizePhoneDigits(value);
+                          final limited = digits.length > 13 ? digits.substring(0, 13) : digits;
+                          final formatted = _formatLocalPhone(limited);
+                          if (formatted != value) {
+                            _isFormatting = true;
+                            final baseOffset = formatted.length;
+                            _identifierCtrl.value = TextEditingValue(
+                              text: formatted,
+                              selection: TextSelection.collapsed(offset: baseOffset),
+                            );
+                            _isFormatting = false;
+                          }
+                        },
+                        validator: (v) {
+                          final value = v?.trim() ?? '';
+                          if (value.isEmpty) return 'Please enter your email or phone number';
+                          if (_isValidEmail(value) || _isValidPhone(value)) return null;
+                          return 'Enter a valid email address or phone number';
+                        },
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Password
+                      TextFormField(
+                        controller: _passwordCtrl,
+                        obscureText: _obscure,
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          border: const OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            icon: Icon(_obscure ? Icons.visibility : Icons.visibility_off),
+                            onPressed: () => setState(() => _obscure = !_obscure),
+                          ),
+                        ),
+                        autofillHints: const [AutofillHints.password],
+                        onFieldSubmitted: (_) => _submit(),
+                        validator: (v) => (v == null || v.isEmpty) ? 'Please enter your password' : null,
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      SizedBox(
+                        height: 48,
+                        child: FilledButton(
+                          onPressed: isLoading ? null : _submit,
+                          child: isLoading
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Text('Sign in'),
                         ),
                       ),
-                      onFieldSubmitted: (_) => _submit(),
-                      validator: (v) => (v == null || v.isEmpty) ? 'Please enter your password' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: isLoading ? null : _submit,
-                        child: isLoading
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Text('Sign in'),
-                      ),
-                    ),
-                  ],
+
+                      const SizedBox(height: 12),
+                      if (asyncAuth.hasError) ...[
+                        CompactErrorWidget(
+                          error: asyncAuth.error as AppError,
+                          isSignInContext: true,
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
             ),

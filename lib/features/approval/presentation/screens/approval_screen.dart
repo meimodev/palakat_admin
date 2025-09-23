@@ -55,7 +55,7 @@ class _ApprovalScreenState extends ConsumerState<ApprovalScreen> {
         loading: () => const AppLoadingWidget(
           message: 'Loading approval rules...',
         ),
-        error: (error, stackTrace) => AppErrorWidget(
+        error: (error, stackTrace) => CompactErrorWidget(
           error: error is AppError 
             ? error 
             : AppError.unknown('Failed to load approval rules'),

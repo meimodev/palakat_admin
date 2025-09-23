@@ -1,3 +1,32 @@
+## 2025-09-23T12:43:38+08:00 — Model: Cascade
+- [prompt] "redesign the sign in screen UI to better suit the already establish design system"
+- [actions]
+  - Redesigned `lib/features/auth/presentation/screens/signin_screen.dart` UI to align with the app’s design system:
+    - Added welcoming header (icon, title, subtitle) centered at the top.
+    - Wrapped content in `SingleChildScrollView` with max width 480 and subtle Card.
+    - Improved spacing, labels, hints, and autofill hints for inputs.
+    - Kept inline `CompactErrorWidget` below the form for errors.
+    - Switched primary button to `FilledButton` and added a `Forgot password?` link.
+## 2025-09-23T12:29:44+08:00 — Model: Cascade
+- [prompt] "add validation to identifier field, check if its an email or a phone"
+- [actions]
+  - Updated `lib/features/auth/presentation/screens/signin_screen.dart` to validate the identifier as email or phone.
+  - Added helpers `_isValidEmail` (RFC5322-ish) and `_isValidPhone` (supports optional `+`, min 8 digits, up to 15).
+  - Enhanced the identifier `TextFormField.validator` to require a valid email address or phone number.
+## 2025-09-23T11:23:01+08:00 — Model: Cascade
+- [prompt] "on error_widget.dart access the status code to make the widget adapt depend on status code and message from server"
+- [actions]
+  - Enhanced `lib/core/widgets/error_widget.dart` `CompactErrorWidget` to adapt icon and label based on `AppError.statusCode` (401, 403, 404, 422, 5xx, etc.).
+  - Implemented server message extraction from `AppError.details`:
+    - Parse JSON or JSON-like substrings from `details` and surface common keys (message/error/detail/title/msg) or validation errors.
+    - Fallback heuristics (substring after `message:`) and truncation for long details.
+  - Removed unused `enums.dart` import and added `dart:convert` for JSON parsing.
+## 2025-09-23T11:02:58+08:00 — Model: Cascade
+- [prompt] "make a compact inline error widget bellow the form to inform user about errors occured"
+- [actions]
+  - Integrated `CompactErrorWidget` below the sign-in form in `lib/features/auth/presentation/screens/signin_screen.dart`.
+  - Imported `lib/core/widgets/error_widget.dart`.
+  - Removed SnackBar from `ref.listen` and now display inline error with optional retry calling `_submit()`.
 # AI Execution Log
 ## 2025-09-23T07:33:57+08:00 — Model: Cascade
 - [prompt] "replace shared_preference and its implementation with hive. instead of just saving the token related data, also save the whole account data by using toJson and fromJson to retrieve it back. together use this mechanism to determine if the user already logged in or not"
@@ -234,3 +263,13 @@
   - Searched the entire codebase for `DioException`, `on DioException`, `_handleDioError`, and `DioError` usages.
   - Confirmed only `api_service.dart` and `auth_repository.dart` directly handled Dio; both now refactored to use `ErrorMapper`.
   - Verified no other repositories/services contain custom Dio mappings or leftover handlers.
+
+## 2025-09-23T10:58:05+08:00 — Model: Cascade
+- [prompt] "handle errors occured on sign in screen"
+- [actions]
+  - Updated `lib/features/auth/presentation/screens/signin_screen.dart` to add robust error handling.
+  - Imported `AppError` and set up `ref.listen(authControllerProvider, ...)` in `initState` to:
+    - Navigate to `/dashboard` on successful sign-in.
+    - Show a SnackBar with `AppError.userMessage` on error; fallback to a generic message if not `AppError`.
+  - Simplified `_submit()` to only call `signIn()` and rely on the listener for UI reactions.
+  - Kept loading state to disable the Sign in button and show a progress indicator.

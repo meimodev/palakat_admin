@@ -1,10 +1,12 @@
+
+import 'dart:developer' as dev show log;
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:palakat_admin/core/models/auth_response.dart';
 import 'package:palakat_admin/core/models/auth_tokens.dart';
 
 /// Auth persistence service backed by Hive. Stores the full AuthResponse
 /// (tokens + account) as JSON, enabling session restore and account caching.
-class AuthService {
+class LocalStorageService {
   static const _kAuthBox = 'auth';
   static const _kAuthKey = 'auth.response';
 
@@ -19,6 +21,7 @@ class AuthService {
 
   Future<void> init() async {
     await _ensureBoxOpen();
+    dev.log('AuthService.init: loading cached auth from Hive', name: 'AuthService');
     _loadFromBox();
   }
 
@@ -34,6 +37,7 @@ class AuthService {
     final box = Hive.box(_kAuthBox);
     _auth = auth;
     await box.put(_kAuthKey, auth.toJson());
+    dev.log('AuthService.saveAuth: saved auth to Hive', name: 'AuthService');
   }
 
   Future<void> saveTokens(AuthTokens tokens) async {
@@ -52,6 +56,7 @@ class AuthService {
   static Future<void> initHive() async {
     await Hive.initFlutter();
     await Hive.openBox(_kAuthBox);
+    dev.log('LocalStorageService.initHive: Hive initialized and auth box opened', name: 'LocalStorageService');
   }
 
   Future<void> _ensureBoxOpen() async {
@@ -67,14 +72,14 @@ class AuthService {
       try {
         final normalized = _normalizeJson(data) as Map<String, dynamic>;
         _auth = AuthResponse.fromJson(normalized);
+        dev.log('AuthService._loadFromBox: $_auth', name: 'AuthService');
       } catch (_) {
         _auth = null;
+        dev.log('AuthService._loadFromBox: failed to parse cached auth, ignoring', name: 'AuthService');
       }
     }
   }
 
-  /// Recursively convert dynamic Maps/Lists (e.g., LinkedMap<dynamic, dynamic>) into
-  /// Map<String, dynamic> and List<dynamic> trees suitable for json_serializable.
   dynamic _normalizeJson(dynamic value) {
     if (value is Map) {
       final result = <String, dynamic>{};
@@ -88,3 +93,6 @@ class AuthService {
     return value;
   }
 }
+
+// Backward compatibility alias for previous name
+typedef AuthService = LocalStorageService;
