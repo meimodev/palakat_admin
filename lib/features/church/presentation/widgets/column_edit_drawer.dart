@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/side_drawer.dart';
-import '../../../../core/models/church_profile.dart';
+import '../../../../core/models/column.dart' as cm;
 import '../../../../core/widgets/info_section.dart';
 
 class ColumnEditDrawer extends StatefulWidget {
-  final ChurchColumn? column;
-  final Function(ChurchColumn) onSave;
+  final cm.Column? column;
+  final Function(cm.Column) onSave;
   final VoidCallback? onDelete;
   final VoidCallback onClose;
 
@@ -43,7 +43,7 @@ class _ColumnEditDrawerState extends State<ColumnEditDrawer> {
     if (_formKey.currentState!.validate()) {
       final column =
           widget.column?.copyWith(number: int.parse(_numberController.text)) ??
-          ChurchColumn(
+          cm.Column(
             id: DateTime.now().millisecondsSinceEpoch.toString(),
             number: int.parse(_numberController.text),
             name:

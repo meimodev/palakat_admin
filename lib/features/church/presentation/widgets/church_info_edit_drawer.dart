@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/side_drawer.dart';
-import '../../../../core/models/church_profile.dart';
+import '../../../../core/models/church.dart';
 import '../../../../core/widgets/info_section.dart';
 
 class ChurchInfoEditDrawer extends StatefulWidget {
-  final ChurchProfile churchProfile;
-  final Function(ChurchProfile) onSave;
+  final Church church;
+  final Function(Church) onSave;
   final VoidCallback onClose;
 
   const ChurchInfoEditDrawer({
     super.key,
-    required this.churchProfile,
+    required this.church,
     required this.onSave,
     required this.onClose,
   });
@@ -25,22 +25,16 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
   late TextEditingController _addressController;
   late TextEditingController _phoneController;
   late TextEditingController _emailController;
-  late TextEditingController _aboutController;
-  late TextEditingController _latitudeController;
-  late TextEditingController _longitudeController;
-  late TextEditingController _serviceScheduleController;
+  late TextEditingController _descriptionController;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.churchProfile.name);
-    _addressController = TextEditingController(text: widget.churchProfile.address);
-    _phoneController = TextEditingController(text: widget.churchProfile.phoneNumber);
-    _emailController = TextEditingController(text: widget.churchProfile.email);
-    _aboutController = TextEditingController(text: widget.churchProfile.aboutChurch);
-    _latitudeController = TextEditingController(text: widget.churchProfile.latitude?.toString() ?? '');
-    _longitudeController = TextEditingController(text: widget.churchProfile.longitude?.toString() ?? '');
-    _serviceScheduleController = TextEditingController(text: widget.churchProfile.serviceSchedule ?? '');
+    _nameController = TextEditingController(text: widget.church.name);
+    _addressController = TextEditingController(text: widget.church.location.name);
+    _phoneController = TextEditingController(text: widget.church.phoneNumber ?? '');
+    _emailController = TextEditingController(text: widget.church.email ?? '');
+    _descriptionController = TextEditingController(text: widget.church.description ?? '');
   }
 
   @override
@@ -49,32 +43,25 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
     _addressController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
-    _aboutController.dispose();
-    _latitudeController.dispose();
-    _longitudeController.dispose();
-    _serviceScheduleController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
   void _saveChanges() {
     if (_formKey.currentState!.validate()) {
-      final updatedProfile = widget.churchProfile.copyWith(
+      final updatedChurch = widget.church.copyWith(
         name: _nameController.text,
-        address: _addressController.text,
-        phoneNumber: _phoneController.text,
-        email: _emailController.text,
-        aboutChurch: _aboutController.text,
-        latitude: _latitudeController.text.isEmpty ? null : double.tryParse(_latitudeController.text),
-        longitude: _longitudeController.text.isEmpty ? null : double.tryParse(_longitudeController.text),
-        serviceSchedule: _serviceScheduleController.text.isEmpty ? null : _serviceScheduleController.text,
+        phoneNumber: _phoneController.text.isEmpty ? null : _phoneController.text,
+        email: _emailController.text.isEmpty ? null : _emailController.text,
+        description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
         updatedAt: DateTime.now(),
       );
       
-      widget.onSave(updatedProfile);
+      widget.onSave(updatedChurch);
       widget.onClose();
       
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Church profile updated successfully')),
+        const SnackBar(content: Text('Church updated successfully')),
       );
     }
   }
@@ -134,7 +121,7 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
                   children: [
                     Expanded(
                       child: _FormField(
-                        label: 'Phone Number',
+                        label: 'Phone Number (Optional)',
                         child: TextFormField(
                           controller: _phoneController,
                           keyboardType: TextInputType.phone,
@@ -146,14 +133,20 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
                             filled: true,
                             fillColor: theme.colorScheme.surface,
                           ),
-                          validator: (value) => value?.isEmpty == true ? 'Phone number is required' : null,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) return null;
+                            // Basic phone sanity check
+                            final digits = value.replaceAll(RegExp(r'[^0-9+]'), '');
+                            if (digits.length < 8) return 'Please enter a valid phone number';
+                            return null;
+                          },
                         ),
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: _FormField(
-                        label: 'Email',
+                        label: 'Email (Optional)',
                         child: TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
@@ -166,8 +159,8 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
                             fillColor: theme.colorScheme.surface,
                           ),
                           validator: (value) {
-                            if (value?.isEmpty == true) return 'Email is required';
-                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
+                            if (value == null || value.isEmpty) return null;
+                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
                               return 'Please enter a valid email';
                             }
                             return null;
@@ -179,12 +172,12 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
                 ),
                 const SizedBox(height: 16),
                 _FormField(
-                  label: 'About the Church',
+                  label: 'Description (Optional)',
                   child: TextFormField(
-                    controller: _aboutController,
+                    controller: _descriptionController,
                     maxLines: 4,
                     decoration: InputDecoration(
-                      hintText: 'Describe your church...',
+                      hintText: 'Describe your church (visible to members)',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -192,94 +185,8 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
                       fillColor: theme.colorScheme.surface,
                       alignLabelWithHint: true,
                     ),
-                    validator: (value) => value?.isEmpty == true ? 'About the church is required' : null,
-                  ),
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Location Information Section
-            InfoSection(
-              title: 'Location Information',
-              titleSpacing: 16,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _FormField(
-                        label: 'Latitude (Optional)',
-                        child: TextFormField(
-                          controller: _latitudeController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: InputDecoration(
-                            hintText: 'e.g., 14.5995',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            filled: true,
-                            fillColor: theme.colorScheme.surface,
-                          ),
-                          validator: (value) {
-                            if (value?.isNotEmpty == true && double.tryParse(value!) == null) {
-                              return 'Please enter a valid latitude';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _FormField(
-                        label: 'Longitude (Optional)',
-                        child: TextFormField(
-                          controller: _longitudeController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: InputDecoration(
-                            hintText: 'e.g., 120.9842',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            filled: true,
-                            fillColor: theme.colorScheme.surface,
-                          ),
-                          validator: (value) {
-                            if (value?.isNotEmpty == true && double.tryParse(value!) == null) {
-                              return 'Please enter a valid longitude';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Service Information Section
-            InfoSection(
-              title: 'Service Information',
-              titleSpacing: 16,
-              children: [
-                _FormField(
-                  label: 'General Service Schedule (Optional)',
-                  child: TextFormField(
-                    controller: _serviceScheduleController,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                      hintText: 'e.g., Sunday Service: 9:00 AM - 11:00 AM\nWednesday Prayer: 7:00 PM - 8:00 PM',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      filled: true,
-                      fillColor: theme.colorScheme.surface,
-                      alignLabelWithHint: true,
-                    ),
+                    // Optional
+                    validator: (_) => null,
                   ),
                 ),
               ],

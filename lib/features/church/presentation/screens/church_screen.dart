@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/expandable_surface_card.dart';
-import '../../../../core/models/church_profile.dart';
+import '../../../../core/models/church.dart';
+import '../../../../core/models/column.dart' as cm;
+import '../../../../core/models/member_position.dart';
+import '../../../../core/models/membership.dart';
+import '../../../../core/models/location.dart';
 import '../widgets/church_info_edit_drawer.dart';
 import '../widgets/column_edit_drawer.dart';
 import '../widgets/position_edit_drawer.dart';
@@ -13,98 +17,148 @@ class ChurchScreen extends StatefulWidget {
 }
 
 class _ChurchScreenState extends State<ChurchScreen> {
-  late ChurchProfile _churchProfile;
+  late Church _church;
 
   @override
   void initState() {
     super.initState();
-    _churchProfile = _generateMockChurchProfile();
+    _church = _generateMockChurch();
   }
 
-  ChurchProfile _generateMockChurchProfile() {
-    return ChurchProfile(
-      id: '1',
+  Church _generateMockChurch() {
+    return Church(
+      id: 1,
       name: 'Grace Community Church',
-      address: '123 Blessing Ave, Faith City, FS 12345',
       phoneNumber: '(123) 456-7890',
       email: 'contact@gracecommunity.com',
-      aboutChurch:
+      description:
           'Grace Community Church is a family of believers dedicated to knowing God and making Him known. We are committed to the teachings of the Bible and fostering a community of faith, hope, and love.',
+      location: Location(
+        id: 1,
+        name: '123 Blessing Ave, Faith City, FS 12345',
+        latitude: 14.5995,
+        longitude: 120.9842,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
       columns: [
-        ChurchColumn(
+        cm.Column(
           id: '1',
           number: 101,
           name: 'Alpha',
           createdAt: DateTime.now(),
         ),
-        ChurchColumn(
+        cm.Column(
           id: '2',
           number: 102,
           name: 'Beta',
           createdAt: DateTime.now(),
         ),
-        ChurchColumn(
+        cm.Column(
           id: '3',
           number: 103,
           name: 'Gamma',
           createdAt: DateTime.now(),
         ),
-        ChurchColumn(
+        cm.Column(
           id: '4',
           number: 201,
           name: 'Delta',
           createdAt: DateTime.now(),
         ),
-        ChurchColumn(
+        cm.Column(
           id: '5',
           number: 202,
           name: 'Epsilon',
           createdAt: DateTime.now(),
         ),
-        ChurchColumn(
+        cm.Column(
           id: '6',
           number: 203,
           name: 'Zeta',
           createdAt: DateTime.now(),
         ),
-        ChurchColumn(
-          id: '7',
-          number: 301,
-          name: 'Eta',
-          createdAt: DateTime.now(),
-        ),
-        ChurchColumn(
+        cm.Column(id: '7', number: 301, name: 'Eta', createdAt: DateTime.now()),
+        cm.Column(
           id: '8',
           number: 302,
           name: 'Theta',
           createdAt: DateTime.now(),
         ),
       ],
-      positions: [
-        ChurchPosition(id: '1', name: 'Pastor', createdAt: DateTime.now()),
-        ChurchPosition(id: '2', name: 'Deacon', createdAt: DateTime.now()),
-        ChurchPosition(id: '3', name: 'Elder', createdAt: DateTime.now()),
-        ChurchPosition(id: '4', name: 'Member', createdAt: DateTime.now()),
-        ChurchPosition(
-          id: '5',
+      memberships: const <Membership>[],
+      membershipPositions: [
+        MemberPosition(
+          id: 1,
+          churchId: 1,
+          columnId: 1,
+          name: 'Pastor',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        MemberPosition(
+          id: 2,
+          churchId: 1,
+          columnId: 1,
+          name: 'Deacon',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        MemberPosition(
+          id: 3,
+          churchId: 1,
+          columnId: 2,
+          name: 'Elder',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        MemberPosition(
+          id: 4,
+          churchId: 1,
+          columnId: 2,
+          name: 'Member',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        MemberPosition(
+          id: 5,
+          churchId: 1,
+          columnId: 3,
           name: 'Choir Member',
           createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
         ),
-        ChurchPosition(id: '6', name: 'BPMS', createdAt: DateTime.now()),
-        ChurchPosition(
-          id: '7',
+        MemberPosition(
+          id: 6,
+          churchId: 1,
+          columnId: 3,
+          name: 'BPMS',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        MemberPosition(
+          id: 7,
+          churchId: 1,
+          columnId: 4,
           name: 'Choir Leader',
           createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
         ),
-        ChurchPosition(
-          id: '8',
+        MemberPosition(
+          id: 8,
+          churchId: 1,
+          columnId: 5,
           name: 'Sunday School Teacher',
           createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
         ),
-        ChurchPosition(
-          id: '9',
+        MemberPosition(
+          id: 9,
+          churchId: 1,
+          columnId: 6,
           name: 'Youth Leader',
           createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
         ),
       ],
       createdAt: DateTime.now(),
@@ -124,10 +178,10 @@ class _ChurchScreenState extends State<ChurchScreen> {
           alignment: Alignment.centerRight,
           child: Material(
             child: ChurchInfoEditDrawer(
-              churchProfile: _churchProfile,
-              onSave: (updatedProfile) {
+              church: _church,
+              onSave: (updatedChurch) {
                 setState(() {
-                  _churchProfile = updatedProfile;
+                  _church = updatedChurch;
                 });
               },
               onClose: () => Navigator.of(context).pop(),
@@ -150,7 +204,7 @@ class _ChurchScreenState extends State<ChurchScreen> {
     );
   }
 
-  void _openColumnEditDrawer(ChurchColumn column) {
+  void _openColumnEditDrawer(cm.Column column) {
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -165,28 +219,24 @@ class _ChurchScreenState extends State<ChurchScreen> {
               column: column,
               onSave: (updatedColumn) {
                 setState(() {
-                  final index = _churchProfile.columns.indexWhere(
+                  final index = _church.columns.indexWhere(
                     (c) => c.id == column.id,
                   );
                   if (index != -1) {
-                    final updatedColumns = List<ChurchColumn>.from(
-                      _churchProfile.columns,
+                    final updatedColumns = List<cm.Column>.from(
+                      _church.columns,
                     );
                     updatedColumns[index] = updatedColumn;
-                    _churchProfile = _churchProfile.copyWith(
-                      columns: updatedColumns,
-                    );
+                    _church = _church.copyWith(columns: updatedColumns);
                   }
                 });
               },
               onDelete: () {
                 setState(() {
-                  final updatedColumns = _churchProfile.columns
+                  final updatedColumns = _church.columns
                       .where((c) => c.id != column.id)
                       .toList();
-                  _churchProfile = _churchProfile.copyWith(
-                    columns: updatedColumns,
-                  );
+                  _church = _church.copyWith(columns: updatedColumns);
                 });
               },
               onClose: () => Navigator.of(context).pop(),
@@ -224,10 +274,9 @@ class _ChurchScreenState extends State<ChurchScreen> {
               column: null,
               onSave: (newColumn) {
                 setState(() {
-                  final updated = List<ChurchColumn>.from(
-                    _churchProfile.columns,
-                  )..add(newColumn);
-                  _churchProfile = _churchProfile.copyWith(columns: updated);
+                  final updated = List<cm.Column>.from(_church.columns)
+                    ..add(newColumn);
+                  _church = _church.copyWith(columns: updated);
                 });
               },
               onClose: () => Navigator.of(context).pop(),
@@ -250,7 +299,7 @@ class _ChurchScreenState extends State<ChurchScreen> {
     );
   }
 
-  void _openPositionEditDrawer(ChurchPosition position) {
+  void _openPositionEditDrawer(MemberPosition position) {
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -265,27 +314,27 @@ class _ChurchScreenState extends State<ChurchScreen> {
               position: position,
               onSave: (updatedPosition) {
                 setState(() {
-                  final index = _churchProfile.positions.indexWhere(
+                  final index = _church.membershipPositions.indexWhere(
                     (p) => p.id == position.id,
                   );
                   if (index != -1) {
-                    final updatedPositions = List<ChurchPosition>.from(
-                      _churchProfile.positions,
+                    final updatedPositions = List<MemberPosition>.from(
+                      _church.membershipPositions,
                     );
                     updatedPositions[index] = updatedPosition;
-                    _churchProfile = _churchProfile.copyWith(
-                      positions: updatedPositions,
+                    _church = _church.copyWith(
+                      membershipPositions: updatedPositions,
                     );
                   }
                 });
               },
               onDelete: () {
                 setState(() {
-                  final updatedPositions = _churchProfile.positions
+                  final updatedPositions = _church.membershipPositions
                       .where((p) => p.id != position.id)
                       .toList();
-                  _churchProfile = _churchProfile.copyWith(
-                    positions: updatedPositions,
+                  _church = _church.copyWith(
+                    membershipPositions: updatedPositions,
                   );
                 });
               },
@@ -324,10 +373,10 @@ class _ChurchScreenState extends State<ChurchScreen> {
               position: null,
               onSave: (newPosition) {
                 setState(() {
-                  final updated = List<ChurchPosition>.from(
-                    _churchProfile.positions,
+                  final updated = List<MemberPosition>.from(
+                    _church.membershipPositions,
                   )..add(newPosition);
-                  _churchProfile = _churchProfile.copyWith(positions: updated);
+                  _church = _church.copyWith(membershipPositions: updated);
                 });
               },
               onClose: () => Navigator.of(context).pop(),
@@ -403,67 +452,54 @@ class _ChurchScreenState extends State<ChurchScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 16),
-          _buildInfoRow('Church Name', _churchProfile.name, theme),
-          const SizedBox(height: 16),
-          _buildInfoRow('Address', _churchProfile.address, theme),
+          _buildInfoRow('Church Name', _church.name, theme),
           const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: _buildInfoRow(
                   'Phone Number',
-                  _churchProfile.phoneNumber,
+                  _church.phoneNumber ?? '-',
                   theme,
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildInfoRow('Email', _churchProfile.email, theme),
+                child: _buildInfoRow('Email', _church.email ?? '-', theme),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildInfoRow('Address', _church.location.name, theme),
+
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildInfoRow(
+                  'Longitude',
+                  _church.location.longitude.toString(),
+                  theme,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildInfoRow(
+                  'Latitude',
+                  _church.location.latitude.toString(),
+                  theme,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 16),
           _buildInfoRow(
             'About the Church',
-            _churchProfile.aboutChurch,
+            _church.description ?? '-',
             theme,
             maxLines: 3,
           ),
           const SizedBox(height: 16),
-
-          // Location Information
-          if (_churchProfile.latitude != null &&
-              _churchProfile.longitude != null) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: _buildInfoRow(
-                    'Latitude',
-                    _churchProfile.latitude!.toString(),
-                    theme,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildInfoRow(
-                    'Longitude',
-                    _churchProfile.longitude!.toString(),
-                    theme,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-          ],
-
-          // Service Schedule
-          if (_churchProfile.serviceSchedule != null)
-            _buildInfoRow(
-              'Service Schedule',
-              _churchProfile.serviceSchedule!,
-              theme,
-              maxLines: 3,
-            ),
         ],
       ),
     );
@@ -499,7 +535,7 @@ class _ChurchScreenState extends State<ChurchScreen> {
     return ExpandableSurfaceCard(
       title: 'Column Management',
       subtitle:
-          'Manage your church columns. Total columns: ${_churchProfile.columns.length}',
+          'Manage your church columns. Total columns: ${_church.columns.length}',
       trailing: ElevatedButton.icon(
         onPressed: _openAddColumnDrawer,
         icon: const Icon(Icons.add),
@@ -513,8 +549,8 @@ class _ChurchScreenState extends State<ChurchScreen> {
         children: [
           const SizedBox(height: 16),
           // Column List
-          ...List.generate(_churchProfile.columns.length, (index) {
-            final column = _churchProfile.columns[index];
+          ...List.generate(_church.columns.length, (index) {
+            final column = _church.columns[index];
             final hoverColor = theme.colorScheme.primary.withValues(
               alpha: 0.04,
             );
@@ -578,7 +614,7 @@ class _ChurchScreenState extends State<ChurchScreen> {
     return ExpandableSurfaceCard(
       title: 'Position Management',
       subtitle:
-          'Manage member positions. Total positions: ${_churchProfile.positions.length}',
+          'Manage member positions. Total positions: ${_church.membershipPositions.length}',
       trailing: ElevatedButton.icon(
         onPressed: _openAddPositionDrawer,
         icon: const Icon(Icons.add),
@@ -592,8 +628,8 @@ class _ChurchScreenState extends State<ChurchScreen> {
         children: [
           const SizedBox(height: 16),
           // Position List (no header)
-          ...List.generate(_churchProfile.positions.length, (index) {
-            final position = _churchProfile.positions[index];
+          ...List.generate(_church.membershipPositions.length, (index) {
+            final position = _church.membershipPositions[index];
             final hoverColor = theme.colorScheme.primary.withValues(
               alpha: 0.04,
             );
@@ -625,19 +661,10 @@ class _ChurchScreenState extends State<ChurchScreen> {
                             style: theme.textTheme.bodyMedium,
                           ),
                         ),
-                        Text(
-                          '${_getMembersForPosition(position.id).length} members',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.only(left: 8),
-                          child: Icon(
-                            Icons.chevron_right,
-                            size: 18,
-                            color: Colors.black54,
-                          ),
+                        const Icon(
+                          Icons.chevron_right,
+                          size: 18,
+                          color: Colors.black54,
                         ),
                       ],
                     ),
@@ -649,20 +676,6 @@ class _ChurchScreenState extends State<ChurchScreen> {
         ],
       ),
     );
-  }
-
-  // Mock method to get members for a position - replace with actual data source
-  List<String> _getMembersForPosition(String positionId) {
-    // This is mock data - replace with actual member data from your data source
-    final mockMembers = {
-      'pos1': ['John Doe', 'Jane Smith'],
-      'pos2': ['Mike Johnson', 'Sarah Wilson', 'David Brown'],
-      'pos3': ['Emily Davis'],
-    };
-
-    // For now, return mock data based on position ID
-    // In a real app, you'd query your member database
-    return mockMembers[positionId] ?? [];
   }
 
   // Mock method to get members for a column - replace with actual data source

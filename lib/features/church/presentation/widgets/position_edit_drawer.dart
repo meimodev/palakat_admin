@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/side_drawer.dart';
-import '../../../../core/models/church_profile.dart';
+import '../../../../core/models/member_position.dart';
 import '../../../../core/widgets/info_section.dart';
 
 class PositionEditDrawer extends StatefulWidget {
-  final ChurchPosition? position;
-  final Function(ChurchPosition) onSave;
+  final MemberPosition? position;
+  final Function(MemberPosition) onSave;
   final VoidCallback? onDelete;
   final VoidCallback onClose;
 
@@ -41,10 +41,13 @@ class _PositionEditDrawerState extends State<PositionEditDrawer> {
     if (_formKey.currentState!.validate()) {
       final position =
           widget.position?.copyWith(name: _nameController.text) ??
-          ChurchPosition(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
+          MemberPosition(
+            id: DateTime.now().millisecondsSinceEpoch, // temp id for mock
+            churchId: 0,
+            columnId: 0,
             name: _nameController.text,
             createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
           );
 
       widget.onSave(position);
@@ -140,7 +143,7 @@ class _PositionEditDrawerState extends State<PositionEditDrawer> {
               InfoSection(
                 title: 'Members in this Position',
                 titleSpacing: 16,
-                children: [_MembersListWidget(positionId: widget.position!.id)],
+                children: [_MembersListWidget(positionId: widget.position!.id.toString())],
               ),
             ],
           ],

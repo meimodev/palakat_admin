@@ -1,3 +1,28 @@
+## 2025-09-23T15:39:28+08:00 — Model: Cascade
+- [prompt] "fix errors"
+- [actions]
+  - Updated `lib/features/church/presentation/screens/church_screen.dart` to import `location.dart` and supply a required `Location` instance when constructing `Church` (since `location` is now non-nullable in the model).
+  - Verified code generation was already up to date from previous step; no additional codegen required.
+
+## 2025-09-23T15:32:03+08:00 — Model: Cascade
+- [prompt] "yes add a nullable location. Location is a new model that consist of int id, string name, double latitude, double longitude, dateTime createdAt, dateTime updatedAt"
+- [actions]
+  - Created new Freezed model `lib/core/models/location.dart` with fields: `id`, `name`, `latitude`, `longitude`, `createdAt`, `updatedAt`.
+  - Updated `lib/core/models/church.dart` to import `location.dart` and include `Location? location` while keeping `int? locationId`.
+  - Ran code generation: `flutter pub run build_runner build -d` (success; generated Location and updated Church outputs).
+
+## 2025-09-23T15:16:03+08:00 — Model: Cascade
+- [prompt] "refactor the church model according to image"
+- [actions]
+  - Refactored `lib/core/models/church.dart` to match the schema from the image:
+    - `id: int`, `name`, `address`, optional `phoneNumber` and `email` (nullable), optional `description` (renamed from `aboutChurch`), optional `locationId: int?`.
+    - Removed `latitude`, `longitude`, and `serviceSchedule`.
+    - Kept `columns: List<Column>`, added `memberships: List<Membership>` and `membershipPositions: List<MemberPosition>`.
+  - Updated UI to align with new fields:
+    - `lib/features/church/presentation/screens/church_screen.dart`: updated mock data, switched from `positions` to `membershipPositions`, removed UI for location/service schedule, used `description` instead of `aboutChurch`, changed `id` to `int`.
+    - `lib/features/church/presentation/widgets/church_info_edit_drawer.dart`: replaced `aboutChurch` with `description`, removed latitude/longitude/service schedule inputs, made phone/email optional with relaxed validators, updated `copyWith`.
+  - Ran code generation: `flutter pub run build_runner build -d` (success; generated files updated).
+
 ## 2025-09-23T12:43:38+08:00 — Model: Cascade
 - [prompt] "redesign the sign in screen UI to better suit the already establish design system"
 - [actions]
@@ -273,3 +298,63 @@
     - Show a SnackBar with `AppError.userMessage` on error; fallback to a generic message if not `AppError`.
   - Simplified `_submit()` to only call `signIn()` and rely on the listener for UI reactions.
   - Kept loading state to disable the Sign in button and show a progress indicator.
+
+## 2025-09-23T13:12:00+08:00 — Model: Cascade
+- [prompt] "on sidebar change the current account information using the locally saved account information"
+- [actions]
+  - Updated `lib/core/widgets/sidebar.dart` to read the cached account from `authControllerProvider`.
+  - Converted `AppSidebar` to a `ConsumerWidget` and imported `flutter_riverpod` and `auth_controller.dart`.
+  - Replaced hardcoded user name and phone with dynamic values from `AuthResponse.account` (name, phone), including initials.
+
+## 2025-09-23T13:20:51+08:00 — Model: Cascade
+- [prompt] "format the phone to group if 4 - 4 - 4/5 digits"
+- [actions]
+  - Added `_formatPhone` helper in `lib/core/widgets/sidebar.dart` that:
+    - Preserves leading `+` and strips non-digits.
+    - Formats 12 digits as `XXXX-XXXX-XXXX` and 13 digits as `XXXX-XXXX-XXXXX`.
+    - Falls back to original when not 12/13 digits.
+  - Applied the formatter to the displayed phone in the sidebar footer.
+
+## 2025-09-23T13:50:27+08:00 — Model: Cascade
+- [prompt] "rename the ChurchProfile class to Church, also change any context that related to this class"
+- [actions]
+  - Renamed the `ChurchProfile` Freezed model class to `Church` in `lib/core/models/church_profile.dart` (constructor, mixin, private class, and `fromJson`).
+  - Updated usages in UI:
+    - `lib/features/church/presentation/screens/church_screen.dart`: switched type from `ChurchProfile` to `Church`, renamed locals (`_churchProfile` -> `_church`), and updated edit drawer call to pass `church:`.
+    - `lib/features/church/presentation/widgets/church_info_edit_drawer.dart`: refactored props to `Church church`, `Function(Church) onSave`, and adjusted field access/copyWith.
+  - Kept the model filename as `church_profile.dart` to reuse existing part files and avoid breaking imports; fixed imports accordingly.
+  - Regenerated code with `flutter pub run build_runner build -d` to update Freezed/JSON outputs successfully.
+
+## 2025-09-23T14:09:40+08:00 — Model: Cascade
+- [prompt] "yes please"
+- [actions]
+  - Renamed model file `lib/core/models/church_profile.dart` -> `lib/core/models/church.dart` (git mv to preserve history).
+  - Updated Freezed/JSON part filenames inside the model to `church.freezed.dart` and `church.g.dart`.
+  - Updated imports to the new path in:
+    - `lib/features/church/presentation/screens/church_screen.dart`
+    - `lib/features/church/presentation/widgets/church_info_edit_drawer.dart`
+    - `lib/features/church/presentation/widgets/column_edit_drawer.dart`
+    - `lib/features/church/presentation/widgets/position_edit_drawer.dart`
+  - Verified no remaining references to `church_profile.dart` or `ChurchProfile`.
+  - Regenerated code with `flutter pub run build_runner build -d`; new generated files `church.freezed.dart` and `church.g.dart` created.
+
+## 2025-09-23T14:56:42+08:00 — Model: Cascade
+- [prompt] "also refactor ChurchColumn to Column and move this model to a sepparate file. also refactor to remove ChurchPosition and replace that with MemberPosition instead"
+- [actions]
+  - Created new model `lib/core/models/column.dart` (Freezed + JSON) defining `Column { id, number, name, createdAt }`.
+  - Refactored `lib/core/models/church.dart` to:
+    - Remove embedded `ChurchColumn` and `ChurchPosition` types.
+    - Use `List<models.Column>` (aliased) for `columns` and `List<MemberPosition>` for `positions`.
+    - Import `column.dart` as `models` and `member_position.dart`.
+  - Updated UI and widgets:
+    - `lib/features/church/presentation/screens/church_screen.dart`: import new models, update mock data and method signatures to use `cm.Column` and `MemberPosition`.
+    - `lib/features/church/presentation/widgets/column_edit_drawer.dart`: import `column.dart` as `cm` and update types/creation.
+    - `lib/features/church/presentation/widgets/position_edit_drawer.dart`: switch to `MemberPosition` and update creation logic.
+  - Ran `flutter pub run build_runner build -d` successfully to generate `column.freezed.dart` and `column.g.dart`, and update `church.*` parts.
+  - Verified no remaining references to `ChurchColumn` or `ChurchPosition` in source files.
+
+## 2025-09-23T14:59:00+08:00 — Model: Cascade
+- [prompt] "Append a new log entry documenting refactor: ChurchColumn->Column (new file), ChurchPosition->MemberPosition updates, imports and codegen, with the given timestamp."
+- [actions]
+  - Documented the refactor of `ChurchColumn` to `Column` in a separate file and the replacement of `ChurchPosition` with `MemberPosition`.
+  - Updated imports and regenerated code with `flutter pub run build_runner build -d`.
