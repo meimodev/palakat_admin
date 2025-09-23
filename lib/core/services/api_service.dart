@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
+import 'package:palakat_admin/core/constants/enums.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/activity.dart';
 import '../models/app_error.dart';
 import 'http_service.dart';
+import 'package:palakat_admin/core/utils/error_mapper.dart';
 
 part 'api_service.g.dart';
 
@@ -18,29 +20,39 @@ class ApiService {
       // For demo purposes, using JSONPlaceholder API
       // Replace with your actual API endpoints
       final response = await _httpService.get('/posts');
-      
+
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
-        
+
         // Convert JSONPlaceholder posts to Activity objects for demo
-        return data.map((json) => Activity(
-          id: json['id'].toString(),
-          title: json['title'] ?? 'Unknown Activity',
-          description: json['body'] ?? 'No description available',
-          startDate: DateTime.now().subtract(Duration(days: json['id'] % 30)),
-          status: ActivityStatus.values[json['id'] % ActivityStatus.values.length],
-          location: 'Location ${json['id']}',
-          supervisor: 'User ${json['userId']}',
-          supervisorPositions: ['Supervisor'],
-          participants: List.generate(
-            (json['id'] % 5) + 1, 
-            (index) => 'Participant ${index + 1}',
-          ),
-          type: ActivityType.values[json['id'] % ActivityType.values.length],
-          notes: 'Notes for activity ${json['id']}',
-          createdAt: DateTime.now().subtract(Duration(days: json['id'] % 30)),
-          updatedAt: DateTime.now(),
-        )).toList();
+        return data
+            .map(
+              (json) => Activity(
+                id: json['id'].toString(),
+                title: json['title'] ?? 'Unknown Activity',
+                description: json['body'] ?? 'No description available',
+                startDate: DateTime.now().subtract(
+                  Duration(days: json['id'] % 30),
+                ),
+                status: ActivityStatus
+                    .values[json['id'] % ActivityStatus.values.length],
+                location: 'Location ${json['id']}',
+                supervisor: 'User ${json['userId']}',
+                supervisorPositions: ['Supervisor'],
+                participants: List.generate(
+                  (json['id'] % 5) + 1,
+                  (index) => 'Participant ${index + 1}',
+                ),
+                type: ActivityType
+                    .values[json['id'] % ActivityType.values.length],
+                notes: 'Notes for activity ${json['id']}',
+                createdAt: DateTime.now().subtract(
+                  Duration(days: json['id'] % 30),
+                ),
+                updatedAt: DateTime.now(),
+              ),
+            )
+            .toList();
       } else {
         throw AppError.network(
           'Failed to fetch activities',
@@ -48,9 +60,9 @@ class ApiService {
         );
       }
     } on DioException catch (e) {
-      throw _handleDioError(e, 'Failed to fetch activities');
+      throw ErrorMapper.fromDio(e, 'Failed to fetch activities');
     } catch (e) {
-      throw AppError.unknown('Unexpected error: $e');
+      throw ErrorMapper.unknown('Failed to fetch activities', e);
     }
   }
 
@@ -65,7 +77,7 @@ class ApiService {
           'userId': 1, // Demo user ID
         },
       );
-      
+
       if (response.statusCode == 201) {
         final json = response.data;
         return Activity(
@@ -90,9 +102,9 @@ class ApiService {
         );
       }
     } on DioException catch (e) {
-      throw _handleDioError(e, 'Failed to create activity');
+      throw ErrorMapper.fromDio(e, 'Failed to create activity');
     } catch (e) {
-      throw AppError.unknown('Unexpected error: $e');
+      throw ErrorMapper.unknown('Failed to create activity', e);
     }
   }
 
@@ -108,7 +120,7 @@ class ApiService {
           'userId': 1, // Demo user ID
         },
       );
-      
+
       if (response.statusCode == 200) {
         return activity;
       } else {
@@ -118,9 +130,9 @@ class ApiService {
         );
       }
     } on DioException catch (e) {
-      throw _handleDioError(e, 'Failed to update activity');
+      throw ErrorMapper.fromDio(e, 'Failed to update activity');
     } catch (e) {
-      throw AppError.unknown('Unexpected error: $e');
+      throw ErrorMapper.unknown('Failed to update activity', e);
     }
   }
 
@@ -128,7 +140,7 @@ class ApiService {
   Future<void> deleteActivity(String activityId) async {
     try {
       final response = await _httpService.delete('/posts/$activityId');
-      
+
       if (response.statusCode != 200) {
         throw AppError.network(
           'Failed to delete activity',
@@ -136,9 +148,9 @@ class ApiService {
         );
       }
     } on DioException catch (e) {
-      throw _handleDioError(e, 'Failed to delete activity');
+      throw ErrorMapper.fromDio(e, 'Failed to delete activity');
     } catch (e) {
-      throw AppError.unknown('Unexpected error: $e');
+      throw ErrorMapper.unknown('Failed to delete activity', e);
     }
   }
 
@@ -148,24 +160,30 @@ class ApiService {
       // For demo purposes, using JSONPlaceholder API
       // Replace with your actual API endpoints
       final response = await _httpService.get('/users');
-      
+
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
-        
+
         // Convert users to approval rules for demo
-        return data.map((json) => {
-          'id': json['id'].toString(),
-          'name': 'Approval Rule ${json['id']}',
-          'description': 'Rule managed by ${json['name']}',
-          'isActive': json['id'] % 2 == 1,
-          'conditions': [
-            'Budget > \$${json['id'] * 100}',
-            'Location: ${json['address']['city']}',
-          ],
-          'approvers': [json['name']],
-          'createdAt': DateTime.now().subtract(Duration(days: json['id'])).toIso8601String(),
-          'updatedAt': DateTime.now().toIso8601String(),
-        }).toList();
+        return data
+            .map(
+              (json) => {
+                'id': json['id'].toString(),
+                'name': 'Approval Rule ${json['id']}',
+                'description': 'Rule managed by ${json['name']}',
+                'isActive': json['id'] % 2 == 1,
+                'conditions': [
+                  'Budget > \$${json['id'] * 100}',
+                  'Location: ${json['address']['city']}',
+                ],
+                'approvers': [json['name']],
+                'createdAt': DateTime.now()
+                    .subtract(Duration(days: json['id']))
+                    .toIso8601String(),
+                'updatedAt': DateTime.now().toIso8601String(),
+              },
+            )
+            .toList();
       } else {
         throw AppError.network(
           'Failed to fetch approval rules',
@@ -173,47 +191,9 @@ class ApiService {
         );
       }
     } on DioException catch (e) {
-      throw _handleDioError(e, 'Failed to fetch approval rules');
+      throw ErrorMapper.fromDio(e, 'Failed to fetch approval rules');
     } catch (e) {
-      throw AppError.unknown('Unexpected error: $e');
-    }
-  }
-
-  /// Handle Dio errors and convert them to AppError
-  AppError _handleDioError(DioException error, String message) {
-    switch (error.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-        return AppError.network(
-          '$message: Request timeout',
-          details: error.message,
-        );
-      case DioExceptionType.badResponse:
-        return AppError.network(
-          '$message: Server error',
-          details: 'Status: ${error.response?.statusCode}, Data: ${error.response?.data}',
-        );
-      case DioExceptionType.cancel:
-        return AppError.network(
-          '$message: Request cancelled',
-          details: error.message,
-        );
-      case DioExceptionType.connectionError:
-        return AppError.network(
-          '$message: Connection error',
-          details: 'Please check your internet connection',
-        );
-      case DioExceptionType.badCertificate:
-        return AppError.network(
-          '$message: SSL certificate error',
-          details: error.message,
-        );
-      case DioExceptionType.unknown:
-        return AppError.network(
-          '$message: Unknown error',
-          details: error.message,
-        );
+      throw ErrorMapper.unknown('Failed to fetch approval rules', e);
     }
   }
 }

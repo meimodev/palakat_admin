@@ -1,7 +1,7 @@
+import 'package:palakat_admin/core/constants/enums.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/activity.dart';
 import '../models/approver.dart';
-import '../models/approval_status.dart';
 
 part 'approver_service.g.dart';
 
@@ -39,13 +39,17 @@ class ApproverService {
             name: 'Pastor John',
             positions: const ['Senior Pastor'],
             decision: ApprovalStatus.approved,
-            decisionAt: activity.startDate.subtract(const Duration(days: 1, hours: 3)),
+            decisionAt: activity.startDate.subtract(
+              const Duration(days: 1, hours: 3),
+            ),
           ),
           ApproverDecision(
             name: 'Admin Bob',
             positions: const ['Administrator'],
             decision: ApprovalStatus.approved,
-            decisionAt: activity.startDate.subtract(const Duration(days: 1, hours: 1)),
+            decisionAt: activity.startDate.subtract(
+              const Duration(days: 1, hours: 1),
+            ),
           ),
         ];
       case ActivityStatus.cancelled:
@@ -63,13 +67,17 @@ class ApproverService {
   /// Calculate overall approval status from individual approver decisions
   ApprovalStatus calculateOverallStatus(List<ApproverDecision> approvers) {
     if (approvers.isEmpty) return ApprovalStatus.pending;
-    
-    final hasRejected = approvers.any((a) => a.decision == ApprovalStatus.rejected);
+
+    final hasRejected = approvers.any(
+      (a) => a.decision == ApprovalStatus.rejected,
+    );
     if (hasRejected) return ApprovalStatus.rejected;
-    
-    final allApproved = approvers.every((a) => a.decision == ApprovalStatus.approved);
+
+    final allApproved = approvers.every(
+      (a) => a.decision == ApprovalStatus.approved,
+    );
     if (allApproved) return ApprovalStatus.approved;
-    
+
     return ApprovalStatus.pending;
   }
 

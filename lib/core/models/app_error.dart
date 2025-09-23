@@ -1,24 +1,8 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:palakat_admin/core/constants/enums.dart';
 
 part 'app_error.freezed.dart';
 part 'app_error.g.dart';
-
-enum ErrorType {
-  @JsonValue('network')
-  network,
-  @JsonValue('validation')
-  validation,
-  @JsonValue('authentication')
-  authentication,
-  @JsonValue('authorization')
-  authorization,
-  @JsonValue('notFound')
-  notFound,
-  @JsonValue('serverError')
-  serverError,
-  @JsonValue('unknown')
-  unknown,
-}
 
 @freezed
 abstract class AppError with _$AppError {

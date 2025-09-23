@@ -1,8 +1,9 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:palakat_admin/core/constants/enums.dart';
+import 'package:palakat_admin/core/models/account.dart';
 import 'package:palakat_admin/core/models/membership.dart';
+import 'package:palakat_admin/core/models/member_position.dart';
 
 part 'members_providers.g.dart';
 
@@ -10,11 +11,11 @@ part 'members_providers.g.dart';
 @riverpod
 class MembersNotifier extends _$MembersNotifier {
   @override
-  List<Membership> build() {
+  List<Account> build() {
     return _generateMembers();
   }
 
-  static List<Membership> _generateMembers() {
+  static List<Account> _generateMembers() {
     final allPositions = [
       'Elder',
       'Deacon',
@@ -34,23 +35,47 @@ class MembersNotifier extends _$MembersNotifier {
         (j) => allPositions[(i + j) % allPositions.length],
       ).toSet().toList(); // Ensure unique positions
 
-      return Membership(
-        name: 'Member ${(i + 1)* Random(10).nextInt(1000000)}',
-        email: 'member${i + 1}@example.com',
+      final now = DateTime.now();
+      final membership = Membership(
+        id: i + 1,
+        baptize: i % 3 == 0,
+        sidi: i % 4 == 0,
+        createdAt: now,
+        updatedAt: now,
+        membershipPositions: [
+          for (var idx = 0; idx < positions.length; idx++)
+            MemberPosition(
+              id: (i + 1) * 100 + idx,
+              churchId: 1,
+              columnId: (idx % 5) + 1,
+              name: positions[idx],
+              createdAt: now,
+              updatedAt: now,
+            ),
+        ],
+      );
+
+      return Account(
+        id: i+1,
+        name: 'Member ${i + 1}',
         phone: '+1 (555) ${100 + (i % 900)}-${1000 + (i % 9000)}',
-        positions: positions,
-        isBaptized: i % 3 == 0,
-        isSidi: i % 4 == 0,
-        isLinked: i % 5 == 0,
+        email: 'member${i + 1}@example.com',
+        gender: i % 2 == 0 ? Gender.male : Gender.female,
+        married: i % 5 == 0,
+        dob: DateTime(1990 + (i % 20), ((i % 12) + 1), ((i % 28) + 1)),
+        claimed: i % 5 == 0,
+        createdAt: now,
+        updatedAt: now,
+        membership: membership,
       );
     });
   }
 
-  void addMember(Membership member) {
+  void addMember(Account member) {
     state = [member, ...state];
   }
 
-  void updateMember(Membership updatedMember) {
+  void updateMember(Account updatedMember) {
     state = [
       for (final member in state)
         if (member.email == updatedMember.email) updatedMember else member,
@@ -60,7 +85,7 @@ class MembersNotifier extends _$MembersNotifier {
 
 // For backward compatibility
 @riverpod
-List<Membership> membersAll(Ref ref) {
+List<Account> membersAll(Ref ref) {
   return ref.watch(membersProvider);
 }
 
@@ -82,13 +107,12 @@ class MembersFilterState {
     String? selectedPosition,
     int? page,
     int? rowsPerPage,
-  }) =>
-      MembersFilterState(
-        search: search ?? this.search,
-        selectedPosition: selectedPosition ?? this.selectedPosition,
-        page: page ?? this.page,
-        rowsPerPage: rowsPerPage ?? this.rowsPerPage,
-      );
+  }) => MembersFilterState(
+    search: search ?? this.search,
+    selectedPosition: selectedPosition ?? this.selectedPosition,
+    page: page ?? this.page,
+    rowsPerPage: rowsPerPage ?? this.rowsPerPage,
+  );
 }
 
 @riverpod
@@ -115,17 +139,22 @@ class MembersFilterNotifier extends _$MembersFilterNotifier {
 }
 
 @riverpod
-List<Membership> membersFiltered(Ref ref) {
+List<Account> membersFiltered(Ref ref) {
   final filters = ref.watch(membersFilterProvider);
   final all = ref.watch(membersAllProvider);
   return all.where((u) {
-    final matchesSearch = filters.search.isEmpty ||
+    final matchesSearch =
+        filters.search.isEmpty ||
         u.name.toLowerCase().contains(filters.search.toLowerCase()) ||
         u.email.toLowerCase().contains(filters.search.toLowerCase());
-    
-    final matchesPosition = filters.selectedPosition == null ||
-        u.positions.contains(filters.selectedPosition!);
-    
+
+    final memberPositionNames = (u.membership?.membershipPositions ?? [])
+        .map((mp) => mp.name)
+        .toList();
+    final matchesPosition =
+        filters.selectedPosition == null ||
+        memberPositionNames.contains(filters.selectedPosition!);
+
     return matchesSearch && matchesPosition;
   }).toList();
 }
@@ -136,13 +165,15 @@ List<String> availablePositions(Ref ref) {
   final all = ref.watch(membersAllProvider);
   final allPositions = <String>{};
   for (final member in all) {
-    allPositions.addAll(member.positions);
+    allPositions.addAll(
+      (member.membership?.membershipPositions ?? []).map((mp) => mp.name),
+    );
   }
   return allPositions.toList()..sort();
 }
 
 class MembersPageSlice {
-  final List<Membership> rows;
+  final List<Account> rows;
   final int total;
   const MembersPageSlice(this.rows, this.total);
 }
@@ -154,7 +185,7 @@ MembersPageSlice membersPage(Ref ref) {
   final start = filters.page * filters.rowsPerPage;
   final end = (start + filters.rowsPerPage).clamp(0, list.length);
   final pageRows = start >= list.length
-      ? <Membership>[]
+      ? <Account>[]
       : list.sublist(start, end);
   return MembersPageSlice(pageRows, list.length);
 }

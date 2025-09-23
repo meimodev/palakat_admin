@@ -1,27 +1,10 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:palakat_admin/core/constants/enums.dart';
 
 part 'activity.freezed.dart';
 part 'activity.g.dart';
 
-enum ActivityType {
-  @JsonValue('service')
-  service,
-  @JsonValue('event')
-  event,
-  @JsonValue('announcement')
-  announcement,
-}
 
-enum ActivityStatus {
-  @JsonValue('planned')
-  planned,
-  @JsonValue('ongoing')
-  ongoing,
-  @JsonValue('completed')
-  completed,
-  @JsonValue('cancelled')
-  cancelled,
-}
 
 @freezed
 abstract class Activity with _$Activity {
@@ -45,31 +28,4 @@ abstract class Activity with _$Activity {
   factory Activity.fromJson(Map<String, dynamic> json) => _$ActivityFromJson(json);
 }
 
-extension ActivityTypeExtension on ActivityType {
-  String get displayName {
-    switch (this) {
-      case ActivityType.service:
-        return 'Service';
-      case ActivityType.event:
-        return 'Event';
-      case ActivityType.announcement:
-        return 'Announcement';
-    }
-  }
-}
-
-extension ActivityStatusExtension on ActivityStatus {
-  String get displayName {
-    switch (this) {
-      case ActivityStatus.planned:
-        return 'Planned';
-      case ActivityStatus.ongoing:
-        return 'Ongoing';
-      case ActivityStatus.completed:
-        return 'Completed';
-      case ActivityStatus.cancelled:
-        return 'Cancelled';
-    }
-  }
-}
 

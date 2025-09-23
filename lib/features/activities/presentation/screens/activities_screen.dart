@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:palakat_admin/core/constants/enums.dart';
 
 import '../../../../core/models/activity.dart';
 import '../../../../core/widgets/surface_card.dart';
@@ -13,7 +14,6 @@ import '../../../../core/utils/date_utils.dart';
 import '../../../../core/utils/debouncer.dart';
 import '../../../../core/repositories/activities_repository.dart';
 import '../../../../core/models/approver.dart';
-import '../../../../core/models/approval_status.dart';
 import '../../../../core/models/app_error.dart';
 import '../../../../core/widgets/error_widget.dart';
 import '../../../../core/widgets/loading_widget.dart';
@@ -30,9 +30,7 @@ class ActivitiesScreen extends ConsumerStatefulWidget {
 class _ActivityApproverChip extends StatelessWidget {
   final ApproverDecision approver;
 
-  const _ActivityApproverChip({
-    required this.approver,
-  });
+  const _ActivityApproverChip({required this.approver});
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +111,8 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
 
   void _onSearchChanged() {
     _searchDebouncer(() {
-      ref.read(activitiesScreenStateProvider.notifier)
+      ref
+          .read(activitiesScreenStateProvider.notifier)
           .updateSearchQuery(_searchController.text);
     });
   }
@@ -124,24 +123,22 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
     final screenState = ref.watch(activitiesScreenStateProvider);
     final activitiesAsync = ref.watch(activitiesAsyncProvider);
     final screenNotifier = ref.read(activitiesScreenStateProvider.notifier);
-    
+
     return Material(
       color: theme.colorScheme.surface,
       child: activitiesAsync.when(
-        loading: () => const AppLoadingWidget(
-          message: 'Loading activities...',
-        ),
+        loading: () => const AppLoadingWidget(message: 'Loading activities...'),
         error: (error, stackTrace) => AppErrorWidget(
-          error: error is AppError 
-            ? error 
-            : AppError.unknown('Failed to load activities'),
+          error: error is AppError
+              ? error
+              : AppError.unknown('Failed to load activities'),
           onRetry: () => ref.refresh(activitiesAsyncProvider),
         ),
         data: (activities) => _buildActivitiesContent(
-          context, 
-          theme, 
-          screenState, 
-          activities, 
+          context,
+          theme,
+          screenState,
+          activities,
           screenNotifier,
         ),
       ),
@@ -166,7 +163,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
       screenState.page,
       screenState.rowsPerPage,
     );
-    
+
     final total = filteredActivities.length;
 
     return Material(
@@ -233,10 +230,16 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                     totalCount: total,
                     rowsPerPage: screenState.rowsPerPage,
                     page: screenState.page,
-                    pageCount: (total / screenState.rowsPerPage).ceil().clamp(1, 9999),
-                    onRowsPerPageChanged: (v) => screenNotifier.updateRowsPerPage(v),
+                    pageCount: (total / screenState.rowsPerPage).ceil().clamp(
+                      1,
+                      9999,
+                    ),
+                    onRowsPerPageChanged: (v) =>
+                        screenNotifier.updateRowsPerPage(v),
                     onPrev: () => screenNotifier.previousPage(),
-                    onNext: () => screenNotifier.nextPage((total / screenState.rowsPerPage).ceil() - 1),
+                    onNext: () => screenNotifier.nextPage(
+                      (total / screenState.rowsPerPage).ceil() - 1,
+                    ),
                   ),
                 ],
               ),
@@ -409,12 +412,18 @@ class _ActivityRow extends ConsumerWidget {
                     _cell(
                       Builder(
                         builder: (context) {
-                          final statusDisplay = approverService.getStatusDisplay(approvalStatus);
+                          final statusDisplay = approverService
+                              .getStatusDisplay(approvalStatus);
                           return StatusChip(
                             label: statusDisplay.label,
-                            background: Color(statusDisplay.colorValue).withValues(alpha: 0.1),
+                            background: Color(
+                              statusDisplay.colorValue,
+                            ).withValues(alpha: 0.1),
                             foreground: Color(statusDisplay.colorValue),
-                            icon: IconData(statusDisplay.iconCodePoint, fontFamily: 'MaterialIcons'),
+                            icon: IconData(
+                              statusDisplay.iconCodePoint,
+                              fontFamily: 'MaterialIcons',
+                            ),
                           );
                         },
                       ),
@@ -479,5 +488,3 @@ class _TypeChip extends StatelessWidget {
     );
   }
 }
-
-

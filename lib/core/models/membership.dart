@@ -1,49 +1,20 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:palakat_admin/core/models/member_position.dart';
 
 part 'membership.freezed.dart';
 part 'membership.g.dart';
 
 @freezed
 abstract class Membership with _$Membership {
-  const Membership._();
-
   const factory Membership({
-    required String name,
-    required String email,
-    required String phone,
-    required List<String> positions,
-    @Default(false) bool isBaptized,
-    @Default(false) bool isSidi,
-    @Default(false) bool isLinked,
-    @Default(false) bool isMarried,
-    String? gender,
-    DateTime? dateOfBirth,
+    required int id,
+    required bool baptize,
+    required bool sidi,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    required List<MemberPosition> membershipPositions,
   }) = _Membership;
 
-  factory Membership.fromJson(Map<String, dynamic> json) => _$MembershipFromJson(json);
-
-  // Helper method to create an AppMember with a single position for backward compatibility
-  factory Membership.singlePosition({
-    required String name,
-    required String email,
-    required String phone,
-    required String position,
-    bool isBaptized = false,
-    bool isSidi = false,
-    bool isLinked = false,
-    bool isMarried = false,
-    DateTime? dateOfBirth,
-  }) {
-    return Membership(
-      name: name,
-      email: email,
-      phone: phone,
-      positions: [position],
-      isBaptized: isBaptized,
-      isSidi: isSidi,
-      isLinked: isLinked,
-      isMarried: isMarried,
-      dateOfBirth: dateOfBirth,
-    );
-  }
+  factory Membership.fromJson(Map<String, dynamic> json) =>
+      _$MembershipFromJson(json);
 }

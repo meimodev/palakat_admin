@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:palakat_admin/core/constants/enums.dart';
 import '../models/app_error.dart';
 
 /// Reusable error widget for displaying errors consistently across the app
@@ -17,18 +18,14 @@ class AppErrorWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              _getErrorIcon(),
-              size: 64,
-              color: theme.colorScheme.error,
-            ),
+            Icon(_getErrorIcon(), size: 64, color: theme.colorScheme.error),
             const SizedBox(height: 16),
             Text(
               customMessage ?? error.userMessage,
@@ -86,16 +83,12 @@ class CompactErrorWidget extends StatelessWidget {
   final AppError error;
   final VoidCallback? onRetry;
 
-  const CompactErrorWidget({
-    super.key,
-    required this.error,
-    this.onRetry,
-  });
+  const CompactErrorWidget({super.key, required this.error, this.onRetry});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -107,11 +100,7 @@ class CompactErrorWidget extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 20,
-            color: theme.colorScheme.error,
-          ),
+          Icon(Icons.error_outline, size: 20, color: theme.colorScheme.error),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -127,10 +116,7 @@ class CompactErrorWidget extends StatelessWidget {
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
               iconSize: 16,
-              constraints: const BoxConstraints(
-                minWidth: 24,
-                minHeight: 24,
-              ),
+              constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
               padding: EdgeInsets.zero,
             ),
           ],

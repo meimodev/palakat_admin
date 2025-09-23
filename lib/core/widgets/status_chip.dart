@@ -30,11 +30,13 @@ class StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resolvedPadding = padding ?? const EdgeInsets.symmetric(horizontal: 12, vertical: 8);
+    final resolvedPadding =
+        padding ?? const EdgeInsets.symmetric(horizontal: 12, vertical: 8);
     final resolvedWeight = fontWeight ?? FontWeight.w600;
     final resolvedFontSize = fontSize;
     final resolvedBorderWidth = borderWidth ?? 1;
-    final resolvedBorderColor = borderColor ?? foreground.withValues(alpha: 0.2);
+    final resolvedBorderColor =
+        borderColor ?? foreground.withValues(alpha: 0.2);
 
     return Container(
       width: fullWidth ? double.infinity : null,
@@ -42,7 +44,10 @@ class StatusChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: resolvedBorderColor, width: resolvedBorderWidth),
+        border: Border.all(
+          color: resolvedBorderColor,
+          width: resolvedBorderWidth,
+        ),
         boxShadow: elevated
             ? [
                 BoxShadow(
@@ -56,7 +61,9 @@ class StatusChip extends StatelessWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: fullWidth ? MainAxisAlignment.start : MainAxisAlignment.center,
+        mainAxisAlignment: fullWidth
+            ? MainAxisAlignment.start
+            : MainAxisAlignment.center,
         children: [
           if (icon != null) ...[
             Icon(icon, color: foreground, size: (resolvedFontSize ?? 13) + 3),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:palakat_admin/core/constants/enums.dart';
+import 'package:palakat_admin/core/models/account.dart';
 import 'package:palakat_admin/core/models/membership.dart';
 
 import '../widgets/members_table.dart';
@@ -139,18 +141,29 @@ class _FiltersBar extends ConsumerWidget {
             const SizedBox(width: 16),
             FilledButton.icon(
               onPressed: () {
-                showEditMemberDrawer(
-                  context,
-                  member: const Membership(
-                    name: '',
-                    email: '',
-                    phone: '',
-                    positions: [],
-                    isBaptized: false,
-                    isSidi: false,
-                    isLinked: false,
+                final now = DateTime.now();
+                // Create a new empty Account with defaults
+                final Account newAccount = Account(
+                  id: now.microsecondsSinceEpoch,
+                  name: '',
+                  phone: '',
+                  email: '',
+                  gender: Gender.male,
+                  married: false,
+                  dob: DateTime(2000, 1, 1),
+                  claimed: false,
+                  createdAt: now,
+                  updatedAt: now,
+                  membership: Membership(
+                    id: 0,
+                    baptize: false,
+                    sidi: false,
+                    createdAt: now,
+                    updatedAt: now,
+                    membershipPositions: const [],
                   ),
                 );
+                showEditMemberDrawer(context, account: newAccount);
               },
               icon: const Icon(Icons.add, size: 18),
               label: const Text('New Member'),

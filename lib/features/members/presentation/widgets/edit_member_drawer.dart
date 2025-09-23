@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:palakat_admin/core/constants/enums.dart';
+import 'package:palakat_admin/core/models/account.dart';
 import 'package:palakat_admin/core/models/membership.dart';
+import 'package:palakat_admin/core/models/member_position.dart';
 import 'package:palakat_admin/features/members/presentation/state/members_providers.dart';
 import 'package:palakat_admin/core/widgets/side_drawer.dart';
 import 'package:intl/intl.dart';
 
 class EditMemberDrawer extends ConsumerStatefulWidget {
-  final Membership member;
+  final Account account;
 
-  const EditMemberDrawer({super.key, required this.member});
+  const EditMemberDrawer({super.key, required this.account});
 
   @override
   ConsumerState<EditMemberDrawer> createState() => _EditMemberDrawerState();
@@ -22,7 +25,7 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
   late bool _isSidi;
   late bool _isLinked;
   late String _maritalStatus;
-  late String _gender;
+  late String _genderText;
   DateTime? _dateOfBirth;
   final List<String> _positions = [];
   // Positions will use the same UX as approval route editor: add via dropdown + chips
@@ -31,17 +34,20 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.member.name);
-    _emailController = TextEditingController(text: widget.member.email);
-    _phoneController = TextEditingController(text: widget.member.phone);
-    _isBaptized = widget.member.isBaptized;
-    _isSidi = widget.member.isSidi;
-    _isLinked = widget.member.isLinked;
-    _maritalStatus = widget.member.isMarried ? 'Married' : 'Single';
-    _gender =
-        widget.member.gender ?? 'Male'; // Default to Male if not specified
-    _dateOfBirth = widget.member.dateOfBirth;
-    _positions.addAll(widget.member.positions);
+    _nameController = TextEditingController(text: widget.account.name);
+    _emailController = TextEditingController(text: widget.account.email);
+    _phoneController = TextEditingController(text: widget.account.phone);
+    _isBaptized = widget.account.membership?.baptize ?? false;
+    _isSidi = widget.account.membership?.sidi ?? false;
+    _isLinked = widget.account.claimed;
+    _maritalStatus = widget.account.married ? 'Married' : 'Single';
+    _genderText = widget.account.gender == Gender.female ? 'Female' : 'Male';
+    _dateOfBirth = widget.account.dob;
+    _positions.addAll(
+      (widget.account.membership?.membershipPositions ?? []).map(
+        (mp) => mp.name,
+      ),
+    );
   }
 
   @override
@@ -54,7 +60,7 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    final isNewMember = widget.member.email.isEmpty;
+    final isNewMember = widget.account.email.isEmpty;
     return Material(
       child: SideDrawer(
         title: isNewMember ? 'Add New Member' : 'Edit Member',
@@ -172,7 +178,7 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
                   _FormField(
                     label: 'Gender',
                     child: DropdownButtonFormField<String>(
-                      value: _gender,
+                      value: _genderText,
                       decoration: InputDecoration(
                         border: const OutlineInputBorder(),
                         contentPadding: const EdgeInsets.symmetric(
@@ -196,7 +202,7 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
                           ? null
                           : (String? newValue) {
                               setState(() {
-                                _gender = newValue ?? 'Male';
+                                _genderText = newValue ?? 'Male';
                               });
                             },
                     ),
@@ -361,7 +367,11 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
   Future<void> _selectDateOfBirth() async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _dateOfBirth ?? DateTime.now().subtract(const Duration(days: 365 * 25)), // Default to 25 years ago
+      initialDate:
+          _dateOfBirth ??
+          DateTime.now().subtract(
+            const Duration(days: 365 * 25),
+          ), // Default to 25 years ago
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
       helpText: 'Select Date of Birth',
@@ -375,32 +385,59 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
 
   void _saveChanges() {
     if (_formKey.currentState?.validate() ?? false) {
-      final updatedMember = widget.member.copyWith(
+      final now = DateTime.now();
+      final gender = _genderText == 'Female' ? Gender.female : Gender.male;
+      final updatedMembership =
+          (widget.account.membership ??
+                  Membership(
+                    id: 0,
+                    baptize: false,
+                    sidi: false,
+                    createdAt: now,
+                    updatedAt: now,
+                    membershipPositions: const [],
+                  ))
+              .copyWith(
+                baptize: _isBaptized,
+                sidi: _isSidi,
+                updatedAt: now,
+                membershipPositions: [
+                  for (var idx = 0; idx < _positions.length; idx++)
+                    MemberPosition(
+                      id: (widget.account.membership?.id ?? 0) * 100 + idx + 1,
+                      churchId: 1,
+                      columnId: (idx % 5) + 1,
+                      name: _positions[idx],
+                      createdAt: now,
+                      updatedAt: now,
+                    ),
+                ],
+              );
+
+      final updatedAccount = widget.account.copyWith(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
-        positions: _positions,
-        isBaptized: _isBaptized,
-        isSidi: _isSidi,
-        isLinked: _isLinked,
-        isMarried: _maritalStatus == 'Married',
-        gender: _gender,
-        dateOfBirth: _dateOfBirth,
+        married: _maritalStatus == 'Married',
+        gender: gender,
+        dob: _dateOfBirth ?? widget.account.dob,
+        updatedAt: now,
+        membership: updatedMembership,
       );
 
       final membersNotifier = ref.read(membersProvider.notifier);
 
       // Check if this is a new member or an update
-      final isNewMember = widget.member.email.isEmpty;
+      final isNewMember = widget.account.email.isEmpty;
 
       if (isNewMember) {
-        membersNotifier.addMember(updatedMember);
+        membersNotifier.addMember(updatedAccount);
       } else {
-        membersNotifier.updateMember(updatedMember);
+        membersNotifier.updateMember(updatedAccount);
       }
 
       if (mounted) {
-        Navigator.of(context).pop(updatedMember);
+        Navigator.of(context).pop(updatedAccount);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -416,11 +453,11 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
 }
 
 // Function to show the edit drawer
-Future<Membership?> showEditMemberDrawer(
+Future<Account?> showEditMemberDrawer(
   BuildContext context, {
-  required Membership member,
+  required Account account,
 }) async {
-  return await showGeneralDialog<Membership>(
+  return await showGeneralDialog<Account>(
     context: context,
 
     // pageBuilder: (context, _, _) => Scaffold(
@@ -434,7 +471,7 @@ Future<Membership?> showEditMemberDrawer(
     //           child: Container(color: Colors.black54),
     //         ),
     //       ),
-    //       EditMemberDrawer(member: member),
+    //       EditMemberDrawer(account: account),
     //     ],
     //   ),
     // ),
@@ -465,7 +502,7 @@ Future<Membership?> showEditMemberDrawer(
                 begin: const Offset(1, 0),
                 end: Offset.zero,
               ).animate(curved),
-              child: EditMemberDrawer(member: member),
+              child: EditMemberDrawer(account: account),
             ),
           ),
         ],

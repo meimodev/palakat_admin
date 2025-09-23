@@ -1,4 +1,68 @@
 # AI Execution Log
+## 2025-09-23T07:33:57+08:00 — Model: Cascade
+- [prompt] "replace shared_preference and its implementation with hive. instead of just saving the token related data, also save the whole account data by using toJson and fromJson to retrieve it back. together use this mechanism to determine if the user already logged in or not"
+- [actions]
+  - Removed `shared_preferences` from `pubspec.yaml` and added `hive` + `hive_flutter` dependencies.
+  - Initialized Hive in `lib/main.dart` and opened the `auth` box before `runApp`.
+  - Refactored `lib/core/services/auth_service.dart` to use Hive, storing the full `AuthResponse` (tokens + account) via `toJson`/`fromJson`.
+  - Added `loadFromCacheSync()` to `AuthService` for immediate cache hydration when the app starts.
+  - Updated `lib/core/services/auth_service_provider.dart` to synchronously load cache and then run async init.
+  - Modified `lib/core/repositories/auth_repository.dart` to call `saveAuth(auth)` on sign-in (persist full payload).
+  - Updated `lib/features/auth/application/auth_controller.dart` to initialize state from cached auth so router guard can detect existing sessions.
+  - Ran `flutter pub get` successfully.
+
+## 2025-09-23T08:23:40+08:00 — Model: Cascade
+- [prompt] "fix redirect when already had saved the account data but not properly redirected"
+- [actions]
+  - Fixed `lib/main.dart` GoRouter `redirect` to be synchronous and compute `isAuthed` via `authControllerProvider.valueOrNull`.
+  - Removed async/whenData usage and print; now returns correct routes immediately for cached sessions.
+
+## 2025-09-23T08:46:53+08:00 — Model: Cascade
+- [prompt] "still not working"
+- [actions]
+  - Updated `lib/main.dart` router guard to rely on `authServiceProvider.isAuthenticated` (Hive-cached state) instead of AsyncValue to avoid timing issues.
+  - Added a `Future.microtask` tick to `refreshListenable` so the redirect runs once after providers initialize, ensuring cached auth is applied on first frame.
+
+## 2025-09-23T08:59:51+08:00 — Model: Cascade
+- [prompt] RouterGuard logs indicate isAuthed=false despite cached account
+- [actions]
+  - Updated `lib/core/services/auth_service.dart` to treat presence of cached `AuthResponse` as authenticated (`isAuthenticated => _auth != null`) to avoid timing/empty token issues during startup.
+## 2025-09-22T22:12:43+08:00 — Model: Cascade
+- [prompt] "yes but use signin for context rather than login"
+- [actions]
+  - Renamed auth endpoint terminology to sign-in:
+    - `authLoginPath` -> `authSignInPath` in `lib/core/config/app_config.dart`
+    - `.env.example`: `AUTH_LOGIN_PATH` -> `AUTH_SIGNIN_PATH` with default `/auth/signin`
+  - Updated repository and controller methods:
+    - `AuthRepository.login` -> `AuthRepository.signIn` and path usage
+    - `AuthController.signIn` now calls `repo.signIn(...)`
+  - Regenerated code: `flutter pub run build_runner build -d`
+
+## 2025-09-22T23:00:16+08:00 — Model: Cascade
+- [prompt] "remove auth endpoints on .env files, instead just collect those paths on 1 class"
+- [actions]
+  - Created centralized endpoints class: `lib/core/config/auth_endpoints.dart` with `signIn`, `refresh`, `logout` constants
+  - Refactored `lib/core/config/app_config.dart` to remove auth endpoint fields and env lookups
+  - Updated `lib/core/repositories/auth_repository.dart` to use `AuthEndpoints` and removed `AppConfig` dependency
+  - Removed `AUTH_*` keys from `.env.example` (note: `.env` is gitignored; please remove AUTH_* there locally)
+  - Created memory: Centralize auth endpoints in `AuthEndpoints` class; remove AUTH_* from .env and AppConfig
+  - Proposed running codegen: `flutter pub run build_runner build -d`
+
+## 2025-09-23T03:39:24+08:00 — Model: Cascade
+- [prompt] "sync .env with app_config.dart"
+- [actions]
+  - Verified `lib/core/config/app_config.dart` expects only: `API_BASE_URL`, `API_KEY` (optional), `APP_CLIENT_USERNAME` (optional), `APP_CLIENT_PASSWORD` (optional)
+  - Confirmed `.env.example` contains exactly these keys and removed legacy `AUTH_*` keys
+  - Noted user's update of `.env.example` `API_BASE_URL` to `http://192.168.0.130`
+  - Advised to mirror the same keys/values in local `.env` (gitignored)
+
+## 2025-09-23T03:41:58+08:00 — Model: Cascade
+- [prompt] "remove all the variables that has no env definition in app config"
+- [actions]
+  - Simplified `lib/core/config/app_config.dart` to only read `API_BASE_URL` and optional `API_KEY`
+  - Removed unused `APP_CLIENT_USERNAME` and `APP_CLIENT_PASSWORD` fields and lookups from `AppConfig`
+  - Updated `.env.example` to remove those keys so it mirrors `AppConfig`
+  - Verified no code references to `appClientUsername`/`appClientPassword` remain
 
 ## 2025-09-18T07:51:54+08:00 — Model: Cascade
 - [prompt] “make a memory: everytime a prompt is executed, generate a log file for what the AI has done in root folder called AI-log.md, provide a model name and date for eachtime a new prompt is executed. starting from now and onwards\n\nand also add log for memories on AI-log-memories.md, update this file to reflect memory state”
@@ -45,3 +109,128 @@
   - Added import for dart:developer as dev at the top of the file
   - Kept PrettyDioLogger interceptor intact
   - Used appropriate log levels (info ~800, error 1000) and logger name "HttpService"
+
+## 2025-09-22T21:32:36+08:00 — Model: Cascade
+- [prompt] "add .env file support to store sensitive data"
+- [actions]
+  - Added flutter_dotenv dependency and registered .env as an asset in pubspec.yaml
+  - Loaded .env in lib/main.dart before runApp (with WidgetsFlutterBinding.ensureInitialized)
+  - Updated lib/core/services/http_service.dart to read API_BASE_URL from env and fallback to default
+  - Created .env and .env.example at repo root
+  - Updated .gitignore to ignore .env
+  - Proposed running `flutter pub get` to fetch dependencies
+
+## 2025-09-22T21:38:03+08:00 — Model: Cascade
+- [prompt] "add a config helper"
+- [actions]
+  - Created centralized config helper: lib/core/config/app_config.dart using Riverpod Generator
+  - Uses ENV, API_BASE_URL, and optional API_KEY from .env with validation and typed AppEnvironment
+  - Switched HttpService provider to consume appConfigProvider for base URL
+  - Updated .env.example to include ENV placeholder
+  - Replaced print with dart:developer dev.log in config helper
+  - Ran code generation: flutter pub run build_runner build -d (generated app_config.g.dart)
+
+## 2025-09-22T21:44:57+08:00 — Model: Cascade
+- [prompt] "sync .env file with appconfig"
+- [actions]
+  - Updated lib/core/config/app_config.dart to remove ENV handling and support APP_CLIENT_USERNAME and APP_CLIENT_PASSWORD
+  - Regenerated Riverpod files with build_runner
+  - Verified providers compile
+
+## 2025-09-22T21:54:54+08:00 — Model: Cascade
+- [prompt] "switch to bearer instead"
+- [actions]
+  - Switched authentication to Bearer using API_KEY from AppConfig
+  - Updated lib/core/services/http_service.dart to set Authorization: Bearer <API_KEY>
+  - Removed Basic auth logic and unnecessary import
+
+## 2025-09-22T21:57:30+08:00 — Model: Cascade
+- [prompt] "plan on adding a signing mechanism using username/email/phone and password"
+- [actions]
+  - Extended `lib/core/config/app_config.dart` to include `authLoginPath`, `authRefreshPath`, `authLogoutPath` from `.env`
+  - Added `shared_preferences` to `pubspec.yaml` for token persistence
+  - Created Freezed models:
+    - `lib/core/models/auth_credentials.dart`
+    - `lib/core/models/auth_tokens.dart`
+    - `lib/core/models/auth_response.dart`
+  - Implemented token storage service: `lib/core/services/auth_service.dart` and Riverpod provider `auth_service_provider.dart`
+  - Implemented `lib/core/repositories/auth_repository.dart` using Dio + Riverpod Generator with login/refresh/logout
+  - Updated `lib/core/services/http_service.dart` to inject Authorization header via `authServiceProvider`
+  - Updated `.env.example` with `AUTH_LOGIN_PATH`, `AUTH_REFRESH_PATH`, `AUTH_LOGOUT_PATH`
+  - Created `lib/features/auth/application/auth_controller.dart` using Riverpod Generator for sign-in/out
+  - Prepared to run `flutter pub get` and `flutter pub run build_runner build -d` to generate code
+
+## 2025-09-23T03:54:56+08:00 — Model: Cascade
+- [prompt] "when calling signIn(identifier, password) error occured — ProviderException: CircularDependencyError"
+- [actions]
+  - Investigated providers in `auth_controller.dart`, `auth_repository.dart`, `http_service.dart`, and `app_config.dart`
+  - Identified circular dependency: `httpServiceProvider` -> `authRepositoryProvider` (for refresh) -> `dioInstanceProvider` -> `httpServiceProvider`
+  - Refactored to break the cycle:
+    - Updated `lib/core/services/http_service.dart` to remove dependency on `authRepositoryProvider` and perform token refresh directly using a lightweight `Dio` with `AppConfig` + `AuthEndpoints` + `AuthService`
+    - Kept `dioInstanceProvider` sourcing from `httpServiceProvider` without back-referencing repository
+    - Updated unauthorized handler to use `AuthController.forceSignOut()`
+  - Added `forceSignOut()` to `lib/features/auth/application/auth_controller.dart` to clear tokens via `authServiceProvider` and reset state without API calls
+  - Verified imports compile; no codegen required
+
+## 2025-09-23T04:06:59+08:00 — Model: Cascade
+- [prompt] "update the App config to use freezed"
+- [actions]
+  - Refactored `lib/core/config/app_config.dart` to a Freezed data class with `@freezed` and added part files `app_config.freezed.dart` and `app_config.g.dart`
+  - Simplified `AppConfig.fromEnv()` to read only `API_BASE_URL` (required) and `API_KEY` (optional), normalizing the base URL with a trailing slash
+  - Kept Riverpod `appConfig` provider and debug logging via `dev.log`
+  - Ran code generation: `flutter pub run build_runner build -d` (success)
+
+## 2025-09-23T04:31:12+08:00 — Model: Cascade
+- [prompt] "on handling 401 with refresh in http_service, add exception for sign-in route"
+- [actions]
+  - Updated `lib/core/services/http_service.dart` interceptor to skip token refresh when a 401 occurs on the sign-in endpoint (`AuthEndpoints.signIn`), preventing unnecessary refresh attempts on invalid credentials.
+  - Logged this action; no memory changes for this step.
+
+## 2025-09-23T05:05:19+08:00 — Model: Cascade
+- [prompt] "move all reusable enum in enums.dart"
+- [actions]
+  - Centralized reusable enums in `lib/core/constants/enums.dart`: added `UserRole`, `AccountStatus`, `ActivityStatus`, `ErrorType`, `PageTransitionType`, `InventoryCondition`, `BillingType`, `BillingStatus`, `PaymentMethod` and aligned `ApprovalStatus` values.
+  - Updated files to import centralized enums and removed local duplicates:
+    - `lib/core/models/account.dart` (import enums; removed local `UserRole`, `AccountStatus`; removed `roleDisplayName` getter referencing non-existent field)
+    - `lib/core/models/activity.dart` (import enums and hide `ActivityType`; moved `ActivityStatus` to enums)
+    - `lib/core/models/app_error.dart` (import enums; removed local `ErrorType`)
+    - `lib/core/models/billing.dart` (import enums; removed local billing enums)
+    - `lib/core/navigation/page_transitions.dart` (import enums; removed local `PageTransitionType`)
+    - `lib/features/inventory/models/inventory_item.dart` (import enums; removed local `InventoryCondition`)
+    - `lib/core/models/approval_status.dart` (re-export `ApprovalStatus` from enums for backward compatibility)
+  - Left `DateRangeFilter`'s private `_Preset` enum unchanged (internal-only).
+
+## 2025-09-23T06:29:41+08:00 — Model: Cascade
+- [prompt] "on repository layer also add try catch to errors that not include in dio"
+- [actions]
+  - Reviewed repository and service error-handling patterns in:
+    - `lib/core/repositories/auth_repository.dart`
+    - `lib/core/repositories/activities_repository.dart`
+    - `lib/core/repositories/approval_repository.dart`
+    - `lib/core/services/api_service.dart`
+  - Updated `AuthRepository` to wrap methods with try/catch:
+    - `signIn(...)`: maps `DioException` to `AppError` via `_handleDioError`, catches non-Dio exceptions as `AppError.unknown`
+    - `refresh()`: validates missing refresh token as `AppError.validation`, maps `DioException`, and catches unknown errors
+    - Added private `_handleDioError` helper mirroring ApiService mapping
+    - Added `AppError` import
+  - Verified `ActivitiesRepository` and `ApprovalRepository` already catch non-Dio errors and wrap as `AppError.unknown`
+
+## 2025-09-23T06:30:00+08:00 — Model: Cascade
+- [prompt] "Append a new log entry for this prompt execution with model name, local timestamp, prompt summary, and actions taken."
+- [actions]
+  - Appended a new log entry for this prompt execution with model name, local timestamp, prompt summary, and actions taken.
+
+## 2025-09-23T06:35:55+08:00 — Model: Cascade
+- [prompt] "yes please  and also extract that to avoid duplication"
+- [actions]
+  - Created shared error mapping utility: `lib/core/utils/error_mapper.dart` to centralize `DioException` -> `AppError` mapping and wrap unknown errors.
+  - Refactored `lib/core/services/api_service.dart` to use `ErrorMapper` and removed private `_handleDioError` method. Cleaned up leftover lines after refactor.
+  - Refactored `lib/core/repositories/auth_repository.dart` to use `ErrorMapper` and removed local `_handleDioError` extension.
+  - Ensured repositories and services follow the guideline: catch `DioException` -> map via `ErrorMapper`, catch other exceptions -> `ErrorMapper.unknown`.
+
+## 2025-09-23T06:40:34+08:00 — Model: Cascade
+- [prompt] "yes please sweep the code base, no need to creating unit test"
+- [actions]
+  - Searched the entire codebase for `DioException`, `on DioException`, `_handleDioError`, and `DioError` usages.
+  - Confirmed only `api_service.dart` and `auth_repository.dart` directly handled Dio; both now refactored to use `ErrorMapper`.
+  - Verified no other repositories/services contain custom Dio mappings or leftover handlers.

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:palakat_admin/core/constants/enums.dart';
 import '../../models/inventory_item.dart';
 import 'package:palakat_admin/core/widgets/side_drawer.dart';
 import 'package:palakat_admin/core/widgets/info_section.dart';
@@ -146,8 +147,6 @@ class InventoryDetailDrawer extends StatelessWidget {
     }
   }
 }
-
- 
 
 class _ConditionBadge extends StatelessWidget {
   const _ConditionBadge({required this.condition});

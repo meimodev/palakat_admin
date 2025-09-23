@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:palakat_admin/core/constants/enums.dart';
+import 'package:palakat_admin/core/models/member_position.dart';
+import 'package:palakat_admin/core/models/membership.dart';
 import '../../../../core/models/account.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../../../../core/widgets/side_drawer.dart';
@@ -21,20 +24,24 @@ class _AccountScreenState extends State<AccountScreen> {
     super.initState();
     // Mock current account data
     _currentAccount = Account(
-      id: 'admin-001',
+      id: 1,
       name: 'Admin User',
       email: 'admin@palakat.com',
       phone: '+62 812-3456-7890',
-      profileImageUrl: 'https://placehold.co/100x100.png',
-      role: UserRole.administrator,
-      status: AccountStatus.active,
-      memberSince: DateTime(2023, 1, 1),
-      lastLogin: DateTime.now().subtract(const Duration(hours: 2)),
-      department: 'Administration',
-      position: 'System Administrator',
-      emailVerified: true,
-      phoneVerified: true,
-      twoFactorEnabled: false,
+      gender: Gender.male,
+      married: false,
+      dob: DateTime.now(),
+      claimed: false,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      membership: Membership(
+        id: 0,
+        baptize: false,
+        sidi: false,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        membershipPositions: const [],
+      ),
     );
 
     _initializeControllers();
@@ -81,7 +88,13 @@ class _AccountScreenState extends State<AccountScreen> {
   void _openEditAccountDrawer() {
     final nameCtrl = TextEditingController(text: _currentAccount.name);
     final phoneCtrl = TextEditingController(text: _currentAccount.phone);
-    final posCtrl = TextEditingController(text: _currentAccount.position ?? '');
+    final posCtrl = TextEditingController(
+      text:
+          _currentAccount.membership?.membershipPositions
+              .map((mp) => mp.name)
+              .join(' - ') ??
+          '',
+    );
 
     final theme = Theme.of(context);
 
@@ -153,7 +166,20 @@ class _AccountScreenState extends State<AccountScreen> {
                   _currentAccount = _currentAccount.copyWith(
                     name: nameCtrl.text,
                     phone: phoneCtrl.text,
-                    position: posCtrl.text.isEmpty ? null : posCtrl.text,
+                    membership: _currentAccount.membership?.copyWith(
+                      membershipPositions: [
+                        ..._currentAccount.membership?.membershipPositions ??
+                            [],
+                        MemberPosition(
+                          name: posCtrl.text,
+                          id: 0,
+                          churchId: 0,
+                          columnId: 0,
+                          createdAt: DateTime.now(),
+                          updatedAt: DateTime.now(),
+                        ),
+                      ],
+                    ),
                   );
                 });
                 Navigator.of(context).pop();
@@ -284,7 +310,11 @@ class _AccountScreenState extends State<AccountScreen> {
     _nameController = TextEditingController(text: _currentAccount.name);
     _phoneController = TextEditingController(text: _currentAccount.phone);
     _positionController = TextEditingController(
-      text: _currentAccount.position ?? '',
+      text:
+          _currentAccount.membership?.membershipPositions
+              .map((mp) => mp.name)
+              .join(' - ') ??
+          '',
     );
   }
 
@@ -431,14 +461,6 @@ class _AccountScreenState extends State<AccountScreen> {
                                     color: theme.colorScheme.onSurfaceVariant,
                                   ),
                                 ),
-                                if (_currentAccount.phoneVerified) ...[
-                                  const SizedBox(width: 6),
-                                  Icon(
-                                    Icons.verified,
-                                    color: Colors.green,
-                                    size: 16,
-                                  ),
-                                ],
                               ],
                             ),
                           ],
@@ -463,7 +485,10 @@ class _AccountScreenState extends State<AccountScreen> {
                         child: _buildInfoField(
                           theme,
                           'Position',
-                          _currentAccount.position ?? '-',
+                          _currentAccount.membership?.membershipPositions
+                                  .map((mp) => mp.name)
+                                  .join(' - ') ??
+                              '-',
                         ),
                       ),
                     ],

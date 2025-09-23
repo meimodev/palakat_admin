@@ -1,3 +1,5 @@
+import 'package:palakat_admin/core/constants/enums.dart';
+
 class InventoryItem {
   final String itemName;
   final String location;
@@ -14,24 +16,4 @@ class InventoryItem {
     required this.lastUpdate,
     required this.updatedBy,
   });
-}
-
-enum InventoryCondition {
-  good,
-  used,
-  new_,
-  notApplicable;
-
-  String get displayName {
-    switch (this) {
-      case InventoryCondition.good:
-        return 'Good';
-      case InventoryCondition.used:
-        return 'Used';
-      case InventoryCondition.new_:
-        return 'New';
-      case InventoryCondition.notApplicable:
-        return 'N/A';
-    }
-  }
 }

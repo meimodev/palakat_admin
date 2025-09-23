@@ -1,42 +1,8 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:palakat_admin/core/constants/enums.dart';
 
 part 'billing.freezed.dart';
 part 'billing.g.dart';
-
-enum BillingType {
-  @JsonValue('subscription')
-  subscription,
-  @JsonValue('oneTime')
-  oneTime,
-  @JsonValue('recurring')
-  recurring,
-}
-
-enum BillingStatus {
-  @JsonValue('pending')
-  pending,
-  @JsonValue('paid')
-  paid,
-  @JsonValue('overdue')
-  overdue,
-  @JsonValue('cancelled')
-  cancelled,
-  @JsonValue('refunded')
-  refunded,
-}
-
-enum PaymentMethod {
-  @JsonValue('creditCard')
-  creditCard,
-  @JsonValue('bankTransfer')
-  bankTransfer,
-  @JsonValue('cash')
-  cash,
-  @JsonValue('check')
-  check,
-  @JsonValue('digitalWallet')
-  digitalWallet,
-}
 
 @freezed
 abstract class BillingItem with _$BillingItem {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:palakat_admin/core/constants/enums.dart';
 
 /// Custom page transition builder that provides smooth and elegant transitions
 class SmoothPageTransition<T> extends CustomTransitionPage<T> {
@@ -53,13 +54,7 @@ class SmoothPageTransition<T> extends CustomTransitionPage<T> {
   }
 }
 
-enum PageTransitionType {
-  fadeWithScale,
-  slideFromRight,
-  slideFromLeft,
-  slideFromBottom,
-  fade,
-}
+// PageTransitionType is now centralized in core/constants/enums.dart
 
 /// Extension to easily create smooth transitions for GoRouter
 extension GoRouterSmoothTransitions on GoRoute {

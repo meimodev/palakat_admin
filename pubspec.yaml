@@ -45,6 +45,11 @@ dependencies:
   dio: ^5.9.0
   # Pretty logging for Dio
   pretty_dio_logger: ^1.4.0
+  # Environment variables support
+  flutter_dotenv: ^6.0.0
+  # Local key-value storage using Hive
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
 
 dev_dependencies:
   flutter_test:
@@ -74,9 +79,8 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

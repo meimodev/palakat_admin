@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:multi_dropdown/multi_dropdown.dart';
+import 'package:palakat_admin/core/models/account.dart';
 import 'package:palakat_admin/core/models/membership.dart';
+import 'package:palakat_admin/core/models/member_position.dart';
 
 class EditMemberDialog extends StatefulWidget {
-  final Membership member;
-  
-  const EditMemberDialog({
-    super.key,
-    required this.member,
-  });
+  final Account account;
+
+  const EditMemberDialog({super.key, required this.account});
 
   @override
   State<EditMemberDialog> createState() => _EditMemberDialogState();
@@ -20,7 +19,7 @@ class _EditMemberDialogState extends State<EditMemberDialog> {
   late TextEditingController _phoneController;
   late bool _isBaptized;
   late bool _isSidi;
-  late bool _isLinked;
+  late bool _isClaimed;
   final List<String> _positions = [];
   late final MultiSelectController<String> _positionsController;
   final _formKey = GlobalKey<FormState>();
@@ -38,14 +37,16 @@ class _EditMemberDialogState extends State<EditMemberDialog> {
   @override
   void initState() {
     super.initState();
-    final member = widget.member;
-    _nameController = TextEditingController(text: member.name);
-    _emailController = TextEditingController(text: member.email);
-    _phoneController = TextEditingController(text: member.phone);
-    _isBaptized = member.isBaptized;
-    _isSidi = member.isSidi;
-    _isLinked = member.isLinked;
-    _positions.addAll(member.positions);
+    final account = widget.account;
+    _nameController = TextEditingController(text: account.name);
+    _emailController = TextEditingController(text: account.email);
+    _phoneController = TextEditingController(text: account.phone);
+    _isBaptized = account.membership?.baptize ?? false;
+    _isSidi = account.membership?.sidi ?? false;
+    _isClaimed = account.claimed;
+    _positions.addAll(
+      (account.membership?.membershipPositions ?? []).map((e) => e.name),
+    );
 
     // Initialize positions controller with available options and preselect
     _positionsController = MultiSelectController<String>();
@@ -96,8 +97,10 @@ class _EditMemberDialogState extends State<EditMemberDialog> {
                 keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 16),
-              const Text('Additional Information',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                'Additional Information',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               CheckboxListTile(
                 title: const Text('Baptized'),
@@ -116,15 +119,17 @@ class _EditMemberDialogState extends State<EditMemberDialog> {
               ),
               CheckboxListTile(
                 title: const Text('Linked to Family'),
-                value: _isLinked,
+                value: _isClaimed,
                 onChanged: (value) =>
-                    setState(() => _isLinked = value ?? false),
+                    setState(() => _isClaimed = value ?? false),
                 controlAffinity: ListTileControlAffinity.leading,
                 dense: true,
               ),
               const SizedBox(height: 8),
-              const Text('Positions',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                'Positions',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               MultiDropdown<String>(
                 controller: _positionsController,
@@ -166,56 +171,56 @@ class _EditMemberDialogState extends State<EditMemberDialog> {
     );
   }
 
-  
-
   void _saveChanges() {
     if (_formKey.currentState?.validate() ?? false) {
-      final updatedMember = widget.member.copyWith(
+      final now = DateTime.now();
+      final updatedMembership =
+          (widget.account.membership ??
+                  Membership(
+                    id: 0,
+                    baptize: false,
+                    sidi: false,
+                    createdAt: now,
+                    updatedAt: now,
+                    membershipPositions: const [],
+                  ))
+              .copyWith(
+                baptize: _isBaptized,
+                sidi: _isSidi,
+                updatedAt: now,
+                membershipPositions: [
+                  for (var idx = 0; idx < _positions.length; idx++)
+                    MemberPosition(
+                      id: (widget.account.membership?.id ?? 0) * 100 + idx + 1,
+                      churchId: 0,
+                      columnId: 0,
+                      name: _positions[idx],
+                      createdAt: now,
+                      updatedAt: now,
+                    ),
+                ],
+              );
+
+      final updatedAccount = widget.account.copyWith(
         name: _nameController.text,
         email: _emailController.text,
         phone: _phoneController.text,
-        positions: _positions,
-        isBaptized: _isBaptized,
-        isSidi: _isSidi,
-        isLinked: _isLinked,
+        claimed: _isClaimed,
+        updatedAt: now,
+        membership: updatedMembership,
       );
-      Navigator.of(context).pop(updatedMember);
+
+      Navigator.of(context).pop(updatedAccount);
     }
   }
 }
 
-// Extension to create a copy of AppMember with updated fields
-extension AppMemberExtension on Membership {
-  Membership copyWith({
-    String? name,
-    String? email,
-    String? role,
-    String? status,
-    String? phone,
-    List<String>? positions,
-    bool? isBaptized,
-    bool? isSidi,
-    bool? isLinked,
-  }) {
-    return Membership(
-      name: name ?? this.name,
-      email: email ?? this.email,
-      phone: phone ?? this.phone,
-      positions: positions ?? List.from(this.positions),
-      isBaptized: isBaptized ?? this.isBaptized,
-      isSidi: isSidi ?? this.isSidi,
-      isLinked: isLinked ?? this.isLinked,
-    );
-  }
-}
-
-// Function to show the edit dialog
-Future<Membership?> showEditMemberDialog(
+Future<Account?> showEditMemberDialog(
   BuildContext context, {
-  required Membership member,
+  required Account account,
 }) async {
-  return showDialog<Membership>(
+  return showDialog<Account>(
     context: context,
-    builder: (context) => EditMemberDialog(member: member),
+    builder: (context) => EditMemberDialog(account: account),
   );
 }

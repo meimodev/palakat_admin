@@ -1,10 +1,1 @@
-import 'package:json_annotation/json_annotation.dart';
-
-enum ApprovalStatus {
-  @JsonValue('pending')
-  pending,
-  @JsonValue('approved')
-  approved,
-  @JsonValue('rejected')
-  rejected,
-}
+export 'package:palakat_admin/core/constants/enums.dart' show ApprovalStatus;

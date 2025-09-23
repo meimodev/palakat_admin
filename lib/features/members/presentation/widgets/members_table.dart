@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/models/membership.dart';
+import '../../../../core/models/account.dart';
 import '../state/members_providers.dart';
 import 'edit_member_drawer.dart';
 
@@ -15,17 +15,17 @@ class MembersTable extends ConsumerWidget {
       children: [
         const _MembersHeader(),
         for (final u in slice.rows)
-          _MemberRow(member: u, onTap: () => _editMember(context, u, ref)),
+          _MemberRow(account: u, onTap: () => _editMember(context, u, ref)),
       ],
     );
   }
 
   Future<void> _editMember(
     BuildContext context,
-    Membership member,
+    Account account,
     WidgetRef ref,
   ) async {
-    final updatedMember = await showEditMemberDrawer(context, member: member);
+    final updatedMember = await showEditMemberDrawer(context, account: account);
 
     if (updatedMember != null) {
       // In a real app, you would update the member in your state management
@@ -76,14 +76,22 @@ class _MembersHeader extends StatelessWidget {
 }
 
 class _MemberRow extends StatelessWidget {
-  final Membership member;
+  final Account account;
   final VoidCallback onTap;
-  const _MemberRow({required this.member, required this.onTap});
+  const _MemberRow({required this.account, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hoverColor = theme.colorScheme.surfaceContainerHighest;
+
+    final membership = account.membership;
+    final isBaptized = membership?.baptize ?? false;
+    final isSidi = membership?.sidi ?? false;
+    final isLinked = account.claimed;
+    final positions = (membership?.membershipPositions ?? [])
+        .map((e) => e.name)
+        .toList();
 
     return Column(
       children: [
@@ -112,7 +120,7 @@ class _MemberRow extends StatelessWidget {
                             children: [
                               Flexible(
                                 child: Text(
-                                  member.name,
+                                  account.name,
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -124,14 +132,14 @@ class _MemberRow extends StatelessWidget {
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  if (member.isBaptized)
+                                  if (isBaptized)
                                     _StatusBadge(
                                       icon: Icons.water_drop,
                                       color: Colors.blue.shade600,
                                       backgroundColor: Colors.blue.shade50,
                                       tooltip: 'Baptized',
                                     ),
-                                  if (member.isSidi)
+                                  if (isSidi)
                                     Padding(
                                       padding: const EdgeInsets.only(left: 4.0),
                                       child: _StatusBadge(
@@ -141,7 +149,7 @@ class _MemberRow extends StatelessWidget {
                                         tooltip: 'Sidi',
                                       ),
                                     ),
-                                  if (member.isLinked)
+                                  if (isLinked)
                                     Padding(
                                       padding: const EdgeInsets.only(left: 4.0),
                                       child: _StatusBadge(
@@ -168,14 +176,14 @@ class _MemberRow extends StatelessWidget {
                     ),
                     _cell(
                       Text(
-                        member.phone,
+                        account.phone,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                       flex: 3,
                     ),
-                    _cell(_PositionsCell(positions: member.positions), flex: 3),
+                    _cell(_PositionsCell(positions: positions), flex: 3),
                     Icon(
                       Icons.chevron_right,
                       size: 20,

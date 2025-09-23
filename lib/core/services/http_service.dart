@@ -1,31 +1,52 @@
+import 'dart:async';
 import 'dart:developer' as dev;
+// import removed: no longer needed
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:palakat_admin/core/config/app_config.dart';
+import 'package:palakat_admin/core/services/auth_service_provider.dart';
+import 'package:palakat_admin/features/auth/application/auth_controller.dart';
+import 'package:palakat_admin/core/config/auth_endpoints.dart';
+import 'package:palakat_admin/core/models/auth_tokens.dart';
 
 part 'http_service.g.dart';
 
 /// HTTP service configuration with Dio and logging interceptor
 class HttpService {
   late final Dio _dio;
+  final String Function()? _accessTokenProvider;
+  final Future<void> Function()? _refreshTokens;
+  final Future<void> Function()? _onUnauthorized;
+  bool _isRefreshing = false;
+  final List<void Function()> _refreshWaiters = [];
 
   HttpService({
     String? baseUrl,
     Duration? connectTimeout,
     Duration? receiveTimeout,
     Duration? sendTimeout,
-  }) {
-    _dio = Dio(BaseOptions(
-      baseUrl: baseUrl ?? 'https://api.example.com', // Replace with your API base URL
-      connectTimeout: connectTimeout ?? const Duration(seconds: 30),
-      receiveTimeout: receiveTimeout ?? const Duration(seconds: 30),
-      sendTimeout: sendTimeout ?? const Duration(seconds: 30),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-    ));
+    Map<String, String>? extraHeaders,
+    String Function()? accessTokenProvider,
+    Future<void> Function()? refreshTokens,
+    Future<void> Function()? onUnauthorized,
+  }) : _accessTokenProvider = accessTokenProvider,
+       _refreshTokens = refreshTokens,
+       _onUnauthorized = onUnauthorized {
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: baseUrl ?? '', // Replace with your API base URL
+        connectTimeout: connectTimeout ?? const Duration(seconds: 30),
+        receiveTimeout: receiveTimeout ?? const Duration(seconds: 30),
+        sendTimeout: sendTimeout ?? const Duration(seconds: 30),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          if (extraHeaders != null) ...extraHeaders,
+        },
+      ),
+    );
 
     _setupInterceptors();
   }
@@ -42,7 +63,7 @@ class HttpService {
           responseHeader: false,
           error: true,
           compact: true,
-          maxWidth: 90,
+          maxWidth: 55,
           enabled: true, // Set to false in production
         ),
       );
@@ -51,31 +72,75 @@ class HttpService {
     // Custom error interceptor
     _dio.interceptors.add(
       InterceptorsWrapper(
-        onError: (error, handler) {
-          // Log error details
-          dev.log('HTTP Error: ${error.message}',
-              name: 'HttpService', level: 1000, error: error);
-          if (error.response != null) {
-            dev.log('Status Code: ${error.response?.statusCode}',
-                name: 'HttpService', level: 1000);
-            dev.log('Response Data: ${error.response?.data}',
-                name: 'HttpService', level: 1000);
+        onError: (error, handler) async {
+          // 401 handling with refresh
+          final status = error.response?.statusCode ?? 0;
+          final isUnauthorized = status == 401;
+          final alreadyRetried =
+              error.requestOptions.extra['__retried__'] == true;
+          // Determine if the failing request is the sign-in route; if so, do NOT attempt refresh
+          final requestPath = error.requestOptions.path;
+          final isSignInRoute = requestPath.endsWith(AuthEndpoints.signIn);
+          if (isUnauthorized &&
+              !alreadyRetried &&
+              _refreshTokens != null &&
+              !isSignInRoute) {
+            try {
+              // Queue while a refresh is in progress
+              if (_isRefreshing) {
+                final completer = Completer<void>();
+                _refreshWaiters.add(() => completer.complete());
+                await completer.future;
+              } else {
+                _isRefreshing = true;
+                await _refreshTokens.call();
+                // notify all waiters
+                for (final notify in List<void Function()>.from(
+                  _refreshWaiters,
+                )) {
+                  notify();
+                }
+                _refreshWaiters.clear();
+              }
+              _isRefreshing = false;
+              // retry original request with new token
+              final req = error.requestOptions;
+              req.extra['__retried__'] = true;
+              final token = _accessTokenProvider?.call();
+              if (token != null && token.isNotEmpty) {
+                req.headers['Authorization'] = 'Bearer $token';
+              } else {
+                req.headers.remove('Authorization');
+              }
+              final response = await _dio.fetch(req);
+              handler.resolve(response);
+              return;
+            } catch (e, st) {
+              dev.log(
+                'Token refresh failed: $e',
+                name: 'HttpService',
+                level: 1000,
+                error: e,
+                stackTrace: st,
+              );
+              _isRefreshing = false;
+              _refreshWaiters.clear();
+              await _onUnauthorized?.call();
+            }
           }
-          
           // Continue with the error
           handler.next(error);
         },
         onRequest: (options, handler) {
           // Add authentication headers if needed
-          // options.headers['Authorization'] = 'Bearer $token';
-          
-          dev.log('Request: ${options.method} ${options.path}',
-              name: 'HttpService', level: 800);
+          final token = _accessTokenProvider?.call();
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+
           handler.next(options);
         },
         onResponse: (response, handler) {
-          dev.log('Response: ${response.statusCode} ${response.requestOptions.path}',
-              name: 'HttpService', level: 800);
           handler.next(response);
         },
       ),
@@ -192,11 +257,49 @@ class HttpService {
 /// Riverpod provider for HttpService
 @riverpod
 HttpService httpService(Ref ref) {
+  final config = ref.watch(appConfigProvider);
+  final auth = ref.watch(authServiceProvider);
+  final headers = <String, String>{};
+  final key = config.apiKey;
+  if (key != null && key.isNotEmpty) {
+    headers['Authorization'] = 'Bearer $key';
+  }
+
   return HttpService(
-    baseUrl: 'https://jsonplaceholder.typicode.com', // Example API for testing
+    baseUrl: config.apiBaseUrl,
     connectTimeout: const Duration(seconds: 30),
     receiveTimeout: const Duration(seconds: 30),
     sendTimeout: const Duration(seconds: 30),
+    extraHeaders: headers.isEmpty ? null : headers,
+    accessTokenProvider: () => auth.accessToken ?? '',
+    refreshTokens: () async {
+      // Perform refresh without going through dioInstance/httpService to avoid cycles
+      final refreshToken = auth.refreshToken;
+      if (refreshToken == null || refreshToken.isEmpty) {
+        throw StateError('No refresh token available');
+      }
+      final dio = Dio(
+        BaseOptions(
+          baseUrl: config.apiBaseUrl,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            if (headers.isNotEmpty) ...headers,
+          },
+        ),
+      );
+      final res = await dio.post<Map<String, dynamic>>(
+        AuthEndpoints.refresh,
+        data: {'refresh_token': refreshToken},
+      );
+      final data = res.data ?? const {};
+      final tokens = AuthTokens.fromJson(data['data']);
+      await auth.saveTokens(tokens);
+    },
+    onUnauthorized: () async {
+      // Ensure controller state resets so router guard reacts
+      await ref.read(authControllerProvider.notifier).forceSignOut();
+    },
   );
 }
 

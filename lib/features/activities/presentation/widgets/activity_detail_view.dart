@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:palakat_admin/core/constants/enums.dart';
 
 import '../../../../core/models/activity.dart';
 import '../../../../core/widgets/side_drawer.dart';
@@ -9,7 +10,6 @@ import '../../../../core/widgets/approver_card.dart';
 import '../../../../core/widgets/status_chip.dart';
 import '../../../../core/services/approver_service.dart';
 import '../../../../core/utils/date_utils.dart';
-import '../../../../core/models/approval_status.dart';
 
 class ActivityDetailView extends ConsumerWidget {
   final Activity activity;
@@ -26,7 +26,7 @@ class ActivityDetailView extends ConsumerWidget {
     final approvers = ref.watch(activityApproversProvider(activity));
     final approvalStatus = ref.watch(activityApprovalStatusProvider(activity));
     final approverService = ref.watch(approverServiceProvider);
-    
+
     return SideDrawer(
       title: 'Activity Details',
       subtitle: 'View detailed information about this activity',
@@ -97,7 +97,8 @@ class ActivityDetailView extends ConsumerWidget {
                           color = Colors.green;
                           statusText = 'Approved';
                           if (approver.decisionAt != null) {
-                            dateText = 'on ${AppDateUtils.formatStandardDate(approver.decisionAt!)}';
+                            dateText =
+                                'on ${AppDateUtils.formatStandardDate(approver.decisionAt!)}';
                           }
                           break;
                         case ApprovalStatus.rejected:
@@ -105,7 +106,8 @@ class ActivityDetailView extends ConsumerWidget {
                           color = Colors.red;
                           statusText = 'Rejected';
                           if (approver.decisionAt != null) {
-                            dateText = 'on ${AppDateUtils.formatStandardDate(approver.decisionAt!)}';
+                            dateText =
+                                'on ${AppDateUtils.formatStandardDate(approver.decisionAt!)}';
                           }
                           break;
                         case ApprovalStatus.pending:
@@ -169,14 +171,24 @@ class ActivityDetailView extends ConsumerWidget {
         children: [
           Builder(
             builder: (context) {
-              final statusDisplay = approverService.getStatusDisplay(approvalStatus);
+              final statusDisplay = approverService.getStatusDisplay(
+                approvalStatus,
+              );
               return StatusChip(
                 label: statusDisplay.label,
-                background: Color(statusDisplay.colorValue).withValues(alpha: 0.2),
+                background: Color(
+                  statusDisplay.colorValue,
+                ).withValues(alpha: 0.2),
                 foreground: Color(statusDisplay.colorValue),
-                icon: IconData(statusDisplay.iconCodePoint, fontFamily: 'MaterialIcons'),
+                icon: IconData(
+                  statusDisplay.iconCodePoint,
+                  fontFamily: 'MaterialIcons',
+                ),
                 fontSize: 13.5,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 9,
+                ),
                 fullWidth: true,
               );
             },
@@ -191,14 +203,15 @@ class ActivityDetailView extends ConsumerWidget {
               ).colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.3),
               ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-
                 Row(
                   children: [
                     Icon(
@@ -224,7 +237,6 @@ class ActivityDetailView extends ConsumerWidget {
       ),
     );
   }
-
 }
 
 class _ActivityTypeChip extends StatelessWidget {
@@ -235,23 +247,20 @@ class _ActivityTypeChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (bg, fg, icon) = switch (type) {
-      ActivityType.service =>
-      (
-      Colors.teal.shade50,
-      Colors.teal.shade700,
-      Icons.handshake,
+      ActivityType.service => (
+        Colors.teal.shade50,
+        Colors.teal.shade700,
+        Icons.handshake,
       ),
-      ActivityType.event =>
-      (
-      Colors.red.shade50,
-      Colors.red.shade700,
-      Icons.event,
+      ActivityType.event => (
+        Colors.red.shade50,
+        Colors.red.shade700,
+        Icons.event,
       ),
-      ActivityType.announcement =>
-      (
-      Colors.blue.shade50,
-      Colors.blue.shade700,
-      Icons.campaign,
+      ActivityType.announcement => (
+        Colors.blue.shade50,
+        Colors.blue.shade700,
+        Icons.campaign,
       ),
     };
 
