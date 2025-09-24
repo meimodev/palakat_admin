@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:palakat_admin/core/config/auth_endpoints.dart';
+import 'package:palakat_admin/core/config/endpoint.dart';
 import 'package:palakat_admin/core/models/app_error.dart';
 import 'package:palakat_admin/core/models/auth_credentials.dart';
 import 'package:palakat_admin/core/models/auth_response.dart';
@@ -25,7 +25,7 @@ class AuthRepository {
         'password': credentials.password,
       };
       final res = await _dio.post<Map<String, dynamic>>(
-        AuthEndpoints.signIn,
+        Endpoints.signIn,
         data: body,
       );
       final auth = AuthResponse.fromJson(res.data?["data"] ?? const {});
@@ -47,7 +47,7 @@ class AuthRepository {
         throw AppError.validation('No refresh token available');
       }
       final res = await _dio.post<Map<String, dynamic>>(
-        AuthEndpoints.refresh,
+        Endpoints.refresh,
         data: {
           'refresh_token': refreshToken,
         },
@@ -66,7 +66,7 @@ class AuthRepository {
 
   Future<void> signOut() async {
     try {
-      await _dio.post(AuthEndpoints.signOut);
+      await _dio.post(Endpoints.signOut);
     } catch (_) {
       // ignore network errors on logout
     } finally {

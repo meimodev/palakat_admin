@@ -8,7 +8,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:palakat_admin/core/config/app_config.dart';
 import 'package:palakat_admin/core/services/auth_service_provider.dart';
 import 'package:palakat_admin/features/auth/application/auth_controller.dart';
-import 'package:palakat_admin/core/config/auth_endpoints.dart';
+import 'package:palakat_admin/core/config/endpoint.dart';
 import 'package:palakat_admin/core/models/auth_tokens.dart';
 
 part 'http_service.g.dart';
@@ -80,7 +80,7 @@ class HttpService {
               error.requestOptions.extra['__retried__'] == true;
           // Determine if the failing request is the sign-in route; if so, do NOT attempt refresh
           final requestPath = error.requestOptions.path;
-          final isSignInRoute = requestPath.endsWith(AuthEndpoints.signIn);
+          final isSignInRoute = requestPath.endsWith(Endpoints.signIn);
           if (isUnauthorized &&
               !alreadyRetried &&
               _refreshTokens != null &&
@@ -289,7 +289,7 @@ HttpService httpService(Ref ref) {
         ),
       );
       final res = await dio.post<Map<String, dynamic>>(
-        AuthEndpoints.refresh,
+        Endpoints.refresh,
         data: {'refresh_token': refreshToken},
       );
       final data = res.data ?? const {};

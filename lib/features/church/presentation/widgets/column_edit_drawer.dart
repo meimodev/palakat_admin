@@ -8,6 +8,7 @@ class ColumnEditDrawer extends StatefulWidget {
   final Function(cm.Column) onSave;
   final VoidCallback? onDelete;
   final VoidCallback onClose;
+  final int churchId;
 
   const ColumnEditDrawer({
     super.key,
@@ -15,6 +16,7 @@ class ColumnEditDrawer extends StatefulWidget {
     required this.onSave,
     this.onDelete,
     required this.onClose,
+    required this.churchId,
   });
 
   @override
@@ -23,32 +25,34 @@ class ColumnEditDrawer extends StatefulWidget {
 
 class _ColumnEditDrawerState extends State<ColumnEditDrawer> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _numberController;
+  late TextEditingController _nameController;
 
   @override
   void initState() {
     super.initState();
-    _numberController = TextEditingController(
-      text: widget.column?.number.toString() ?? '',
+    _nameController = TextEditingController(
+      text: widget.column?.name ?? '',
     );
   }
 
   @override
   void dispose() {
-    _numberController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
   void _saveChanges() {
     if (_formKey.currentState!.validate()) {
-      final column =
-          widget.column?.copyWith(number: int.parse(_numberController.text)) ??
+      final column = widget.column?.copyWith(
+            name: _nameController.text.trim(),
+            updatedAt: DateTime.now(),
+          ) ??
           cm.Column(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            number: int.parse(_numberController.text),
-            name:
-                'Column ${_numberController.text}', // Auto-generate name from number
+            id: DateTime.now().millisecondsSinceEpoch,
+            name: _nameController.text.trim(),
             createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            churchId: widget.churchId,
           );
 
       widget.onSave(column);
@@ -117,12 +121,12 @@ class _ColumnEditDrawerState extends State<ColumnEditDrawer> {
               titleSpacing: 16,
               children: [
                 _FormField(
-                  label: 'Column Number',
+                  label: 'Column Name',
                   child: TextFormField(
-                    controller: _numberController,
-                    keyboardType: TextInputType.number,
+                    controller: _nameController,
+                    keyboardType: TextInputType.text,
                     decoration: InputDecoration(
-                      hintText: 'Enter column number',
+                      hintText: 'Enter column name',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -130,11 +134,8 @@ class _ColumnEditDrawerState extends State<ColumnEditDrawer> {
                       fillColor: theme.colorScheme.surface,
                     ),
                     validator: (value) {
-                      if (value?.isEmpty == true) {
-                        return 'Column number is required';
-                      }
-                      if (int.tryParse(value!) == null) {
-                        return 'Please enter a valid number';
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Column name is required';
                       }
                       return null;
                     },
@@ -175,8 +176,6 @@ class _ColumnEditDrawerState extends State<ColumnEditDrawer> {
     );
   }
 }
-
- 
 
 class _FormField extends StatelessWidget {
   final String label;

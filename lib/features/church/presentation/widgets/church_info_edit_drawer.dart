@@ -26,6 +26,8 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
   late TextEditingController _phoneController;
   late TextEditingController _emailController;
   late TextEditingController _descriptionController;
+  late TextEditingController _latitudeController;
+  late TextEditingController _longitudeController;
 
   @override
   void initState() {
@@ -35,6 +37,10 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
     _phoneController = TextEditingController(text: widget.church.phoneNumber ?? '');
     _emailController = TextEditingController(text: widget.church.email ?? '');
     _descriptionController = TextEditingController(text: widget.church.description ?? '');
+    _latitudeController =
+        TextEditingController(text: widget.church.location.latitude.toString());
+    _longitudeController =
+        TextEditingController(text: widget.church.location.longitude.toString());
   }
 
   @override
@@ -44,22 +50,42 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
     _phoneController.dispose();
     _emailController.dispose();
     _descriptionController.dispose();
+    _latitudeController.dispose();
+    _longitudeController.dispose();
     super.dispose();
   }
 
   void _saveChanges() {
     if (_formKey.currentState!.validate()) {
-      final updatedChurch = widget.church.copyWith(
-        name: _nameController.text,
-        phoneNumber: _phoneController.text.isEmpty ? null : _phoneController.text,
-        email: _emailController.text.isEmpty ? null : _emailController.text,
-        description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
+      // parse coordinates
+      final parsedLat = double.tryParse(_latitudeController.text.trim());
+      final parsedLng = double.tryParse(_longitudeController.text.trim());
+
+      final updatedLocation = widget.church.location.copyWith(
+        name: _addressController.text.trim(),
+        latitude: parsedLat ?? widget.church.location.latitude,
+        longitude: parsedLng ?? widget.church.location.longitude,
         updatedAt: DateTime.now(),
       );
-      
+
+      final updatedChurch = widget.church.copyWith(
+        name: _nameController.text.trim(),
+        phoneNumber: _phoneController.text.trim().isEmpty
+            ? null
+            : _phoneController.text.trim(),
+        email: _emailController.text.trim().isEmpty
+            ? null
+            : _emailController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
+        location: updatedLocation,
+        updatedAt: DateTime.now(),
+      );
+
       widget.onSave(updatedChurch);
       widget.onClose();
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Church updated successfully')),
       );
@@ -69,7 +95,7 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return SideDrawer(
       title: 'Edit Church Information',
       subtitle: 'Update your church details',
@@ -96,7 +122,7 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
                       filled: true,
                       fillColor: theme.colorScheme.surface,
                     ),
-                    validator: (value) => value?.isEmpty == true ? 'Church name is required' : null,
+                    validator: (value) => value?.trim().isEmpty == true ? 'Church name is required' : null,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -113,8 +139,68 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
                       filled: true,
                       fillColor: theme.colorScheme.surface,
                     ),
-                    validator: (value) => value?.isEmpty == true ? 'Address is required' : null,
+                    validator: (value) => value?.trim().isEmpty == true ? 'Address is required' : null,
                   ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _FormField(
+                        label: 'Latitude',
+                        child: TextFormField(
+                          controller: _latitudeController,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                          decoration: InputDecoration(
+                            hintText: 'e.g. -6.1754',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            filled: true,
+                            fillColor: theme.colorScheme.surface,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Latitude is required';
+                            }
+                            final v = double.tryParse(value.trim());
+                            if (v == null || v < -90 || v > 90) {
+                              return 'Latitude must be a number between -90 and 90';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _FormField(
+                        label: 'Longitude',
+                        child: TextFormField(
+                          controller: _longitudeController,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                          decoration: InputDecoration(
+                            hintText: 'e.g. 106.8272',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            filled: true,
+                            fillColor: theme.colorScheme.surface,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Longitude is required';
+                            }
+                            final v = double.tryParse(value.trim());
+                            if (v == null || v < -180 || v > 180) {
+                              return 'Longitude must be a number between -180 and 180';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 Row(

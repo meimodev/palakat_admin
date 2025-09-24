@@ -6,10 +6,11 @@ part 'column.g.dart';
 @freezed
 abstract class Column with _$Column {
   const factory Column({
-    required String id,
-    required int number,
+    required int id,
     required String name,
     required DateTime createdAt,
+    required DateTime updatedAt,
+    required int churchId,
   }) = _Column;
 
   factory Column.fromJson(Map<String, dynamic> json) => _$ColumnFromJson(json);

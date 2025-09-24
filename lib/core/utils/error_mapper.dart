@@ -31,7 +31,7 @@ class ErrorMapper {
 
   /// Wrap an unknown error with AppError.unknown and context message
   static AppError unknown(String message, Object error, {StackTrace? st}) {
-    dev.log('$message: $error', error: error, name: 'ErrorMapper', stackTrace: st);
+    dev.log('Unknown error: $message: $error', error: error, name: 'ErrorMapper', stackTrace: st);
     return AppError.unknown('$message: $error', details: "");
   }
 }

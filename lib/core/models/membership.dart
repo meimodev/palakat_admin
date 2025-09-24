@@ -1,4 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:palakat_admin/core/models/church.dart';
+import 'package:palakat_admin/core/models/column.dart';
 import 'package:palakat_admin/core/models/member_position.dart';
 
 part 'membership.freezed.dart';
@@ -13,6 +15,8 @@ abstract class Membership with _$Membership {
     required DateTime createdAt,
     required DateTime updatedAt,
     required List<MemberPosition> membershipPositions,
+    Church? church,
+    Column? column,
   }) = _Membership;
 
   factory Membership.fromJson(Map<String, dynamic> json) =>
