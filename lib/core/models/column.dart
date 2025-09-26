@@ -1,15 +1,16 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'column.freezed.dart';
+
 part 'column.g.dart';
 
 @freezed
 abstract class Column with _$Column {
   const factory Column({
-    required int id,
+    int? id,
     required String name,
     required DateTime createdAt,
-    required DateTime updatedAt,
+    DateTime? updatedAt,
     required int churchId,
   }) = _Column;
 

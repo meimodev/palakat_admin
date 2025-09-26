@@ -44,7 +44,7 @@ dependencies:
   # HTTP client with interceptors
   dio: ^5.9.0
   # Pretty logging for Dio
-  pretty_dio_logger: ^1.4.0
+  talker_dio_logger: ^5.0.1
   # Environment variables support
   flutter_dotenv: ^6.0.0
   # Local key-value storage using Hive

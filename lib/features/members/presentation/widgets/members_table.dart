@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:palakat_admin/core/widgets/app_snackbars.dart';
 
 import '../../../../core/models/account.dart';
 import '../state/members_providers.dart';
@@ -34,9 +35,11 @@ class MembersTable extends ConsumerWidget {
 
       // For now, just show a snackbar
       if (context.mounted) {
-        ScaffoldMessenger.of(
+        AppSnackbars.showSuccess(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Member updated')));
+          title: 'Saved',
+          message: 'Member updated',
+        );
       }
     }
   }

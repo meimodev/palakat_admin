@@ -193,7 +193,6 @@ class _EditMemberDialogState extends State<EditMemberDialog> {
                     MemberPosition(
                       id: (widget.account.membership?.id ?? 0) * 100 + idx + 1,
                       churchId: 0,
-                      columnId: 0,
                       name: _positions[idx],
                       createdAt: now,
                       updatedAt: now,

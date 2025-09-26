@@ -5,6 +5,7 @@ import 'package:palakat_admin/core/models/membership.dart';
 import '../../../../core/models/account.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../../../../core/widgets/side_drawer.dart';
+import '../../../../core/widgets/app_snackbars.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -174,7 +175,6 @@ class _AccountScreenState extends State<AccountScreen> {
                           name: posCtrl.text,
                           id: 0,
                           churchId: 0,
-                          columnId: 0,
                           createdAt: DateTime.now(),
                           updatedAt: DateTime.now(),
                         ),
@@ -183,10 +183,10 @@ class _AccountScreenState extends State<AccountScreen> {
                   );
                 });
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Account information updated successfully'),
-                  ),
+                AppSnackbars.showSuccess(
+                  context,
+                  title: 'Saved',
+                  message: 'Account information updated successfully',
                 );
               },
               child: const Text('Save Changes'),
@@ -273,29 +273,27 @@ class _AccountScreenState extends State<AccountScreen> {
                 final newPass = newCtrl.text.trim();
                 final confirmPass = confirmCtrl.text.trim();
                 if (newPass.length < 6) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Password must be at least 6 characters'),
-                    ),
+                  AppSnackbars.showError(
+                    context,
+                    title: 'Invalid password',
+                    message: 'Password must be at least 6 characters',
                   );
                   return;
                 }
                 if (newPass != confirmPass) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'New password and confirmation do not match',
-                      ),
-                    ),
+                  AppSnackbars.showError(
+                    context,
+                    title: 'Mismatch',
+                    message: 'New password and confirmation do not match',
                   );
                   return;
                 }
                 // TODO: Integrate with backend password change
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Password updated successfully'),
-                  ),
+                AppSnackbars.showSuccess(
+                  context,
+                  title: 'Updated',
+                  message: 'Password updated successfully',
                 );
               },
               child: const Text('Update Password'),
@@ -387,8 +385,10 @@ class _AccountScreenState extends State<AccountScreen> {
             onPressed: () {
               Navigator.of(context).pop();
               // TODO: Implement actual sign out logic
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Signed out successfully')),
+              AppSnackbars.showSuccess(
+                context,
+                title: 'Signed out',
+                message: 'Signed out successfully',
               );
             },
             child: const Text('Sign Out'),

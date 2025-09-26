@@ -6,7 +6,7 @@ import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/repositories/approval_repository.dart';
 import '../../../../core/models/app_error.dart';
 import '../../../../core/utils/debouncer.dart';
- 
+import '../../../../core/widgets/app_snackbars.dart';
 
 class ApprovalScreen extends ConsumerStatefulWidget {
   const ApprovalScreen({super.key});
@@ -161,22 +161,28 @@ class _ApprovalScreenState extends ConsumerState<ApprovalScreen> {
 
   void _showAddRuleDialog(BuildContext context) {
     // TODO: Implement add rule dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Add rule dialog - Coming soon!')),
+    AppSnackbars.showSuccess(
+      context,
+      title: 'Coming soon',
+      message: 'Add rule dialog - Coming soon!',
     );
   }
 
   void _showEditRuleDialog(BuildContext context, ApprovalRule rule) {
     // TODO: Implement edit rule dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Edit rule: ${rule.name} - Coming soon!')),
+    AppSnackbars.showSuccess(
+      context,
+      title: 'Coming soon',
+      message: 'Edit rule: ${rule.name} - Coming soon!',
     );
   }
 
   void _toggleRuleActive(ApprovalRule rule) {
     // TODO: Implement toggle rule active status
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Toggle ${rule.name} status - Coming soon!')),
+    AppSnackbars.showSuccess(
+      context,
+      title: 'Coming soon',
+      message: 'Toggle ${rule.name} status - Coming soon!',
     );
   }
 }

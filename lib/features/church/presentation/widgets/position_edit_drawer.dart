@@ -1,34 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:palakat_admin/core/models/member_position_detail.dart';
 import '../../../../core/widgets/side_drawer.dart';
 import '../../../../core/models/member_position.dart';
 import '../../../../core/widgets/info_section.dart';
+import '../../../../core/widgets/app_snackbars.dart';
+import '../../application/church_controller.dart';
 
-class PositionEditDrawer extends StatefulWidget {
-  final MemberPosition? position;
+class PositionEditDrawer extends ConsumerStatefulWidget {
+  final int? positionId;
   final Function(MemberPosition) onSave;
   final VoidCallback? onDelete;
   final VoidCallback onClose;
+  final int churchId;
 
   const PositionEditDrawer({
     super.key,
-    this.position,
+    this.positionId,
     required this.onSave,
     this.onDelete,
     required this.onClose,
+    required this.churchId,
   });
 
   @override
-  State<PositionEditDrawer> createState() => _PositionEditDrawerState();
+  ConsumerState<PositionEditDrawer> createState() => _PositionEditDrawerState();
 }
 
-class _PositionEditDrawerState extends State<PositionEditDrawer> {
+class _PositionEditDrawerState extends ConsumerState<PositionEditDrawer> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _nameController;
+  final TextEditingController _nameController = TextEditingController();
+  bool _loading = false;
+  String? _errorMessage;
+  MemberPositionDetail? _positionDetail;
+
+  bool get adding => widget.positionId == null;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.position?.name ?? '');
+
+    if (!adding) {
+      _fetchPositionAndMembers();
+    }
   }
 
   @override
@@ -37,28 +51,48 @@ class _PositionEditDrawerState extends State<PositionEditDrawer> {
     super.dispose();
   }
 
+  Future<void> _fetchPositionAndMembers() async {
+    setState(() {
+      _loading = true;
+      _errorMessage = null;
+    });
+    try {
+      // Fetch latest position by ID
+      final latest = await ref
+          .read(churchControllerProvider.notifier)
+          .fetchPosition(widget.positionId!);
+
+      setState(() {
+        _loading = false;
+        _errorMessage = null;
+        _positionDetail = latest;
+        _nameController.text = latest.name;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to load members for this position';
+      });
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   void _saveChanges() {
     if (_formKey.currentState!.validate()) {
-      final position =
-          widget.position?.copyWith(name: _nameController.text) ??
-          MemberPosition(
-            id: DateTime.now().millisecondsSinceEpoch, // temp id for mock
-            churchId: 0,
-            columnId: 0,
-            name: _nameController.text,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-          );
+      final position = MemberPosition(
+        id: widget.positionId,
+        churchId: _positionDetail?.churchId ?? widget.churchId,
+        name: _nameController.text.trim(),
+        createdAt: _positionDetail?.createdAt ?? DateTime.now(),
+      );
 
       widget.onSave(position);
       widget.onClose();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Position ${widget.position == null ? 'added' : 'updated'} successfully',
-          ),
-        ),
+      AppSnackbars.showSuccess(
+        context,
+        title: 'Saved',
+        message: 'Position ${adding ? 'added' : 'updated'} successfully',
       );
     }
   }
@@ -79,14 +113,17 @@ class _PositionEditDrawerState extends State<PositionEditDrawer> {
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
-                widget.onDelete!();
+                if (widget.onDelete != null) {
+                  widget.onDelete!();
+                }
                 widget.onClose();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Position deleted successfully'),
-                  ),
+                AppSnackbars.showSuccess(
+                  context,
+                  title: 'Deleted',
+                  message: 'Position deleted successfully',
                 );
+                Navigator.of(context).pop();
+
               },
               style: TextButton.styleFrom(
                 foregroundColor: Theme.of(context).colorScheme.error,
@@ -104,9 +141,15 @@ class _PositionEditDrawerState extends State<PositionEditDrawer> {
     final theme = Theme.of(context);
 
     return SideDrawer(
-      title: 'Edit Position',
-      subtitle: 'Update position information',
+      title: adding ? 'Add Position' : 'Edit Position',
+      subtitle: adding
+          ? 'Create a new position'
+          : 'Update position information',
       onClose: widget.onClose,
+      isLoading: !adding && _loading,
+      loadingMessage: 'Loading position details...',
+      errorMessage: !adding ? _errorMessage : null,
+      onRetry: !adding ? _fetchPositionAndMembers : null,
       content: Form(
         key: _formKey,
         child: Column(
@@ -139,11 +182,143 @@ class _PositionEditDrawerState extends State<PositionEditDrawer> {
             const SizedBox(height: 24),
 
             // Members using this position
-            if (widget.position != null) ...[
+            if (!adding) ...[
               InfoSection(
                 title: 'Members in this Position',
                 titleSpacing: 16,
-                children: [_MembersListWidget(positionId: widget.position!.id.toString())],
+                children: [
+                  if ((_positionDetail?.positions ?? []).isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: theme.colorScheme.outlineVariant,
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            size: 16,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'No members assigned to this position',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else ...[
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: theme.colorScheme.outlineVariant,
+                          width: 1,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerHighest
+                                  .withValues(alpha: 0.3),
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(7),
+                                topRight: Radius.circular(7),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.people,
+                                  size: 16,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  _positionDetail?.accountName ?? '',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ..._positionDetail!.positions.asMap().entries.map((
+                            entry,
+                          ) {
+                            final index = entry.key;
+                            final member = entry.value;
+                            final isLast =
+                                index == _positionDetail!.positions.length - 1;
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                border: isLast
+                                    ? null
+                                    : Border(
+                                        bottom: BorderSide(
+                                          color:
+                                              theme.colorScheme.outlineVariant,
+                                          width: 0.5,
+                                        ),
+                                      ),
+                              ),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 12,
+                                    backgroundColor: theme.colorScheme.primary
+                                        .withValues(alpha: 0.1),
+                                    child: Text(
+                                      member
+                                          .split(' ')
+                                          .map((n) => n[0])
+                                          .take(2)
+                                          .join(),
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: theme.colorScheme.primary,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 10,
+                                          ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      member,
+                                      style: theme.textTheme.bodyMedium,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ],
           ],
@@ -156,8 +331,8 @@ class _PositionEditDrawerState extends State<PositionEditDrawer> {
               child: OutlinedButton(
                 onPressed: _deletePosition,
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: theme.colorScheme.error,
-                  side: BorderSide(color: theme.colorScheme.error),
+                  foregroundColor: Colors.red,
+                  side: BorderSide(color: Colors.red),
                 ),
                 child: const Text('Delete'),
               ),
@@ -171,7 +346,7 @@ class _PositionEditDrawerState extends State<PositionEditDrawer> {
                 backgroundColor: theme.colorScheme.primary,
                 foregroundColor: theme.colorScheme.onPrimary,
               ),
-              child: const Text('Save'),
+              child: Text(adding ? 'Create' : 'Save'),
             ),
           ),
         ],
@@ -179,8 +354,6 @@ class _PositionEditDrawerState extends State<PositionEditDrawer> {
     );
   }
 }
-
- 
 
 class _FormField extends StatelessWidget {
   final String label;
@@ -207,139 +380,16 @@ class _FormField extends StatelessWidget {
   }
 }
 
-class _MembersListWidget extends StatelessWidget {
-  final String positionId;
+// Mock method to get members for a position - replace with actual data source
+List<String> _getMembersForPosition(String positionId) {
+  // This is mock data - replace with actual member data from your data source
+  final mockMembers = {
+    'pos1': ['John Doe', 'Jane Smith'],
+    'pos2': ['Mike Johnson', 'Sarah Wilson', 'David Brown'],
+    'pos3': ['Emily Davis'],
+  };
 
-  const _MembersListWidget({required this.positionId});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final members = _getMembersForPosition(positionId);
-
-    if (members.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest.withValues(
-            alpha: 0.3,
-          ),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: theme.colorScheme.outlineVariant, width: 1),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.info_outline,
-              size: 16,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'No members assigned to this position',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: theme.colorScheme.outlineVariant, width: 1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(
-                alpha: 0.3,
-              ),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(7),
-                topRight: Radius.circular(7),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.people,
-                  size: 16,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${members.length} member${members.length == 1 ? '' : 's'}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ...members.asMap().entries.map((entry) {
-            final index = entry.key;
-            final member = entry.value;
-            final isLast = index == members.length - 1;
-
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                border: isLast
-                    ? null
-                    : Border(
-                        bottom: BorderSide(
-                          color: theme.colorScheme.outlineVariant,
-                          width: 0.5,
-                        ),
-                      ),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 12,
-                    backgroundColor: theme.colorScheme.primary.withValues(
-                      alpha: 0.1,
-                    ),
-                    child: Text(
-                      member.split(' ').map((n) => n[0]).take(2).join(),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(member, style: theme.textTheme.bodyMedium),
-                  ),
-                ],
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  // Mock method to get members for a position - replace with actual data source
-  List<String> _getMembersForPosition(String positionId) {
-    // This is mock data - replace with actual member data from your data source
-    final mockMembers = {
-      'pos1': ['John Doe', 'Jane Smith'],
-      'pos2': ['Mike Johnson', 'Sarah Wilson', 'David Brown'],
-      'pos3': ['Emily Davis'],
-    };
-
-    // For now, return mock data based on position ID
-    // In a real app, you'd query your member database
-    return mockMembers[positionId] ?? [];
-  }
+  // For now, return mock data based on position ID
+  // In a real app, you'd query your member database
+  return mockMembers[positionId] ?? [];
 }

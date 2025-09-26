@@ -34,8 +34,7 @@ class AuthRepository {
       return auth;
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to sign in');
-    } catch (e, st) {
-      print(st);
+    } catch (e) {
       throw ErrorMapper.unknown('Failed to sign in', e);
     }
   }

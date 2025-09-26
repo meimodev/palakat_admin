@@ -61,12 +61,10 @@ class _LoadingShimmerState extends State<LoadingShimmer>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final baseColor =
-        widget.baseColor ??
-        theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3);
-    final highlightColor =
-        widget.highlightColor ??
-        theme.colorScheme.surface.withValues(alpha: 0.8);
+    final baseColor = widget.baseColor ??
+        theme.colorScheme.primaryContainer.withValues(alpha: 0.35);
+    final highlightColor = widget.highlightColor ??
+        theme.colorScheme.secondaryContainer.withValues(alpha: 0.85);
 
     if (!widget.isLoading) {
       return widget.child;

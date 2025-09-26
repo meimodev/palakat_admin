@@ -47,7 +47,6 @@ class MembersNotifier extends _$MembersNotifier {
             MemberPosition(
               id: (i + 1) * 100 + idx,
               churchId: 1,
-              columnId: (idx % 5) + 1,
               name: positions[idx],
               createdAt: now,
               updatedAt: now,

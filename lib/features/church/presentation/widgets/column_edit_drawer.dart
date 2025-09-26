@@ -1,38 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:palakat_admin/core/models/column_detail.dart';
 import '../../../../core/widgets/side_drawer.dart';
 import '../../../../core/models/column.dart' as cm;
 import '../../../../core/widgets/info_section.dart';
+import '../../../../core/widgets/app_snackbars.dart';
+import '../../application/church_controller.dart';
+import '../../../../core/models/membership.dart';
 
-class ColumnEditDrawer extends StatefulWidget {
-  final cm.Column? column;
+class ColumnEditDrawer extends ConsumerStatefulWidget {
   final Function(cm.Column) onSave;
   final VoidCallback? onDelete;
   final VoidCallback onClose;
+  final int? columnId;
   final int churchId;
 
   const ColumnEditDrawer({
     super.key,
-    this.column,
     required this.onSave,
     this.onDelete,
     required this.onClose,
+    this.columnId,
     required this.churchId,
   });
 
   @override
-  State<ColumnEditDrawer> createState() => _ColumnEditDrawerState();
+  ConsumerState<ColumnEditDrawer> createState() => _ColumnEditDrawerState();
 }
 
-class _ColumnEditDrawerState extends State<ColumnEditDrawer> {
+class _ColumnEditDrawerState extends ConsumerState<ColumnEditDrawer> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _nameController;
+  final TextEditingController _nameController = TextEditingController();
+  ColumnDetail? _columnDetail; // latest column copy (fetched)
+  bool _loading = false;
+  List<ColumnDetailMembership> _memberships = const [];
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(
-      text: widget.column?.name ?? '',
-    );
+    // Only fetch when editing an existing column
+    if (widget.columnId != null) {
+      _fetchColumnAndMemberships();
+    }
   }
 
   @override
@@ -41,29 +51,55 @@ class _ColumnEditDrawerState extends State<ColumnEditDrawer> {
     super.dispose();
   }
 
+  Future<void> _fetchColumnAndMemberships() async {
+    setState(() {
+      _loading = true;
+      _errorMessage = null;
+    });
+    try {
+      final latest = await ref
+          .read(churchControllerProvider.notifier)
+          .fetchColumn(widget.columnId!);
+
+      setState(() {
+        _loading = false;
+        _errorMessage = null;
+        _columnDetail = latest;
+        _memberships = latest.memberships;
+        _nameController.text = latest.name;
+      });
+    } catch (e) {
+      // Surface error but keep drawer open
+      setState(() {
+        _errorMessage = 'Failed to load column details';
+      });
+      AppSnackbars.showError(
+        context,
+        title: 'Load failed',
+        message: 'Failed to load column details',
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   void _saveChanges() {
     if (_formKey.currentState!.validate()) {
-      final column = widget.column?.copyWith(
-            name: _nameController.text.trim(),
-            updatedAt: DateTime.now(),
-          ) ??
-          cm.Column(
-            id: DateTime.now().millisecondsSinceEpoch,
-            name: _nameController.text.trim(),
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-            churchId: widget.churchId,
-          );
+      final column = cm.Column(
+        id: widget.columnId,
+        name: _nameController.text.trim(),
+        createdAt: _columnDetail?.createdAt ?? DateTime.now(),
+        churchId: widget.churchId,
+      );
 
       widget.onSave(column);
       widget.onClose();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Column ${widget.column == null ? 'added' : 'updated'} successfully',
-          ),
-        ),
+      AppSnackbars.showSuccess(
+        context,
+        title: 'Saved',
+        message:
+            'Column ${_columnDetail == null ? 'created' : 'updated'} successfully',
       );
     }
   }
@@ -87,8 +123,10 @@ class _ColumnEditDrawerState extends State<ColumnEditDrawer> {
                 Navigator.of(context).pop();
                 widget.onDelete!();
                 widget.onClose();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Column deleted successfully')),
+                AppSnackbars.showSuccess(
+                  context,
+                  title: 'Deleted',
+                  message: 'Column deleted successfully',
                 );
               },
               style: TextButton.styleFrom(
@@ -107,9 +145,15 @@ class _ColumnEditDrawerState extends State<ColumnEditDrawer> {
     final theme = Theme.of(context);
 
     return SideDrawer(
-      title: 'Edit Column',
-      subtitle: 'Update column information',
+      title: _columnDetail == null ? 'Add Column' : 'Edit Column',
+      subtitle: _columnDetail == null
+          ? 'Create a new column'
+          : 'Update column information',
       onClose: widget.onClose,
+      isLoading: widget.columnId != null && _loading,
+      loadingMessage: 'Loading column details...',
+      errorMessage: widget.columnId != null ? _errorMessage : null,
+      onRetry: widget.columnId != null ? _fetchColumnAndMemberships : null,
       content: Form(
         key: _formKey,
         child: Column(
@@ -120,6 +164,19 @@ class _ColumnEditDrawerState extends State<ColumnEditDrawer> {
               title: 'Basic Information',
               titleSpacing: 16,
               children: [
+                // Show ID field only when editing existing column
+                if (_columnDetail != null) ...[
+                  _FormField(
+                    label: 'Column ID',
+                    child: Text(
+                      _columnDetail!.id.toString(),
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 _FormField(
                   label: 'Column Name',
                   child: TextFormField(
@@ -143,12 +200,57 @@ class _ColumnEditDrawerState extends State<ColumnEditDrawer> {
                 ),
               ],
             ),
+
+            const SizedBox(height: 16),
+
+            // Memberships listing (read-only)
+            if (_columnDetail != null)
+              InfoSection(
+                title: 'Registered Members (${_memberships.length})',
+                titleSpacing: 16,
+                children: [
+                  if (_memberships.isEmpty)
+                    Text(
+                      'No members register in this column.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    )
+                  else
+                    ..._memberships.map(
+                      (m) => Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: theme.colorScheme.outlineVariant,
+                              width: 0.5,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '#${m.membershipId} • ${m.name}',
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
           ],
         ),
       ),
       footer: Row(
         children: [
-          if (widget.onDelete != null) ...[
+          if (widget.onDelete != null && _columnDetail != null) ...[
             Expanded(
               child: OutlinedButton(
                 onPressed: _deleteColumn,
@@ -168,7 +270,7 @@ class _ColumnEditDrawerState extends State<ColumnEditDrawer> {
                 backgroundColor: theme.colorScheme.primary,
                 foregroundColor: theme.colorScheme.onPrimary,
               ),
-              child: const Text('Save'),
+              child: Text(_columnDetail == null ? 'Create' : 'Save'),
             ),
           ),
         ],

@@ -9,6 +9,13 @@ class Endpoints {
   static const String churches = '/church';
   static String church({required int churchId}) => '/church/$churchId';
 
+  // Location
+  static String location({required int locationId}) => '/location/$locationId';
+
+  // Column
+  static String column({required int columnId}) => '/column/$columnId';
+  static const String columns = '/column';
+
   // Members
   static const String members = '/members';
   static String member(String memberId) => '/members/$memberId';
@@ -28,5 +35,9 @@ class Endpoints {
   static String churchPositions(String churchId) => '/church/$churchId/positions';
   static String churchPosition(String churchId, String positionId) =>
       '/church/$churchId/positions/$positionId';
+
+  // Membership positions root (query by churchId)
+  static const String membershipPositions = '/membership-position';
+  static String membershipPosition({required int positionId}) => '/membership-position/$positionId';
 
 }

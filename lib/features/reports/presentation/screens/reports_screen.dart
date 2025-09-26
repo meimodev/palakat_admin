@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:palakat_admin/core/widgets/surface_card.dart';
 import 'package:palakat_admin/core/widgets/pagination_bar.dart';
 import 'package:palakat_admin/features/reports/presentation/widgets/report_generate_drawer.dart';
+import 'package:palakat_admin/core/widgets/app_snackbars.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -194,12 +195,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   onClose: () => Navigator.of(ctx).pop(),
                   onGenerate: (range) {
                     Navigator.of(ctx).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Generating $reportTitle${range == null ? '' : ' for ${DateFormat('y-MM-dd').format(range.start)} - ${DateFormat('y-MM-dd').format(range.end)}'}',
-                        ),
-                      ),
+                    final suffix = range == null
+                        ? ''
+                        : ' for ${DateFormat('y-MM-dd').format(range.start)} - ${DateFormat('y-MM-dd').format(range.end)}';
+                    AppSnackbars.showSuccess(
+                      context,
+                      title: 'Generating',
+                      message: '$reportTitle$suffix',
                     );
                   },
                 ),

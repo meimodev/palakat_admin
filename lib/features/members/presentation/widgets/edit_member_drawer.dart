@@ -406,7 +406,6 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
                     MemberPosition(
                       id: (widget.account.membership?.id ?? 0) * 100 + idx + 1,
                       churchId: 1,
-                      columnId: (idx % 5) + 1,
                       name: _positions[idx],
                       createdAt: now,
                       updatedAt: now,

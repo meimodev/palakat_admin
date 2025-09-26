@@ -3,13 +3,14 @@ import 'dart:developer' as dev;
 // import removed: no longer needed
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:palakat_admin/core/config/app_config.dart';
 import 'package:palakat_admin/core/services/auth_service_provider.dart';
 import 'package:palakat_admin/features/auth/application/auth_controller.dart';
 import 'package:palakat_admin/core/config/endpoint.dart';
 import 'package:palakat_admin/core/models/auth_tokens.dart';
+import 'package:talker_dio_logger/talker_dio_logger_interceptor.dart';
+import 'package:talker_dio_logger/talker_dio_logger_settings.dart';
 
 part 'http_service.g.dart';
 
@@ -55,18 +56,25 @@ class HttpService {
   void _setupInterceptors() {
     // Pretty logger interceptor for debugging
     if (kDebugMode) {
-      _dio.interceptors.add(
-        PrettyDioLogger(
-          requestHeader: true,
-          requestBody: true,
-          responseBody: true,
-          responseHeader: false,
-          error: true,
-          compact: true,
-          maxWidth: 55,
-          enabled: true, // Set to false in production
-        ),
-      );
+      // _dio.interceptors.add(
+      //   PrettyDioLogger(
+      //     requestHeader: true,
+      //     requestBody: true,
+      //     responseBody: true,
+      //     responseHeader: false,
+      //     error: true,
+      //     compact: true,
+      //     maxWidth: 55,
+      //     enabled: true, // Set to false in production
+      //   ),
+      // );
+    _dio.interceptors.add(TalkerDioLogger(
+      settings: const TalkerDioLoggerSettings(
+        printRequestHeaders: true,
+        printResponseHeaders: true,
+        printResponseMessage: true,
+      ),
+    ));
     }
 
     // Custom error interceptor
