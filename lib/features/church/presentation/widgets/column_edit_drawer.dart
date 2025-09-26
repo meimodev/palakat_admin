@@ -6,7 +6,6 @@ import '../../../../core/models/column.dart' as cm;
 import '../../../../core/widgets/info_section.dart';
 import '../../../../core/widgets/app_snackbars.dart';
 import '../../application/church_controller.dart';
-import '../../../../core/models/membership.dart';
 
 class ColumnEditDrawer extends ConsumerStatefulWidget {
   final Function(cm.Column) onSave;

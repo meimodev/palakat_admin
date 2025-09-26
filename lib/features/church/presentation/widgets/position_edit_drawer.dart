@@ -184,7 +184,7 @@ class _PositionEditDrawerState extends ConsumerState<PositionEditDrawer> {
             // Members using this position
             if (!adding) ...[
               InfoSection(
-                title: 'Members in this Position',
+                title: 'Member in this Position',
                 titleSpacing: 16,
                 children: [
                   if ((_positionDetail?.positions ?? []).isEmpty)
@@ -380,16 +380,3 @@ class _FormField extends StatelessWidget {
   }
 }
 
-// Mock method to get members for a position - replace with actual data source
-List<String> _getMembersForPosition(String positionId) {
-  // This is mock data - replace with actual member data from your data source
-  final mockMembers = {
-    'pos1': ['John Doe', 'Jane Smith'],
-    'pos2': ['Mike Johnson', 'Sarah Wilson', 'David Brown'],
-    'pos3': ['Emily Davis'],
-  };
-
-  // For now, return mock data based on position ID
-  // In a real app, you'd query your member database
-  return mockMembers[positionId] ?? [];
-}

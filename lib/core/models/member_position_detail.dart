@@ -1,7 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:palakat_admin/core/models/member_position.dart';
 
-import 'membership.dart';
 
 part 'member_position_detail.freezed.dart';
 

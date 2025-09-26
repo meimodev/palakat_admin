@@ -4,7 +4,6 @@ import 'package:palakat_admin/features/church/application/church_state.dart';
 import '../../../../core/widgets/expandable_surface_card.dart';
 import '../../../../core/models/church.dart';
 import '../../../../core/models/column.dart' as cm;
-import '../../../../core/models/membership.dart';
 import '../../../../core/models/member_position.dart';
 import '../../../../core/widgets/loading_shimmer.dart';
 import '../widgets/church_info_edit_drawer.dart';
@@ -374,64 +373,6 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
     );
   }
 
-  Widget _buildLoadingSkeleton(ThemeData theme) {
-    return Material(
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: LoadingShimmer(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                ShimmerPlaceholders.text(
-                  width: 240,
-                  height: 28,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                const SizedBox(height: 8),
-                ShimmerPlaceholders.text(width: 360, height: 16),
-                const SizedBox(height: 24),
-
-                // Church Information Card skeleton
-                ShimmerPlaceholders.card(height: 160),
-                const SizedBox(height: 24),
-
-                // Location Card skeleton
-                ShimmerPlaceholders.card(height: 160),
-                const SizedBox(height: 24),
-
-                // Column Management section skeleton (table)
-                Container(
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: ShimmerPlaceholders.table(rows: 4, columns: 4),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Position Management section skeleton (table)
-                Container(
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: ShimmerPlaceholders.table(rows: 4, columns: 4),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _cardError({
     required ThemeData theme,
@@ -479,7 +420,7 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: theme.colorScheme.onPrimary,
-          disabledBackgroundColor: theme.colorScheme.surfaceVariant,
+          disabledBackgroundColor: theme.colorScheme.surfaceContainerHighest,
         ),
       ),
       child: infoAsync.when(
@@ -566,7 +507,7 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: theme.colorScheme.onPrimary,
-          disabledBackgroundColor: theme.colorScheme.surfaceVariant,
+          disabledBackgroundColor: theme.colorScheme.surfaceContainerHighest,
         ),
       ),
       child: locationAsync.when(
@@ -614,6 +555,7 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
 
     return ExpandableSurfaceCard(
       title: 'Column Management',
+      initiallyExpanded: true,
       subtitle: columnsAsync.hasValue
           ? 'Manage your church columns. Total columns: ${columnsAsync.value!.length}'
           : 'Manage your church columns.',
@@ -624,7 +566,7 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: theme.colorScheme.onPrimary,
-          disabledBackgroundColor: theme.colorScheme.surfaceVariant,
+          disabledBackgroundColor: theme.colorScheme.surfaceContainerHighest,
         ),
       ),
       child: columnsAsync.when(
@@ -690,6 +632,7 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
 
     return ExpandableSurfaceCard(
       title: 'Position Management',
+      initiallyExpanded: true,
       subtitle: positionsAsync.hasValue
           ? 'Manage member positions. Total positions: ${positionsAsync.value!.length}'
           : 'Manage member positions.',
