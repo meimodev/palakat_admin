@@ -129,7 +129,7 @@ class _ChurchLocationEditDrawerState extends ConsumerState<LocationEditDrawer> {
               title: 'Location Details',
               titleSpacing: 16,
               children: [
-                _FormField(
+                LabeledField(
                   label: 'Address',
                   child: TextFormField(
                     controller: _addressController,
@@ -149,7 +149,7 @@ class _ChurchLocationEditDrawerState extends ConsumerState<LocationEditDrawer> {
                 const SizedBox(height: 16),
                 Column(
                   children: [
-                    _FormField(
+                    LabeledField(
                       label: 'Latitude',
                       child: TextFormField(
                         controller: _latitudeController,
@@ -170,7 +170,7 @@ class _ChurchLocationEditDrawerState extends ConsumerState<LocationEditDrawer> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _FormField(
+                    LabeledField(
                       label: 'Longitude',
                       child: TextFormField(
                         controller: _longitudeController,
@@ -210,31 +210,6 @@ class _ChurchLocationEditDrawerState extends ConsumerState<LocationEditDrawer> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _FormField extends StatelessWidget {
-  final String label;
-  final Widget child;
-
-  const _FormField({required this.label, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: theme.textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-        child,
-      ],
     );
   }
 }

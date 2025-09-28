@@ -172,7 +172,7 @@ class _PositionEditDrawerState extends ConsumerState<PositionEditDrawer> {
               titleSpacing: 16,
               children: [
                 if (_positionDetail != null) ...[
-                  _FormField(
+                  LabeledField(
                     label: 'Position ID',
                     child: Text(
                       "# ${_positionDetail!.id}",
@@ -183,7 +183,7 @@ class _PositionEditDrawerState extends ConsumerState<PositionEditDrawer> {
                   ),
                   const SizedBox(height: 16),
                 ],
-                _FormField(
+                LabeledField(
                   label: 'Position Name',
                   child: TextFormField(
                     controller: _nameController,
@@ -374,31 +374,6 @@ class _PositionEditDrawerState extends ConsumerState<PositionEditDrawer> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _FormField extends StatelessWidget {
-  final String label;
-  final Widget child;
-
-  const _FormField({required this.label, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: theme.textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-        child,
-      ],
     );
   }
 }

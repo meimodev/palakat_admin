@@ -8,6 +8,7 @@ import 'package:palakat_admin/features/members/presentation/state/members_provid
 import 'package:palakat_admin/core/widgets/side_drawer.dart';
 import 'package:intl/intl.dart';
 import 'package:palakat_admin/core/validation/validators.dart';
+import 'package:palakat_admin/core/widgets/info_section.dart';
 
 class EditMemberDrawer extends ConsumerStatefulWidget {
   final Account account;
@@ -75,8 +76,9 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Account Information Section
-              _InfoSection(
+              InfoSection(
                 title: 'Account Information',
+                titleSpacing: 12,
                 children: [
                   if (_isLinked) ...[
                     Container(
@@ -109,110 +111,13 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  _FormField(
-                    label: 'Name',
-                    child: TextFormField(
-                      controller: _nameController,
-                      enabled: !_isLinked,
-                      decoration: InputDecoration(
-                        border: const OutlineInputBorder(),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
-                        ),
-                        fillColor: _isLinked ? Colors.grey.shade100 : null,
-                        filled: _isLinked,
-                      ),
-                      validator: (value) => Validators.required('Name is required')
-                          .asFormFieldValidator(value),
-                    ),
-                  ),
-                  _FormField(
-                    label: 'Phone',
-                    child: TextFormField(
-                      controller: _phoneController,
-                      enabled: !_isLinked,
-                      decoration: InputDecoration(
-                        border: const OutlineInputBorder(),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
-                        ),
-                        fillColor: _isLinked ? Colors.grey.shade100 : null,
-                        filled: _isLinked,
-                      ),
-                      keyboardType: TextInputType.phone,
-                    ),
-                  ),
-                  _FormField(
-                    label: 'Marital Status',
-                    child: DropdownButtonFormField<String>(
-                      value: _maritalStatus,
-                      decoration: InputDecoration(
-                        border: const OutlineInputBorder(),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
-                        ),
-                        fillColor: _isLinked ? Colors.grey.shade100 : null,
-                        filled: _isLinked,
-                      ),
-                      items: const [
-                        DropdownMenuItem<String>(
-                          value: 'Single',
-                          child: Text('Single'),
-                        ),
-                        DropdownMenuItem<String>(
-                          value: 'Married',
-                          child: Text('Married'),
-                        ),
-                      ],
-                      onChanged: _isLinked
-                          ? null
-                          : (String? newValue) {
-                              setState(() {
-                                _maritalStatus = newValue ?? 'Single';
-                              });
-                            },
-                    ),
-                  ),
-                  _FormField(
-                    label: 'Gender',
-                    child: DropdownButtonFormField<String>(
-                      value: _genderText,
-                      decoration: InputDecoration(
-                        border: const OutlineInputBorder(),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
-                        ),
-                        fillColor: _isLinked ? Colors.grey.shade100 : null,
-                        filled: _isLinked,
-                      ),
-                      items: const [
-                        DropdownMenuItem<String>(
-                          value: 'Male',
-                          child: Text('Male'),
-                        ),
-                        DropdownMenuItem<String>(
-                          value: 'Female',
-                          child: Text('Female'),
-                        ),
-                      ],
-                      onChanged: _isLinked
-                          ? null
-                          : (String? newValue) {
-                              setState(() {
-                                _genderText = newValue ?? 'Male';
-                              });
-                            },
-                    ),
-                  ),
-                  _FormField(
-                    label: 'Date of Birth',
-                    child: InkWell(
-                      onTap: _isLinked ? null : _selectDateOfBirth,
-                      child: InputDecorator(
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: LabeledField(
+                      label: 'Name',
+                      child: TextFormField(
+                        controller: _nameController,
+                        enabled: !_isLinked,
                         decoration: InputDecoration(
                           border: const OutlineInputBorder(),
                           contentPadding: const EdgeInsets.symmetric(
@@ -221,19 +126,131 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
                           ),
                           fillColor: _isLinked ? Colors.grey.shade100 : null,
                           filled: _isLinked,
-                          suffixIcon: Icon(
-                            Icons.calendar_today,
-                            color: _isLinked ? Colors.grey : null,
-                          ),
                         ),
-                        child: Text(
-                          _dateOfBirth != null
-                              ? DateFormat('MMM dd, yyyy').format(_dateOfBirth!)
-                              : 'Select date of birth',
-                          style: TextStyle(
-                            color: _dateOfBirth != null
-                                ? Theme.of(context).textTheme.bodyLarge?.color
-                                : Theme.of(context).hintColor,
+                        validator: (value) => Validators.required('Name is required')
+                            .asFormFieldValidator(value),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: LabeledField(
+                      label: 'Phone',
+                      child: TextFormField(
+                        controller: _phoneController,
+                        enabled: !_isLinked,
+                        decoration: InputDecoration(
+                          border: const OutlineInputBorder(),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                          fillColor: _isLinked ? Colors.grey.shade100 : null,
+                          filled: _isLinked,
+                        ),
+                        keyboardType: TextInputType.phone,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: LabeledField(
+                      label: 'Marital Status',
+                      child: DropdownButtonFormField<String>(
+                        value: _maritalStatus,
+                        decoration: InputDecoration(
+                          border: const OutlineInputBorder(),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                          fillColor: _isLinked ? Colors.grey.shade100 : null,
+                          filled: _isLinked,
+                        ),
+                        items: const [
+                          DropdownMenuItem<String>(
+                            value: 'Single',
+                            child: Text('Single'),
+                          ),
+                          DropdownMenuItem<String>(
+                            value: 'Married',
+                            child: Text('Married'),
+                          ),
+                        ],
+                        onChanged: _isLinked
+                            ? null
+                            : (String? newValue) {
+                                setState(() {
+                                  _maritalStatus = newValue ?? 'Single';
+                                });
+                              },
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: LabeledField(
+                      label: 'Gender',
+                      child: DropdownButtonFormField<String>(
+                        value: _genderText,
+                        decoration: InputDecoration(
+                          border: const OutlineInputBorder(),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                          fillColor: _isLinked ? Colors.grey.shade100 : null,
+                          filled: _isLinked,
+                        ),
+                        items: const [
+                          DropdownMenuItem<String>(
+                            value: 'Male',
+                            child: Text('Male'),
+                          ),
+                          DropdownMenuItem<String>(
+                            value: 'Female',
+                            child: Text('Female'),
+                          ),
+                        ],
+                        onChanged: _isLinked
+                            ? null
+                            : (String? newValue) {
+                                setState(() {
+                                  _genderText = newValue ?? 'Male';
+                                });
+                              },
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: LabeledField(
+                      label: 'Date of Birth',
+                      child: InkWell(
+                        onTap: _isLinked ? null : _selectDateOfBirth,
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            border: const OutlineInputBorder(),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
+                            fillColor: _isLinked ? Colors.grey.shade100 : null,
+                            filled: _isLinked,
+                            suffixIcon: Icon(
+                              Icons.calendar_today,
+                              color: _isLinked ? Colors.grey : null,
+                            ),
+                          ),
+                          child: Text(
+                            _dateOfBirth != null
+                                ? DateFormat('MMM dd, yyyy').format(_dateOfBirth!)
+                                : 'Select date of birth',
+                            style: TextStyle(
+                              color: _dateOfBirth != null
+                                  ? Theme.of(context).textTheme.bodyLarge?.color
+                                  : Theme.of(context).hintColor,
+                            ),
                           ),
                         ),
                       ),
@@ -245,71 +262,78 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
               const SizedBox(height: 24),
 
               // Membership Information Section
-              _InfoSection(
+              InfoSection(
                 title: 'Membership Information',
+                titleSpacing: 12,
                 children: [
-                  _FormField(
-                    label: 'Positions',
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        DropdownButtonFormField<String>(
-                          key: ValueKey(_positions.length),
-                          value: null,
-                          items: _pos
-                              .where((p) => !_positions.contains(p))
-                              .map(
-                                (p) =>
-                                    DropdownMenuItem(value: p, child: Text(p)),
-                              )
-                              .toList(),
-                          onChanged: (v) {
-                            if (v == null) return;
-                            setState(() {
-                              _positions.add(v);
-                            });
-                          },
-                          decoration: const InputDecoration(
-                            hintText: 'Add a position...',
-                            border: OutlineInputBorder(),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: LabeledField(
+                      label: 'Positions',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          DropdownButtonFormField<String>(
+                            key: ValueKey(_positions.length),
+                            value: null,
+                            items: _pos
+                                .where((p) => !_positions.contains(p))
+                                .map(
+                                  (p) =>
+                                      DropdownMenuItem(value: p, child: Text(p)),
+                                )
+                                .toList(),
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setState(() {
+                                _positions.add(v);
+                              });
+                            },
+                            decoration: const InputDecoration(
+                              hintText: 'Add a position...',
+                              border: OutlineInputBorder(),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final p in _positions)
-                              Chip(
-                                label: Text(p),
-                                onDeleted: () =>
-                                    setState(() => _positions.remove(p)),
-                              ),
-                          ],
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final p in _positions)
+                                Chip(
+                                  label: Text(p),
+                                  onDeleted: () =>
+                                      setState(() => _positions.remove(p)),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  _FormField(
-                    label: 'Column',
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedColumn,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: LabeledField(
+                      label: 'Column',
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedColumn,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                        ),
+                        items: _availableColumns.map<DropdownMenuItem<String>>(
+                          (String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          },
+                        ).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedColumn = newValue;
+                          });
+                        },
                       ),
-                      items: _availableColumns.map<DropdownMenuItem<String>>((
-                        String value,
-                      ) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedColumn = newValue;
-                        });
-                      },
                     ),
                   ),
                   _CheckboxField(
@@ -509,60 +533,6 @@ Future<Account?> showEditMemberDrawer(
       );
     },
   );
-}
-
-class _InfoSection extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
-
-  const _InfoSection({required this.title, required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...children,
-      ],
-    );
-  }
-}
-
-class _FormField extends StatelessWidget {
-  final String label;
-  final Widget child;
-
-  const _FormField({required this.label, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 8),
-          child,
-        ],
-      ),
-    );
-  }
 }
 
 class _CheckboxField extends StatelessWidget {

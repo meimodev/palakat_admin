@@ -91,23 +91,22 @@ class _ColumnEditDrawerState extends ConsumerState<ColumnEditDrawer> {
       churchId: widget.churchId,
     );
 
+    setState(() {
+      _saving = true;
+      _errorMessage = null;
+    });
+    try {
+      await widget.onSave(column);
+      if (!mounted) return;
+      widget.onClose();
+    } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _saving = true;
-        _errorMessage = null;
+        _errorMessage = 'Failed to save column';
       });
-      try {
-        await widget.onSave(column);
-        if (!mounted) return;
-        widget.onClose();
-      } catch (e) {
-        if (!mounted) return;
-        setState(() {
-          _errorMessage = 'Failed to save column';
-        });
-      } finally {
-        if (mounted) setState(() => _saving = false);
-      }
-      return;
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   void _deleteColumn() {
@@ -187,7 +186,7 @@ class _ColumnEditDrawerState extends ConsumerState<ColumnEditDrawer> {
               children: [
                 // Show ID field only when editing existing column
                 if (_columnDetail != null) ...[
-                  _FormField(
+                  LabeledField(
                     label: 'Column ID',
                     child: Text(
                       "# ${_columnDetail!.id}",
@@ -198,7 +197,7 @@ class _ColumnEditDrawerState extends ConsumerState<ColumnEditDrawer> {
                   ),
                   const SizedBox(height: 16),
                 ],
-                _FormField(
+                LabeledField(
                   label: 'Column Name',
                   child: TextFormField(
                     controller: _nameController,
@@ -293,31 +292,6 @@ class _ColumnEditDrawerState extends ConsumerState<ColumnEditDrawer> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _FormField extends StatelessWidget {
-  final String label;
-  final Widget child;
-
-  const _FormField({required this.label, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: theme.textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-        child,
-      ],
     );
   }
 }

@@ -132,7 +132,7 @@ class _InfoEditDrawerState extends ConsumerState<InfoEditDrawer> {
               title: 'Basic Information',
               titleSpacing: 16,
               children: [
-                _FormField(
+                LabeledField(
                   label: 'Church Name',
                   child: TextFormField(
                     controller: _nameController,
@@ -149,7 +149,7 @@ class _InfoEditDrawerState extends ConsumerState<InfoEditDrawer> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                _FormField(
+                LabeledField(
                   label: 'Phone Number (Optional)',
                   child: TextFormField(
                     controller: _phoneController,
@@ -169,7 +169,7 @@ class _InfoEditDrawerState extends ConsumerState<InfoEditDrawer> {
                 ),
                 const SizedBox(height: 16),
 
-                _FormField(
+                LabeledField(
                   label: 'Email (Optional)',
                   child: TextFormField(
                     controller: _emailController,
@@ -186,7 +186,7 @@ class _InfoEditDrawerState extends ConsumerState<InfoEditDrawer> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                _FormField(
+                LabeledField(
                   label: 'Description (Optional)',
                   child: TextFormField(
                     controller: _descriptionController,
@@ -221,31 +221,6 @@ class _InfoEditDrawerState extends ConsumerState<InfoEditDrawer> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _FormField extends StatelessWidget {
-  final String label;
-  final Widget child;
-
-  const _FormField({required this.label, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: theme.textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-        child,
-      ],
     );
   }
 }
