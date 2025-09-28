@@ -3,6 +3,7 @@ import 'package:multi_dropdown/multi_dropdown.dart';
 import 'package:palakat_admin/core/models/account.dart';
 import 'package:palakat_admin/core/models/membership.dart';
 import 'package:palakat_admin/core/models/member_position.dart';
+import 'package:palakat_admin/core/validation/validators.dart';
 
 class EditMemberDialog extends StatefulWidget {
   final Account account;
@@ -79,16 +80,16 @@ class _EditMemberDialogState extends State<EditMemberDialog> {
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(labelText: 'Name'),
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Name is required' : null,
+                validator: (value) => Validators.required('Name is required')
+                    .asFormFieldValidator(value),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(labelText: 'Email'),
                 keyboardType: TextInputType.emailAddress,
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Email is required' : null,
+                validator: (value) => Validators.required('Email is required')
+                    .asFormFieldValidator(value),
               ),
               const SizedBox(height: 12),
               TextFormField(

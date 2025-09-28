@@ -7,6 +7,7 @@ import 'package:palakat_admin/core/models/member_position.dart';
 import 'package:palakat_admin/features/members/presentation/state/members_providers.dart';
 import 'package:palakat_admin/core/widgets/side_drawer.dart';
 import 'package:intl/intl.dart';
+import 'package:palakat_admin/core/validation/validators.dart';
 
 class EditMemberDrawer extends ConsumerStatefulWidget {
   final Account account;
@@ -122,8 +123,8 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
                         fillColor: _isLinked ? Colors.grey.shade100 : null,
                         filled: _isLinked,
                       ),
-                      validator: (value) =>
-                          value?.isEmpty ?? true ? 'Name is required' : null,
+                      validator: (value) => Validators.required('Name is required')
+                          .asFormFieldValidator(value),
                     ),
                   ),
                   _FormField(

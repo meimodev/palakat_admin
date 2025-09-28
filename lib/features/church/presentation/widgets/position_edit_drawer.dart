@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:palakat_admin/core/extension/string_extension.dart';
 import 'package:palakat_admin/core/models/member_position_detail.dart';
 import '../../../../core/widgets/side_drawer.dart';
 import '../../../../core/models/member_position.dart';
 import '../../../../core/widgets/info_section.dart';
 import '../../../../core/widgets/app_snackbars.dart';
 import '../../application/church_controller.dart';
+import 'package:palakat_admin/core/validation/validators.dart';
 
 class PositionEditDrawer extends ConsumerStatefulWidget {
   final int? positionId;
   final Function(MemberPosition) onSave;
-  final VoidCallback? onDelete;
+  final Future<void> Function()? onDelete;
   final VoidCallback onClose;
   final int churchId;
 
@@ -33,6 +35,7 @@ class _PositionEditDrawerState extends ConsumerState<PositionEditDrawer> {
   bool _loading = false;
   String? _errorMessage;
   MemberPositionDetail? _positionDetail;
+  bool _deleting = false;
 
   bool get adding => widget.positionId == null;
 
@@ -66,7 +69,7 @@ class _PositionEditDrawerState extends ConsumerState<PositionEditDrawer> {
         _loading = false;
         _errorMessage = null;
         _positionDetail = latest;
-        _nameController.text = latest.name;
+        _nameController.text = latest.name.toCamelCase;
       });
     } catch (e) {
       setState(() {
@@ -82,8 +85,9 @@ class _PositionEditDrawerState extends ConsumerState<PositionEditDrawer> {
       final position = MemberPosition(
         id: widget.positionId,
         churchId: _positionDetail?.churchId ?? widget.churchId,
-        name: _nameController.text.trim(),
+        name: _nameController.text.trim().toCamelCase,
         createdAt: _positionDetail?.createdAt ?? DateTime.now(),
+        updatedAt: _positionDetail?.updatedAt,
       );
 
       widget.onSave(position);
@@ -112,18 +116,24 @@ class _PositionEditDrawerState extends ConsumerState<PositionEditDrawer> {
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
-                if (widget.onDelete != null) {
-                  widget.onDelete!();
-                }
-                widget.onClose();
-                AppSnackbars.showSuccess(
-                  context,
-                  title: 'Deleted',
-                  message: 'Position deleted successfully',
-                );
+              onPressed: () async {
                 Navigator.of(context).pop();
-
+                setState(() {
+                  _deleting = true;
+                  _errorMessage = null;
+                });
+                try {
+                  await widget.onDelete!();
+                  if (!mounted) return;
+                  widget.onClose();
+                } catch (e) {
+                  if (!mounted) return;
+                  setState(() {
+                    _errorMessage = 'Failed to delete position';
+                  });
+                } finally {
+                  if (mounted) setState(() => _deleting = false);
+                }
               },
               style: TextButton.styleFrom(
                 foregroundColor: Theme.of(context).colorScheme.error,
@@ -146,10 +156,12 @@ class _PositionEditDrawerState extends ConsumerState<PositionEditDrawer> {
           ? 'Create a new position'
           : 'Update position information',
       onClose: widget.onClose,
-      isLoading: !adding && _loading,
-      loadingMessage: 'Loading position details...',
+      isLoading: (!adding && _loading) || _deleting,
+      loadingMessage: _deleting
+          ? 'Deleting position...'
+          : 'Loading position details...',
       errorMessage: !adding ? _errorMessage : null,
-      onRetry: !adding ? _fetchPositionAndMembers : null,
+      onRetry: !adding && !_deleting ? _fetchPositionAndMembers : null,
       content: Form(
         key: _formKey,
         child: Column(
@@ -159,6 +171,18 @@ class _PositionEditDrawerState extends ConsumerState<PositionEditDrawer> {
               title: 'Position Information',
               titleSpacing: 16,
               children: [
+                if (_positionDetail != null) ...[
+                  _FormField(
+                    label: 'Position ID',
+                    child: Text(
+                      "# ${_positionDetail!.id}",
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 _FormField(
                   label: 'Position Name',
                   child: TextFormField(
@@ -171,9 +195,9 @@ class _PositionEditDrawerState extends ConsumerState<PositionEditDrawer> {
                       filled: true,
                       fillColor: theme.colorScheme.surface,
                     ),
-                    validator: (value) => value?.isEmpty == true
-                        ? 'Position name is required'
-                        : null,
+                    maxLength: 20,
+                    validator: (value) => ChurchValidators.positionName()
+                        .asFormFieldValidator(value),
                   ),
                 ),
               ],
@@ -181,7 +205,6 @@ class _PositionEditDrawerState extends ConsumerState<PositionEditDrawer> {
 
             const SizedBox(height: 24),
 
-            // Members using this position
             if (!adding) ...[
               InfoSection(
                 title: 'Member in this Position',
@@ -379,4 +402,3 @@ class _FormField extends StatelessWidget {
     );
   }
 }
-

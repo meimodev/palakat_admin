@@ -2,7 +2,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:palakat_admin/core/models/auth_credentials.dart';
 import 'package:palakat_admin/core/models/auth_response.dart';
 import 'package:palakat_admin/core/repositories/auth_repository.dart';
-import 'package:palakat_admin/core/services/auth_service_provider.dart';
+import 'package:palakat_admin/core/services/local_storage_service_provider.dart';
+import 'package:palakat_admin/core/models/account.dart';
 
 part 'auth_controller.g.dart';
 
@@ -11,7 +12,7 @@ class AuthController extends _$AuthController {
   @override
   AsyncValue<AuthResponse?> build() {
     // Initialize from cached auth (Hive) so session is restored on app start
-    final cached = ref.read(authServiceProvider).currentAuth;
+    final cached = ref.read(localStorageServiceProvider).currentAuth;
     return AsyncValue.data(cached);
   }
 
@@ -39,9 +40,21 @@ class AuthController extends _$AuthController {
   /// Useful for 401 handling to avoid provider cycles.
   Future<void> forceSignOut() async {
     try {
-      await ref.read(authServiceProvider).clear();
+      await ref.read(localStorageServiceProvider).clear();
     } finally {
       state = const AsyncValue.data(null);
     }
+  }
+
+  /// Update the locally cached auth by replacing its Account, then sync provider state.
+  /// Safe no-op if there is no current cached auth (e.g., signed out).
+  Future<void> updateCachedAccount(Account updatedAccount) async {
+    final storage = ref.read(localStorageServiceProvider);
+    final current = storage.currentAuth;
+    if (current == null) return;
+
+    final newAuth = current.copyWith(account: updatedAccount);
+    await storage.saveAuth(newAuth);
+    state = AsyncValue.data(newAuth);
   }
 }

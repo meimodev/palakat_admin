@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../application/church_controller.dart';
 import '../../../../core/widgets/side_drawer.dart';
 import '../../../../core/models/church.dart';
 import '../../../../core/widgets/info_section.dart';
+import 'package:palakat_admin/core/validation/validators.dart';
 
-class ChurchInfoEditDrawer extends StatefulWidget {
+class InfoEditDrawer extends ConsumerStatefulWidget {
   final Church church;
-  final Function(Church) onSave;
+  final Future<void> Function(Church) onSave;
   final VoidCallback onClose;
 
-  const ChurchInfoEditDrawer({
+  const InfoEditDrawer({
     super.key,
     required this.church,
     required this.onSave,
@@ -16,15 +19,18 @@ class ChurchInfoEditDrawer extends StatefulWidget {
   });
 
   @override
-  State<ChurchInfoEditDrawer> createState() => _ChurchInfoEditDrawerState();
+  ConsumerState<InfoEditDrawer> createState() => _InfoEditDrawerState();
 }
 
-class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
+class _InfoEditDrawerState extends ConsumerState<InfoEditDrawer> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
   late TextEditingController _emailController;
   late TextEditingController _descriptionController;
+  bool _saving = false;
+  String? _errorMessage;
+  bool _loading = false;
 
   @override
   void initState() {
@@ -37,6 +43,31 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
     _descriptionController = TextEditingController(
       text: widget.church.description ?? '',
     );
+    _fetchLatestChurch();
+  }
+
+  Future<void> _fetchLatestChurch() async {
+    setState(() {
+      _loading = true;
+      _errorMessage = null;
+    });
+    try {
+      final latest = await ref
+          .read(churchControllerProvider.notifier)
+          .fetchChurchDetail(widget.church.id);
+      if (!mounted) return;
+      _nameController.text = latest.name;
+      _phoneController.text = latest.phoneNumber ?? '';
+      _emailController.text = latest.email ?? '';
+      _descriptionController.text = latest.description ?? '';
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Failed to load church details';
+      });
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -48,23 +79,34 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
     super.dispose();
   }
 
-  void _saveChanges() {
-    if (_formKey.currentState!.validate()) {
-      final updatedChurch = widget.church.copyWith(
-        name: _nameController.text.trim(),
-        phoneNumber: _phoneController.text.trim().isEmpty
-            ? null
-            : _phoneController.text.trim(),
-        email: _emailController.text.trim().isEmpty
-            ? null
-            : _emailController.text.trim(),
-        description: _descriptionController.text.trim().isEmpty
-            ? null
-            : _descriptionController.text.trim(),
-      );
+  Future<void> _saveChanges() async {
+    if (!_formKey.currentState!.validate()) return;
+    final updatedChurch = widget.church.copyWith(
+      name: _nameController.text.trim(),
+      phoneNumber:
+          _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+      email:
+          _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+      description: _descriptionController.text.trim().isEmpty
+          ? null
+          : _descriptionController.text.trim(),
+    );
 
-      widget.onSave(updatedChurch);
+    setState(() {
+      _saving = true;
+      _errorMessage = null;
+    });
+    try {
+      await widget.onSave(updatedChurch);
+      if (!mounted) return;
       widget.onClose();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Failed to save changes';
+      });
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -76,6 +118,10 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
       title: 'Edit Church Information',
       subtitle: 'Update your church details',
       onClose: widget.onClose,
+      isLoading: _saving || _loading,
+      loadingMessage: _loading ? 'Loading church details...' : 'Saving changes...',
+      errorMessage: _errorMessage,
+      onRetry: _loading ? _fetchLatestChurch : null,
       content: Form(
         key: _formKey,
         child: Column(
@@ -98,9 +144,8 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
                       filled: true,
                       fillColor: theme.colorScheme.surface,
                     ),
-                    validator: (value) => value?.trim().isEmpty == true
-                        ? 'Church name is required'
-                        : null,
+                    validator: (value) =>
+                        ChurchValidators.churchName().asFormFieldValidator(value),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -109,6 +154,7 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
                   child: TextFormField(
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
+                    maxLength: 13,
                     decoration: InputDecoration(
                       hintText: 'Enter phone number',
                       border: OutlineInputBorder(
@@ -117,12 +163,8 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
                       filled: true,
                       fillColor: theme.colorScheme.surface,
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return null;
-                      final digits = value.replaceAll(RegExp(r'[^0-9+]'), '');
-                      if (digits.length < 8) return 'Please enter a valid phone number';
-                      return null;
-                    },
+                    validator: (value) =>
+                        Validators.optionalPhoneMinDigits(12).asFormFieldValidator(value),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -140,15 +182,7 @@ class _ChurchInfoEditDrawerState extends State<ChurchInfoEditDrawer> {
                       filled: true,
                       fillColor: theme.colorScheme.surface,
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return null;
-                      if (!RegExp(
-                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                      ).hasMatch(value)) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
+                    validator: (value) => Validators.email().asFormFieldValidator(value),
                   ),
                 ),
                 const SizedBox(height: 16),

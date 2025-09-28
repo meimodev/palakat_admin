@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:palakat_admin/features/auth/application/auth_controller.dart';
 import 'package:palakat_admin/core/models/app_error.dart';
+import 'package:palakat_admin/core/validation/validators.dart';
 import 'package:palakat_admin/core/widgets/error_widget.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
@@ -42,19 +43,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     );
   }
 
-  bool _isValidEmail(String input) {
-    final email = input.trim();
-    if (email.isEmpty) return false;
-    // Simple RFC5322-ish pattern sufficient for validation UI
-    final emailRegex = RegExp(r'^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$', caseSensitive: false);
-    return emailRegex.hasMatch(email);
-  }
-
-  bool _isValidPhone(String input) {
-    // Local phone only: digits only, 12-13 digits, no country code '+'
-    final digits = _normalizePhoneDigits(input);
-    return RegExp(r'^[0-9]{12,13}$').hasMatch(digits);
-  }
 
   String _normalizePhoneDigits(String input) {
     return input.replaceAll(RegExp(r'[^0-9]'), '');
@@ -174,12 +162,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                             _isFormatting = false;
                           }
                         },
-                        validator: (v) {
-                          final value = v?.trim() ?? '';
-                          if (value.isEmpty) return 'Please enter your email or phone number';
-                          if (_isValidEmail(value) || _isValidPhone(value)) return null;
-                          return 'Enter a valid email address or phone number';
-                        },
+                        validator: (v) => AuthValidators.identifier()
+                            .asFormFieldValidator(v),
                       ),
                       const SizedBox(height: 12),
 
@@ -197,7 +181,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         ),
                         autofillHints: const [AutofillHints.password],
                         onFieldSubmitted: (_) => _submit(),
-                        validator: (v) => (v == null || v.isEmpty) ? 'Please enter your password' : null,
+                        validator: (v) => Validators.required('Please enter your password')
+                            .asFormFieldValidator(v),
                       ),
 
                       const SizedBox(height: 24),

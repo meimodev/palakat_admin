@@ -7,10 +7,10 @@ import '../models/column.dart' as cm;
 import '../models/location.dart';
 import '../models/app_error.dart';
 import '../models/member_position_detail.dart';
+import '../models/member_position.dart';
 import '../services/http_service.dart';
 import '../utils/error_mapper.dart';
 import '../config/endpoint.dart';
-import '../models/member_position.dart';
 
 part 'church_repository.g.dart';
 
@@ -49,7 +49,6 @@ class ChurchRepository {
   }) async {
     try {
       final http = _ref.read(httpServiceProvider);
-
       final response = await http.patch<Map<String, dynamic>>(
         Endpoints.church(churchId: churchId),
         data: update,
@@ -250,6 +249,68 @@ class ChurchRepository {
       throw ErrorMapper.fromDio(e, 'Failed to fetch position');
     } catch (e) {
       throw ErrorMapper.unknown('Failed to fetch position', e);
+    }
+  }
+
+  Future<void> deletePosition({required int positionId}) async {
+    try {
+      final http = _ref.read(httpServiceProvider);
+      await http.delete<void>(
+        Endpoints.membershipPosition(positionId: positionId),
+      );
+    } on DioException catch (e) {
+      throw ErrorMapper.fromDio(e, 'Failed to delete position');
+    } catch (e) {
+      throw ErrorMapper.unknown('Failed to delete position', e);
+    }
+  }
+
+  Future<MemberPosition> updateMemberPosition({
+    required int positionId,
+    required Map<String, dynamic> update,
+  }) async {
+
+    try {
+      final http = _ref.read(httpServiceProvider);
+
+      final response = await http.patch<Map<String, dynamic>>(
+        Endpoints.membershipPosition(positionId: positionId),
+        data: update,
+      );
+
+      final data = response.data;
+      final Map<String, dynamic> json = data?['data'] ?? {};
+      if (json.isEmpty) {
+        throw AppError.network('Invalid update position response payload');
+      }
+
+      return MemberPosition.fromJson(json);
+    } on DioException catch (e) {
+      throw ErrorMapper.fromDio(e, 'Failed to update position');
+    } catch (e) {
+      throw ErrorMapper.unknown('Failed to update position', e);
+    }
+
+  }
+
+  Future<MemberPosition> createMemberPosition({required Map<String, dynamic> data}) async {
+    try {
+      final http = _ref.read(httpServiceProvider);
+      final response = await http.post<Map<String, dynamic>>(
+        Endpoints.membershipPositions,
+        data: data,
+      );
+
+      final body = response.data;
+      final Map<String, dynamic> json = body?['data'] ?? {};
+      if (json.isEmpty) {
+        throw AppError.network('Invalid create position response payload');
+      }
+      return MemberPosition.fromJson(json);
+    } on DioException catch (e) {
+      throw ErrorMapper.fromDio(e, 'Failed to create position');
+    } catch (e) {
+      throw ErrorMapper.unknown('Failed to create position', e);
     }
   }
 }

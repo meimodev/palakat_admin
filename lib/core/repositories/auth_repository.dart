@@ -5,8 +5,8 @@ import 'package:palakat_admin/core/models/app_error.dart';
 import 'package:palakat_admin/core/models/auth_credentials.dart';
 import 'package:palakat_admin/core/models/auth_response.dart';
 import 'package:palakat_admin/core/models/auth_tokens.dart';
-import 'package:palakat_admin/core/services/auth_service.dart';
-import 'package:palakat_admin/core/services/auth_service_provider.dart';
+import 'package:palakat_admin/core/services/local_storage_service.dart';
+import 'package:palakat_admin/core/services/local_storage_service_provider.dart';
 import 'package:palakat_admin/core/services/http_service.dart';
 import 'package:palakat_admin/core/utils/error_mapper.dart';
 
@@ -14,9 +14,9 @@ part 'auth_repository.g.dart';
 
 class AuthRepository {
   final Dio _dio;
-  final AuthService _authService;
+  final LocalStorageService _localStorageService;
 
-  const AuthRepository(this._dio, this._authService);
+  const AuthRepository(this._dio, this._localStorageService);
 
   Future<AuthResponse> signIn(AuthCredentials credentials) async {
     try {
@@ -30,7 +30,7 @@ class AuthRepository {
       );
       final auth = AuthResponse.fromJson(res.data?["data"] ?? const {});
       // Persist full auth payload (tokens + account) using Hive
-      await _authService.saveAuth(auth);
+      await _localStorageService.saveAuth(auth);
       return auth;
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to sign in');
@@ -41,7 +41,7 @@ class AuthRepository {
 
   Future<AuthTokens> refresh() async {
     try {
-      final refreshToken = _authService.refreshToken;
+      final refreshToken = _localStorageService.refreshToken;
       if (refreshToken == null || refreshToken.isEmpty) {
         throw AppError.validation('No refresh token available');
       }
@@ -54,7 +54,7 @@ class AuthRepository {
       // some APIs return tokens directly; others nest in data
       final data = res.data ?? const {};
       final tokens = AuthTokens.fromJson(data["data"]);
-      await _authService.saveTokens(tokens);
+      await _localStorageService.saveTokens(tokens);
       return tokens;
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to refresh tokens');
@@ -69,7 +69,7 @@ class AuthRepository {
     } catch (_) {
       // ignore network errors on logout
     } finally {
-      await _authService.clear();
+      await _localStorageService.clear();
     }
   }
 }
@@ -77,6 +77,6 @@ class AuthRepository {
 @riverpod
 AuthRepository authRepository(Ref ref) {
   final dio = ref.watch(dioInstanceProvider);
-  final auth = ref.watch(authServiceProvider);
+  final auth = ref.watch(localStorageServiceProvider);
   return AuthRepository(dio, auth);
 }

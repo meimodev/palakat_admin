@@ -45,7 +45,15 @@ class _AppScaffoldState extends State<AppScaffold> {
                   horizontal: 16,
                   vertical: 16,
                 ),
-                child: widget.child,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Page content
+                    SizedBox.shrink(key: ValueKey('content_placeholder')),
+                    widget.child,
+                    const _AppFooter(),
+                  ],
+                ),
               ),
             ),
           ),
@@ -238,6 +246,35 @@ class _AvatarMenu extends StatelessWidget {
       onSelected: (value) {
         if (value == 'profile') onProfile();
       },
+    );
+  }
+}
+
+class _AppFooter extends StatelessWidget {
+  const _AppFooter();
+
+  @override
+  Widget build(BuildContext context) {
+    final year = DateTime.now().year;
+    final color = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 32),
+        const Divider(height: 16, color: Colors.black54,),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            '© ' '$year' ' Palakat. All rights reserved.',
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: color),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,29 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../application/church_controller.dart';
 import '../../../../core/widgets/side_drawer.dart';
 import '../../../../core/widgets/info_section.dart';
 import '../../../../core/models/church.dart';
+import 'package:palakat_admin/core/validation/validators.dart';
 
-class ChurchLocationEditDrawer extends StatefulWidget {
+class LocationEditDrawer extends ConsumerStatefulWidget {
   final Church church;
-  final Function(Church) onSave;
+  final Future<void> Function(Church) onSave;
   final VoidCallback onClose;
 
-  const ChurchLocationEditDrawer({
+  const LocationEditDrawer({
     super.key,
     required this.church,
     required this.onSave,
     required this.onClose,
   });
 
-  @override
-  State<ChurchLocationEditDrawer> createState() => _ChurchLocationEditDrawerState();
+  ConsumerState<LocationEditDrawer> createState() => _ChurchLocationEditDrawerState();
 }
 
-class _ChurchLocationEditDrawerState extends State<ChurchLocationEditDrawer> {
+class _ChurchLocationEditDrawerState extends ConsumerState<LocationEditDrawer> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _addressController;
   late TextEditingController _latitudeController;
   late TextEditingController _longitudeController;
+  bool _saving = false;
+  String? _errorMessage;
+  bool _loading = false;
 
   @override
   void initState() {
@@ -35,6 +40,7 @@ class _ChurchLocationEditDrawerState extends State<ChurchLocationEditDrawer> {
     _longitudeController = TextEditingController(
       text: widget.church.location.longitude.toString(),
     );
+    _fetchLatestLocation();
   }
 
   @override
@@ -45,7 +51,32 @@ class _ChurchLocationEditDrawerState extends State<ChurchLocationEditDrawer> {
     super.dispose();
   }
 
-  void _saveChanges() {
+  Future<void> _fetchLatestLocation() async {
+    final locationId = widget.church.locationId;
+    if (locationId == null) return;
+    setState(() {
+      _loading = true;
+      _errorMessage = null;
+    });
+    try {
+      final latest = await ref
+          .read(churchControllerProvider.notifier)
+          .fetchLocationDetail(locationId);
+      if (!mounted) return;
+      _addressController.text = latest.name;
+      _latitudeController.text = latest.latitude.toString();
+      _longitudeController.text = latest.longitude.toString();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Failed to load location details';
+      });
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _saveChanges() async {
     if (!_formKey.currentState!.validate()) return;
 
     final parsedLat = double.tryParse(_latitudeController.text.trim());
@@ -59,8 +90,22 @@ class _ChurchLocationEditDrawerState extends State<ChurchLocationEditDrawer> {
 
     final updatedChurch = widget.church.copyWith(location: updatedLocation);
 
-    widget.onSave(updatedChurch);
-    widget.onClose();
+    setState(() {
+      _saving = true;
+      _errorMessage = null;
+    });
+    try {
+      await widget.onSave(updatedChurch);
+      if (!mounted) return;
+      widget.onClose();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Failed to save changes';
+      });
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
@@ -71,6 +116,10 @@ class _ChurchLocationEditDrawerState extends State<ChurchLocationEditDrawer> {
       title: 'Edit Location',
       subtitle: 'Update address and coordinates for your church',
       onClose: widget.onClose,
+      isLoading: _saving || _loading,
+      loadingMessage: _loading ? 'Loading location details...' : 'Saving changes...',
+      errorMessage: _errorMessage,
+      onRetry: _loading ? _fetchLatestLocation : null,
       content: Form(
         key: _formKey,
         child: Column(
@@ -93,72 +142,52 @@ class _ChurchLocationEditDrawerState extends State<ChurchLocationEditDrawer> {
                       filled: true,
                       fillColor: theme.colorScheme.surface,
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Address is required';
-                      }
-                      return null;
-                    },
+                    validator: (value) =>
+                        ChurchValidators.address().asFormFieldValidator(value),
                   ),
                 ),
                 const SizedBox(height: 16),
-                Row(
+                Column(
                   children: [
-                    Expanded(
-                      child: _FormField(
-                        label: 'Latitude',
-                        child: TextFormField(
-                          controller: _latitudeController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                            signed: true,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: 'e.g. -6.1754',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            filled: true,
-                            fillColor: theme.colorScheme.surface,
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Latitude is required';
-                            }
-                            final v = double.tryParse(value.trim());
-                            if (v == null) return 'Latitude must be a number';
-                            return null;
-                          },
+                    _FormField(
+                      label: 'Latitude',
+                      child: TextFormField(
+                        controller: _latitudeController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                          signed: true,
                         ),
+                        decoration: InputDecoration(
+                          hintText: 'e.g. -6.1754',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          filled: true,
+                          fillColor: theme.colorScheme.surface,
+                        ),
+                        validator: (value) =>
+                            ChurchValidators.latitude().asFormFieldValidator(value),
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _FormField(
-                        label: 'Longitude',
-                        child: TextFormField(
-                          controller: _longitudeController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                            signed: true,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: 'e.g. 106.8272',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            filled: true,
-                            fillColor: theme.colorScheme.surface,
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Longitude is required';
-                            }
-                            final v = double.tryParse(value.trim());
-                            if (v == null) return 'Longitude must be a number';
-                            return null;
-                          },
+                    const SizedBox(height: 16),
+                    _FormField(
+                      label: 'Longitude',
+                      child: TextFormField(
+                        controller: _longitudeController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                          signed: true,
                         ),
+                        decoration: InputDecoration(
+                          hintText: 'e.g. 106.8272',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          filled: true,
+                          fillColor: theme.colorScheme.surface,
+                        ),
+                        validator: (value) =>
+                            ChurchValidators.longitude().asFormFieldValidator(value),
                       ),
                     ),
                   ],

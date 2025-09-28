@@ -6,8 +6,8 @@ import '../../../../core/models/church.dart';
 import '../../../../core/models/column.dart' as cm;
 import '../../../../core/models/member_position.dart';
 import '../../../../core/widgets/loading_shimmer.dart';
-import '../widgets/church_info_edit_drawer.dart';
-import '../widgets/church_location_edit_drawer.dart';
+import '../widgets/info_edit_drawer.dart';
+import '../widgets/location_edit_drawer.dart';
 import '../widgets/column_edit_drawer.dart';
 import '../widgets/position_edit_drawer.dart';
 import '../../application/church_controller.dart';
@@ -22,9 +22,10 @@ class ChurchScreen extends ConsumerStatefulWidget {
 }
 
 class _ChurchScreenState extends ConsumerState<ChurchScreen> {
+  ChurchController get churchController =>
+      ref.read(churchControllerProvider.notifier);
 
-   ChurchController get churchController => ref.read(churchControllerProvider.notifier);
-   ChurchState get state => ref.watch(churchControllerProvider);
+  ChurchState get state => ref.watch(churchControllerProvider);
 
   void _openEditDrawer(Church church) {
     showGeneralDialog(
@@ -37,10 +38,10 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
         return Align(
           alignment: Alignment.centerRight,
           child: Material(
-            child: ChurchInfoEditDrawer(
+            child: InfoEditDrawer(
               church: church,
               onSave: (updatedChurch) {
-               churchController
+                return churchController
                     .saveChurch(updatedChurch)
                     .then((_) {
                       churchController.fetchChurch();
@@ -94,13 +95,17 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
         return Align(
           alignment: Alignment.centerRight,
           child: Material(
-            child: ChurchLocationEditDrawer(
+            child: LocationEditDrawer(
               church: church,
               onSave: (updatedChurch) {
-                ref
-                    .read(churchControllerProvider.notifier)
+                return churchController
                     .saveLocation(updatedChurch.location)
                     .then((_) {
+                      // Refresh the specific location card to reflect latest data
+                      final locationId = church.locationId;
+                      if (locationId != null) {
+                        churchController.fetchLocation(locationId);
+                      }
                       AppSnackbars.showSuccess(
                         context,
                         title: 'Saved',
@@ -155,14 +160,34 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
               columnId: column.id,
               churchId: column.churchId,
               onSave: (updatedColumn) {
-                ref
-                    .read(churchControllerProvider.notifier)
-                    .saveColumn(updatedColumn);
+                churchController.saveColumn(updatedColumn);
               },
               onDelete: () {
-                ref
-                    .read(churchControllerProvider.notifier)
-                    .deleteColumn(column.id!);
+                return churchController
+                    .deleteColumn(column.id!)
+                    .then((_) {
+                      final churchId =
+                          state.church.value?.id ?? column.churchId;
+
+                      churchController.fetchColumns(churchId);
+                      AppSnackbars.showSuccess(
+                        context,
+                        title: 'Deleted',
+                        message: 'Column deleted successfully',
+                      );
+                    })
+                    .catchError((e) {
+                      final msg = e is AppError
+                          ? e.userMessage
+                          : 'Failed to delete column';
+                      final code = e is AppError ? e.statusCode : null;
+                      AppSnackbars.showError(
+                        context,
+                        title: 'Delete failed',
+                        message: msg,
+                        statusCode: code,
+                      );
+                    });
               },
               onClose: () => Navigator.of(context).pop(),
             ),
@@ -198,19 +223,7 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
             child: ColumnEditDrawer(
               churchId: churchId,
               onSave: (newColumn) {
-                final churchId =
-                   state.church.value?.id ?? 0;
-                final toCreate = cm.Column(
-                  id: 0,
-                  // placeholder; server will assign real id
-                  name: newColumn.name,
-                  createdAt: DateTime.now(),
-                  updatedAt: DateTime.now(),
-                  churchId: churchId,
-                );
-                ref
-                    .read(churchControllerProvider.notifier)
-                    .createColumn(toCreate);
+                churchController.createColumn(newColumn);
               },
               onClose: () => Navigator.of(context).pop(),
             ),
@@ -247,34 +260,33 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
               churchId: state.church.value!.id,
               positionId: position.id,
               onSave: (updatedPosition) {
-                final church = state.church.value;
-                if (church == null) return;
-                final index = church.membershipPositions.indexWhere(
-                  (p) => p.id == position.id,
-                );
-                if (index != -1) {
-                  final updatedPositions = List<MemberPosition>.from(
-                    church.membershipPositions,
-                  );
-                  updatedPositions[index] = updatedPosition;
-                  ref
-                      .read(churchControllerProvider.notifier)
-                      .saveChurch(
-                        church.copyWith(membershipPositions: updatedPositions),
-                      );
-                }
+                churchController.savePosition(updatedPosition);
               },
               onDelete: () {
-                final church = state.church.value;
-                if (church == null) return;
-                final updatedPositions = church.membershipPositions
-                    .where((p) => p.id != position.id)
-                    .toList();
-                ref
-                    .read(churchControllerProvider.notifier)
-                    .saveChurch(
-                      church.copyWith(membershipPositions: updatedPositions),
-                    );
+                final churchId = state.church.value?.id;
+                if (churchId == null) return Future.value();
+                return churchController
+                    .deletePosition(position.id!)
+                    .then((_) {
+                      churchController.fetchPositions(churchId);
+                      AppSnackbars.showSuccess(
+                        context,
+                        title: 'Deleted',
+                        message: 'Position deleted successfully',
+                      );
+                    })
+                    .catchError((e) {
+                      final msg = e is AppError
+                          ? e.userMessage
+                          : 'Failed to delete position';
+                      final code = e is AppError ? e.statusCode : null;
+                      AppSnackbars.showError(
+                        context,
+                        title: 'Delete failed',
+                        message: msg,
+                        statusCode: code,
+                      );
+                    });
               },
               onClose: () => Navigator.of(context).pop(),
             ),
@@ -310,14 +322,7 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
             child: PositionEditDrawer(
               churchId: state.church.value!.id,
               onSave: (newPosition) {
-                final church = state.church.value;
-                if (church == null) return;
-                final updated = List<MemberPosition>.from(
-                  church.membershipPositions,
-                )..add(newPosition);
-                ref
-                    .read(churchControllerProvider.notifier)
-                    .saveChurch(church.copyWith(membershipPositions: updated));
+                churchController.createPosition(newPosition);
               },
               onClose: () => Navigator.of(context).pop(),
             ),
@@ -373,7 +378,6 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
     );
   }
 
-
   Widget _cardError({
     required ThemeData theme,
     required Object error,
@@ -390,10 +394,12 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Failed to load this section.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.error,
-              )),
+          Text(
+            'Failed to load this section.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.error,
+            ),
+          ),
           const SizedBox(height: 8),
           ElevatedButton.icon(
             onPressed: onRetry,
@@ -409,12 +415,14 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
     final infoAsync = state.church;
 
     return ExpandableSurfaceCard(
-      title: 'Church Information',
+      title: 'Basic Information',
       subtitle:
-          'Update the details for your church. This information may be visible to members.',
+          'Update the details for your church. This information is visible to members.',
       initiallyExpanded: true,
       trailing: ElevatedButton.icon(
-        onPressed: infoAsync.hasValue ? () => _openEditDrawer(infoAsync.value!) : null,
+        onPressed: infoAsync.hasValue
+            ? () => _openEditDrawer(infoAsync.value!)
+            : null,
         icon: const Icon(Icons.edit),
         label: const Text('Edit'),
         style: ElevatedButton.styleFrom(
@@ -431,11 +439,23 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
               const SizedBox(height: 16),
               ShimmerPlaceholders.text(width: 220, height: 16),
               const SizedBox(height: 16),
-              Row(children: [
-                Expanded(child: ShimmerPlaceholders.text(width: double.infinity, height: 16)),
-                const SizedBox(width: 16),
-                Expanded(child: ShimmerPlaceholders.text(width: double.infinity, height: 16)),
-              ]),
+              Row(
+                children: [
+                  Expanded(
+                    child: ShimmerPlaceholders.text(
+                      width: double.infinity,
+                      height: 16,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ShimmerPlaceholders.text(
+                      width: double.infinity,
+                      height: 16,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 16),
               ShimmerPlaceholders.text(width: double.infinity, height: 48),
               const SizedBox(height: 16),
@@ -453,13 +473,28 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
             const SizedBox(height: 16),
             _buildInfoRow('Church Name', church.name, theme),
             const SizedBox(height: 16),
-            Row(children: [
-              Expanded(child: _buildInfoRow('Phone Number', church.phoneNumber ?? '-', theme)),
-              const SizedBox(width: 16),
-              Expanded(child: _buildInfoRow('Email', church.email ?? '-', theme)),
-            ]),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildInfoRow(
+                    'Phone Number',
+                    church.phoneNumber ?? '-',
+                    theme,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildInfoRow('Email', church.email ?? '-', theme),
+                ),
+              ],
+            ),
             const SizedBox(height: 16),
-            _buildInfoRow('About the Church', church.description ?? '-', theme, maxLines: 3),
+            _buildInfoRow(
+              'About the Church',
+              church.description ?? '-',
+              theme,
+              maxLines: 3,
+            ),
             const SizedBox(height: 16),
           ],
         ),
@@ -501,7 +536,7 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
       subtitle: 'Update address and coordinates for your church location.',
       initiallyExpanded: true,
       trailing: ElevatedButton.icon(
-        onPressed: ()=> _openLocationEditDrawer(state.church.value!)  ,
+        onPressed: () => _openLocationEditDrawer(state.church.value!),
         icon: const Icon(Icons.edit_location_alt),
         label: const Text('Edit Location'),
         style: ElevatedButton.styleFrom(
@@ -518,11 +553,23 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
               const SizedBox(height: 16),
               ShimmerPlaceholders.text(width: double.infinity, height: 16),
               const SizedBox(height: 16),
-              Row(children: [
-                Expanded(child: ShimmerPlaceholders.text(width: double.infinity, height: 16)),
-                const SizedBox(width: 16),
-                Expanded(child: ShimmerPlaceholders.text(width: double.infinity, height: 16)),
-              ]),
+              Row(
+                children: [
+                  Expanded(
+                    child: ShimmerPlaceholders.text(
+                      width: double.infinity,
+                      height: 16,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ShimmerPlaceholders.text(
+                      width: double.infinity,
+                      height: 16,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 16),
             ],
           ),
@@ -530,7 +577,8 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
         error: (e, st) => _cardError(
           theme: theme,
           error: e,
-          onRetry: () => churchController.fetchLocation(state.location.value!.id),
+          onRetry: () =>
+              churchController.fetchLocation(state.location.value!.id),
         ),
         data: (location) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -538,11 +586,25 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
             const SizedBox(height: 16),
             _buildInfoRow('Address', location.name, theme),
             const SizedBox(height: 16),
-            Row(children: [
-              Expanded(child: _buildInfoRow('Longitude', location.longitude.toString(), theme)),
-              const SizedBox(width: 16),
-              Expanded(child: _buildInfoRow('Latitude', location.latitude.toString(), theme)),
-            ]),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildInfoRow(
+                    'Latitude',
+                    location.latitude.toString(),
+                    theme,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildInfoRow(
+                    'Longitude',
+                    location.longitude.toString(),
+                    theme,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 16),
           ],
         ),
@@ -560,7 +622,7 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
           ? 'Manage your church columns. Total columns: ${columnsAsync.value!.length}'
           : 'Manage your church columns.',
       trailing: ElevatedButton.icon(
-        onPressed:  () => _openAddColumnDrawer(state.church.value!.id) ,
+        onPressed: () => _openAddColumnDrawer(state.church.value!.id),
         icon: const Icon(Icons.add),
         label: const Text('Add Column'),
         style: ElevatedButton.styleFrom(
@@ -577,7 +639,9 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
           ),
           child: Padding(
             padding: const EdgeInsets.all(12.0),
-            child: LoadingShimmer(child: ShimmerPlaceholders.table(rows: 4, columns: 3)),
+            child: LoadingShimmer(
+              child: ShimmerPlaceholders.table(rows: 4, columns: 3),
+            ),
           ),
         ),
         error: (e, st) => _cardError(
@@ -589,7 +653,9 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
           children: [
             const SizedBox(height: 16),
             ...columns.map((column) {
-              final hoverColor = theme.colorScheme.primary.withValues(alpha: 0.04);
+              final hoverColor = theme.colorScheme.primary.withValues(
+                alpha: 0.04,
+              );
               return MouseRegion(
                 cursor: SystemMouseCursors.click,
                 child: Material(
@@ -600,7 +666,10 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
                     },
                     hoverColor: hoverColor,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 16,
+                      ),
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
@@ -611,9 +680,30 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
                       ),
                       child: Row(
                         children: [
-                          Text("${column.id.toString()} - ", style: theme.textTheme.bodySmall),
-                          Expanded(child: Text(column.name, style: theme.textTheme.bodyMedium)),
-                          const Icon(Icons.chevron_right, size: 18, color: Colors.black54),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                SizedBox(
+                                  width: 60,
+                                  child: Text(
+                                    "#${column.id}",
+                                    style: theme.textTheme.bodyMedium,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    column.name,
+                                    style: theme.textTheme.bodyMedium,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.chevron_right,
+                            size: 18,
+                            color: Colors.black54,
+                          ),
                         ],
                       ),
                     ),
@@ -653,19 +743,24 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
           ),
           child: Padding(
             padding: const EdgeInsets.all(12.0),
-            child: LoadingShimmer(child: ShimmerPlaceholders.table(rows: 4, columns: 2)),
+            child: LoadingShimmer(
+              child: ShimmerPlaceholders.table(rows: 4, columns: 2),
+            ),
           ),
         ),
         error: (e, st) => _cardError(
           theme: theme,
           error: e,
-          onRetry: () => churchController.fetchPositions(state.church.value!.id),
+          onRetry: () =>
+              churchController.fetchPositions(state.church.value!.id),
         ),
         data: (positions) => Column(
           children: [
             const SizedBox(height: 16),
             ...positions.map((position) {
-              final hoverColor = theme.colorScheme.primary.withValues(alpha: 0.04);
+              final hoverColor = theme.colorScheme.primary.withValues(
+                alpha: 0.04,
+              );
               return MouseRegion(
                 cursor: SystemMouseCursors.click,
                 child: Material(
@@ -674,7 +769,10 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
                     onTap: () => _openPositionEditDrawer(position),
                     hoverColor: hoverColor,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 16,
+                      ),
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
@@ -685,8 +783,30 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
                       ),
                       child: Row(
                         children: [
-                          Expanded(child: Text(position.name, style: theme.textTheme.bodyMedium)),
-                          const Icon(Icons.chevron_right, size: 18, color: Colors.black54),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                SizedBox(
+                                  width: 60,
+                                  child: Text(
+                                    "#${position.id}",
+                                    style: theme.textTheme.bodyMedium,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    position.name,
+                                    style: theme.textTheme.bodyMedium,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.chevron_right,
+                            size: 18,
+                            color: Colors.black54,
+                          ),
                         ],
                       ),
                     ),

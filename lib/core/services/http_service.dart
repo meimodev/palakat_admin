@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:palakat_admin/core/config/app_config.dart';
-import 'package:palakat_admin/core/services/auth_service_provider.dart';
+import 'package:palakat_admin/core/services/local_storage_service_provider.dart';
 import 'package:palakat_admin/features/auth/application/auth_controller.dart';
 import 'package:palakat_admin/core/config/endpoint.dart';
 import 'package:palakat_admin/core/models/auth_tokens.dart';
@@ -266,7 +266,7 @@ class HttpService {
 @riverpod
 HttpService httpService(Ref ref) {
   final config = ref.watch(appConfigProvider);
-  final auth = ref.watch(authServiceProvider);
+  final localStorage = ref.watch(localStorageServiceProvider);
   final headers = <String, String>{};
   final key = config.apiKey;
   if (key != null && key.isNotEmpty) {
@@ -279,10 +279,10 @@ HttpService httpService(Ref ref) {
     receiveTimeout: const Duration(seconds: 30),
     sendTimeout: const Duration(seconds: 30),
     extraHeaders: headers.isEmpty ? null : headers,
-    accessTokenProvider: () => auth.accessToken ?? '',
+    accessTokenProvider: () => localStorage.accessToken ?? '',
     refreshTokens: () async {
       // Perform refresh without going through dioInstance/httpService to avoid cycles
-      final refreshToken = auth.refreshToken;
+      final refreshToken = localStorage.refreshToken;
       if (refreshToken == null || refreshToken.isEmpty) {
         throw StateError('No refresh token available');
       }
@@ -302,7 +302,7 @@ HttpService httpService(Ref ref) {
       );
       final data = res.data ?? const {};
       final tokens = AuthTokens.fromJson(data['data']);
-      await auth.saveTokens(tokens);
+      await localStorage.saveTokens(tokens);
     },
     onUnauthorized: () async {
       // Ensure controller state resets so router guard reacts

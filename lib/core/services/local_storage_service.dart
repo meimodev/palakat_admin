@@ -94,5 +94,3 @@ class LocalStorageService {
   }
 }
 
-// Backward compatibility alias for previous name
-typedef AuthService = LocalStorageService;

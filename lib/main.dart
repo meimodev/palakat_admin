@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:palakat_admin/core/services/auth_service_provider.dart';
-import 'package:palakat_admin/core/services/auth_service.dart';
+import 'package:palakat_admin/core/services/local_storage_service_provider.dart';
+import 'package:palakat_admin/core/services/local_storage_service.dart';
 
 import 'core/theme/theme.dart';
 import 'core/layout/app_scaffold.dart';
@@ -29,7 +29,7 @@ Future<void> main() async {
   // Load environment variables
   await dotenv.load(fileName: '.env');
   // Initialize Hive and open the auth box for cached session restore
-  await AuthService.initHive();
+  await LocalStorageService.initHive();
   runApp(const ProviderScope(child: PalakatAdminApp()));
 }
 
@@ -58,8 +58,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     refreshListenable: refresh,
     redirect: (context, state) {
       // Rely solely on AuthService's cached auth state
-      final authService = ref.read(authServiceProvider);
-      final isAuthed = authService.isAuthenticated;
+      final localStorageService = ref.read(localStorageServiceProvider);
+      final isAuthed = localStorageService.isAuthenticated;
       final goingToSignIn = state.matchedLocation == '/signin';
       String? route;
       if (!isAuthed && !goingToSignIn) route = '/signin';

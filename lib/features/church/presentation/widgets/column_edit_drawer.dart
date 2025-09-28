@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:palakat_admin/core/extension/string_extension.dart';
 import 'package:palakat_admin/core/models/column_detail.dart';
 import '../../../../core/widgets/side_drawer.dart';
 import '../../../../core/models/column.dart' as cm;
 import '../../../../core/widgets/info_section.dart';
-import '../../../../core/widgets/app_snackbars.dart';
 import '../../application/church_controller.dart';
+import 'package:palakat_admin/core/validation/validators.dart';
 
 class ColumnEditDrawer extends ConsumerStatefulWidget {
   final Function(cm.Column) onSave;
-  final VoidCallback? onDelete;
+  final Future<void> Function()? onDelete;
   final VoidCallback onClose;
   final int? columnId;
   final int churchId;
@@ -32,6 +33,8 @@ class _ColumnEditDrawerState extends ConsumerState<ColumnEditDrawer> {
   final TextEditingController _nameController = TextEditingController();
   ColumnDetail? _columnDetail; // latest column copy (fetched)
   bool _loading = false;
+  bool _deleting = false;
+  bool _saving = false;
   List<ColumnDetailMembership> _memberships = const [];
   String? _errorMessage;
 
@@ -65,42 +68,46 @@ class _ColumnEditDrawerState extends ConsumerState<ColumnEditDrawer> {
         _errorMessage = null;
         _columnDetail = latest;
         _memberships = latest.memberships;
-        _nameController.text = latest.name;
+        _nameController.text = latest.name.toCamelCase;
       });
     } catch (e) {
-      // Surface error but keep drawer open
+      // Surface error inline but keep drawer open
       setState(() {
         _errorMessage = 'Failed to load column details';
       });
-      AppSnackbars.showError(
-        context,
-        title: 'Load failed',
-        message: 'Failed to load column details',
-      );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  void _saveChanges() {
-    if (_formKey.currentState!.validate()) {
-      final column = cm.Column(
-        id: widget.columnId,
-        name: _nameController.text.trim(),
-        createdAt: _columnDetail?.createdAt ?? DateTime.now(),
-        churchId: widget.churchId,
-      );
+  Future<void> _saveChanges() async {
+    if (!_formKey.currentState!.validate()) return;
 
-      widget.onSave(column);
-      widget.onClose();
+    final column = cm.Column(
+      id: widget.columnId,
+      name: _nameController.text.trim().toCamelCase,
+      createdAt: _columnDetail?.createdAt ?? DateTime.now(),
+      updatedAt: _columnDetail?.updatedAt,
+      churchId: widget.churchId,
+    );
 
-      AppSnackbars.showSuccess(
-        context,
-        title: 'Saved',
-        message:
-            'Column ${_columnDetail == null ? 'created' : 'updated'} successfully',
-      );
-    }
+      setState(() {
+        _saving = true;
+        _errorMessage = null;
+      });
+      try {
+        await widget.onSave(column);
+        if (!mounted) return;
+        widget.onClose();
+      } catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _errorMessage = 'Failed to save column';
+        });
+      } finally {
+        if (mounted) setState(() => _saving = false);
+      }
+      return;
   }
 
   void _deleteColumn() {
@@ -118,15 +125,25 @@ class _ColumnEditDrawerState extends ConsumerState<ColumnEditDrawer> {
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                widget.onDelete!();
-                widget.onClose();
-                AppSnackbars.showSuccess(
-                  context,
-                  title: 'Deleted',
-                  message: 'Column deleted successfully',
-                );
+              onPressed: () async {
+                Navigator.of(context).pop(); // close confirm dialog
+                setState(() {
+                  _deleting = true;
+                  _errorMessage = null;
+                });
+                try {
+                  await widget.onDelete!();
+                  if (!mounted) return;
+                  widget.onClose();
+                } catch (e) {
+                  // Surface error inline; parent shows snackbar too
+                  if (!mounted) return;
+                  setState(() {
+                    _errorMessage = 'Failed to delete column';
+                  });
+                } finally {
+                  if (mounted) setState(() => _deleting = false);
+                }
               },
               style: TextButton.styleFrom(
                 foregroundColor: Theme.of(context).colorScheme.error,
@@ -144,15 +161,20 @@ class _ColumnEditDrawerState extends ConsumerState<ColumnEditDrawer> {
     final theme = Theme.of(context);
 
     return SideDrawer(
-      title: _columnDetail == null ? 'Add Column' : 'Edit Column',
-      subtitle: _columnDetail == null
+      title: widget.columnId == null ? 'Add Column' : 'Edit Column',
+      subtitle: widget.columnId == null
           ? 'Create a new column'
           : 'Update column information',
       onClose: widget.onClose,
-      isLoading: widget.columnId != null && _loading,
-      loadingMessage: 'Loading column details...',
-      errorMessage: widget.columnId != null ? _errorMessage : null,
-      onRetry: widget.columnId != null ? _fetchColumnAndMemberships : null,
+      isLoading: (widget.columnId != null && _loading) || _deleting || _saving,
+      loadingMessage: _deleting
+          ? 'Deleting column...'
+          : _saving
+              ? 'Saving column...'
+              : 'Loading column details...',
+      errorMessage: _errorMessage,
+      onRetry:
+          widget.columnId != null && !_deleting ? _fetchColumnAndMemberships : null,
       content: Form(
         key: _formKey,
         child: Column(
@@ -168,7 +190,7 @@ class _ColumnEditDrawerState extends ConsumerState<ColumnEditDrawer> {
                   _FormField(
                     label: 'Column ID',
                     child: Text(
-                      _columnDetail!.id.toString(),
+                      "# ${_columnDetail!.id}",
                       style: theme.textTheme.bodyLarge?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -189,12 +211,9 @@ class _ColumnEditDrawerState extends ConsumerState<ColumnEditDrawer> {
                       filled: true,
                       fillColor: theme.colorScheme.surface,
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Column name is required';
-                      }
-                      return null;
-                    },
+                    maxLength: 20,
+                    validator: (value) =>
+                        ChurchValidators.columnName().asFormFieldValidator(value),
                   ),
                 ),
               ],
@@ -249,7 +268,7 @@ class _ColumnEditDrawerState extends ConsumerState<ColumnEditDrawer> {
       ),
       footer: Row(
         children: [
-          if (widget.onDelete != null && _columnDetail != null) ...[
+          if (widget.onDelete != null && widget.columnId != null) ...[
             Expanded(
               child: OutlinedButton(
                 onPressed: _deleteColumn,
@@ -269,7 +288,7 @@ class _ColumnEditDrawerState extends ConsumerState<ColumnEditDrawer> {
                 backgroundColor: theme.colorScheme.primary,
                 foregroundColor: theme.colorScheme.onPrimary,
               ),
-              child: Text(_columnDetail == null ? 'Create' : 'Save'),
+              child: Text(widget.columnId == null ? 'Create' : 'Save'),
             ),
           ),
         ],

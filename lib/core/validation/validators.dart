@@ -67,6 +67,21 @@ class Validators {
     };
   }
 
+  /// Optional phone validator that enforces a minimum number of digits when provided
+  static Validator<String> optionalPhoneMinDigits(int minDigits, [String? message]) {
+    return (String? value) {
+      final raw = (value ?? '').trim();
+      if (raw.isEmpty) return const ValidationSuccess();
+      final digitsOnly = raw.replaceAll(RegExp(r'[^0-9]'), '');
+      if (digitsOnly.length < minDigits) {
+        return ValidationError(
+          message ?? 'Phone number must contain at least $minDigits digits',
+        );
+      }
+      return const ValidationSuccess();
+    };
+  }
+
   /// Validator that checks numeric values
   static Validator<String> numeric([String? message]) {
     return (String? value) {
@@ -226,6 +241,39 @@ class Validators {
   }
 }
 
+/// Adapter to convert a Validators.Validator into Flutter's FormFieldValidator
+extension FlutterFormValidator on Validator<String> {
+  String? asFormFieldValidator(String? value) {
+    final res = this(value);
+    return res.errorMessage;
+  }
+}
+
+/// Authentication-specific validators
+class AuthValidators {
+  AuthValidators._();
+
+  /// Accepts either a valid email or a local phone (digits only, 12-13 digits)
+  static Validator<String> identifier([String? message]) {
+    return Validators.combine<String>([
+      Validators.required('Please enter your email or phone number'),
+      (v) {
+        final value = (v ?? '').trim();
+        final isEmail = Validators.email().isValidFor(value);
+        final digitsOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
+        final isLocalPhone = RegExp(r'^[0-9]{12,13}$').hasMatch(digitsOnly);
+        if (isEmail || isLocalPhone) return const ValidationSuccess();
+        return ValidationError(message ?? 'Enter a valid email address or phone number');
+      },
+    ]);
+  }
+}
+
+/// Small helper so we can reuse Validators.* in custom lambdas above
+extension _ValidatorUtils on Validator<String> {
+  bool isValidFor(String? value) => this(value).isValid;
+}
+
 /// Church-specific validators
 class ChurchValidators {
   ChurchValidators._();
@@ -270,6 +318,77 @@ class ChurchValidators {
       Validators.required('Pastor name is required'),
       Validators.minLength(2, 'Pastor name must be at least 2 characters'),
       Validators.maxLength(50, 'Pastor name must be no more than 50 characters'),
+    ]);
+  }
+
+  /// Validator for column name
+  static Validator<String> columnName([String? message]) {
+    return Validators.combine([
+      Validators.required('Column name is required'),
+      Validators.minLength(3, 'Minimum 3 characters'),
+      Validators.maxLength(20, 'Maximum 20 characters'),
+      (v) {
+        final value = (v ?? '').trim();
+        if (!RegExp(r'^[A-Za-z]').hasMatch(value)) {
+          return const ValidationError('Must start with a letter');
+        }
+        if (!RegExp(r'^[A-Za-z0-9 ]+$').hasMatch(value)) {
+          return const ValidationError('Only letters and numbers are allowed');
+        }
+        return const ValidationSuccess();
+      },
+    ]);
+  }
+
+  /// Validator for position name
+  static Validator<String> positionName([String? message]) {
+    return Validators.combine([
+      Validators.required('Position name is required'),
+      Validators.minLength(3, 'Minimum 3 characters'),
+      Validators.maxLength(20, 'Maximum 20 characters'),
+      (v) {
+        final value = (v ?? '').trim();
+        if (!RegExp(r'^[A-Za-z]').hasMatch(value)) {
+          return const ValidationError('Must start with a letter');
+        }
+        if (!RegExp(r'^[A-Za-z0-9 ]+$').hasMatch(value)) {
+          return const ValidationError('Only letters and numbers are allowed');
+        }
+        return const ValidationSuccess();
+      },
+    ]);
+  }
+
+  /// Validator for address (required, non-empty)
+  static Validator<String> address([String? message]) {
+    return Validators.required(message ?? 'Address is required');
+  }
+
+  /// Validator for latitude: required, numeric, range -90..90
+  static Validator<String> latitude([String? message]) {
+    return Validators.combine([
+      Validators.required('Latitude is required'),
+      Validators.numeric('Latitude must be a number'),
+      (v) {
+        final d = double.tryParse((v ?? '').trim());
+        if (d == null) return const ValidationError('Latitude must be a number');
+        if (d < -90 || d > 90) return const ValidationError('Latitude must be between -90 and 90');
+        return const ValidationSuccess();
+      },
+    ]);
+  }
+
+  /// Validator for longitude: required, numeric, range -180..180
+  static Validator<String> longitude([String? message]) {
+    return Validators.combine([
+      Validators.required('Longitude is required'),
+      Validators.numeric('Longitude must be a number'),
+      (v) {
+        final d = double.tryParse((v ?? '').trim());
+        if (d == null) return const ValidationError('Longitude must be a number');
+        if (d < -180 || d > 180) return const ValidationError('Longitude must be between -180 and 180');
+        return const ValidationSuccess();
+      },
     ]);
   }
 }
