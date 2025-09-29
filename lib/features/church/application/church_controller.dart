@@ -15,6 +15,7 @@ part 'church_controller.g.dart';
 class ChurchController extends _$ChurchController {
   ChurchRepository get churchRepo => ref.read(churchRepositoryProvider);
 
+  late Church locallyStoredChurch;
   @override
   ChurchState build() {
     final church = ref
@@ -26,6 +27,8 @@ class ChurchController extends _$ChurchController {
 
     // Initialize both church and location from cached/auth state
     final initial = ChurchState(church: AsyncData(church!));
+
+    locallyStoredChurch = church;
 
     Future.microtask(() {
       fetchChurch();
@@ -55,14 +58,12 @@ class ChurchController extends _$ChurchController {
 
       // Sync cached auth account.membership.church on success
       _updateCachedAccountLocation();
-    } catch (e) {
-      state = state.copyWith(church: AsyncData(previous));
-      rethrow;
+    } catch (e, st) {
+      _catchError(e, st);
     }
   }
 
   Future<void> savePosition(MemberPosition updated) async {
-
     final prev = state.positions;
     try {
       state = state.copyWith(positions: const AsyncLoading());
@@ -92,21 +93,19 @@ class ChurchController extends _$ChurchController {
       state = state.copyWith(positions: AsyncData(updatedPositions));
 
       await _updateCachedAccountLocation();
-    } catch (e) {
-      state = state.copyWith(positions: prev);
-      rethrow;
+    } catch (e, st) {
+      _catchError(e, st);
     }
   }
 
   Future<void> fetchChurch() async {
-    final previous = state.church.value!;
+    final previous = state.church.value ?? locallyStoredChurch;
     try {
       state = state.copyWith(church: AsyncLoading());
       final result = await churchRepo.fetchChurchProfile(previous.id);
       state = state.copyWith(church: AsyncData(result));
-    } catch (e) {
-      state = state.copyWith(church: AsyncData(previous));
-      rethrow;
+    } catch (e, st) {
+      _catchError(e, st);
     }
   }
 
@@ -130,9 +129,8 @@ class ChurchController extends _$ChurchController {
       state = state.copyWith(location: AsyncData(result));
 
       _updateCachedAccountLocation();
-    } catch (e) {
-      state = state.copyWith(location: previous);
-      rethrow;
+    } catch (e, st) {
+      _catchError(e, st);
     }
   }
 
@@ -141,9 +139,8 @@ class ChurchController extends _$ChurchController {
       state = state.copyWith(location: AsyncLoading());
       final result = await churchRepo.fetchLocation(locationId);
       state = state.copyWith(location: AsyncData(result));
-    } catch (e) {
-      state = state.copyWith(location: AsyncData(state.location.value!));
-      rethrow;
+    } catch (e, st) {
+      _catchError(e, st);
     }
   }
 
@@ -194,10 +191,8 @@ class ChurchController extends _$ChurchController {
 
       // Sync cached auth account.membership.church columns on success
       await _updateCachedAccountLocation();
-    } catch (e) {
-      // Restore previous state on error
-      state = state.copyWith(columns: previousColumns);
-      rethrow;
+    } catch (e, st) {
+      _catchError(e, st);
     }
   }
 
@@ -214,9 +209,8 @@ class ChurchController extends _$ChurchController {
       state = state.copyWith(columns: AsyncData(updatedColumns));
 
       await _updateCachedAccountLocation();
-    } catch (e) {
-      state = state.copyWith(columns: previousColumns);
-      rethrow;
+    } catch (e, st) {
+      _catchError(e, st);
     }
   }
 
@@ -230,20 +224,16 @@ class ChurchController extends _$ChurchController {
       final current = previousColumns.value ?? const <cm.Column>[];
       final updatedColumns = current.where((c) => c.id != columnId).toList();
       state = state.copyWith(columns: AsyncData(updatedColumns));
-    } catch (e) {
-      // Restore previous state on error
-      state = state.copyWith(columns: previousColumns);
-      rethrow;
+    } catch (e, st) {
+      _catchError(e, st);
     }
   }
 
   Future<ColumnDetail> fetchColumn(int columnId) async {
     try {
-      // Keep current data visible; optionally could set to loading but we'll fetch silently
       final fetched = await churchRepo.fetchColumn(columnId: columnId);
       return fetched;
     } catch (e) {
-      // Preserve state
       rethrow;
     }
   }
@@ -276,13 +266,7 @@ class ChurchController extends _$ChurchController {
       final result = await churchRepo.fetchColumns(churchId: churchId);
       state = state.copyWith(columns: AsyncData(result));
     } catch (e, st) {
-      // If we already had data, keep it visible; otherwise surface the error
-      if (state.columns.hasValue && state.columns.value != null) {
-        state = state.copyWith(columns: AsyncData(state.columns.value!));
-      } else {
-        state = state.copyWith(columns: AsyncError(e, st));
-      }
-      rethrow;
+      _catchError(e, st);
     }
   }
 
@@ -292,12 +276,7 @@ class ChurchController extends _$ChurchController {
       final result = await churchRepo.fetchPositions(churchId: churchId);
       state = state.copyWith(positions: AsyncData(result));
     } catch (e, st) {
-      if (state.positions.hasValue && state.positions.value != null) {
-        state = state.copyWith(positions: AsyncData(state.positions.value!));
-      } else {
-        state = state.copyWith(positions: AsyncError(e, st));
-      }
-      rethrow;
+      _catchError(e, st);
     }
   }
 
@@ -306,10 +285,7 @@ class ChurchController extends _$ChurchController {
     try {
       state = state.copyWith(positions: const AsyncLoading());
 
-      final payload = {
-        'name': toCreate.name,
-        'churchId': toCreate.churchId,
-      };
+      final payload = {'name': toCreate.name, 'churchId': toCreate.churchId};
       final created = await churchRepo.createMemberPosition(data: payload);
 
       final current = previousPositions.value ?? const <MemberPosition>[];
@@ -317,9 +293,8 @@ class ChurchController extends _$ChurchController {
       state = state.copyWith(positions: AsyncData(updated));
 
       await _updateCachedAccountLocation();
-    } catch (e) {
-      state = state.copyWith(positions: previousPositions);
-      rethrow;
+    } catch (e, st) {
+      _catchError(e, st);
     }
   }
 
@@ -332,9 +307,8 @@ class ChurchController extends _$ChurchController {
       final current = previousPositions.value ?? const <MemberPosition>[];
       final updated = current.where((p) => p.id != positionId).toList();
       state = state.copyWith(positions: AsyncData(updated));
-    } catch (e) {
-      state = state.copyWith(positions: previousPositions);
-      rethrow;
+    } catch (e, st) {
+      _catchError(e, st);
     }
   }
 
@@ -342,9 +316,35 @@ class ChurchController extends _$ChurchController {
     try {
       final fetched = await churchRepo.fetchChurchProfile(churchId);
       return fetched;
-    } catch (e) {
+    } catch (e, st) {
       rethrow;
     }
+  }
+
+  // Centralized error handler: if a slice is currently loading, restore its previous
+  // value (when available) to avoid leaving the UI stuck in loading state; otherwise
+  // set it to AsyncError. Always rethrow with the original stack to let callers handle UI.
+  void _catchError(Object e, StackTrace st) {
+    AsyncValue<T> _restore<T>(AsyncValue<T> slice) {
+      if (slice.isLoading) {
+        if (slice.hasValue) {
+          return AsyncData(slice.value as T);
+        } else {
+          return AsyncError(e, st);
+        }
+      }
+      return slice;
+    }
+
+    state = state.copyWith(
+      church: _restore(state.church),
+      location: _restore(state.location),
+      columns: _restore(state.columns),
+      positions: _restore(state.positions),
+    );
+
+    // Preserve original stack trace on rethrow
+    Error.throwWithStackTrace(e, st);
   }
 
   // Helper: Update cached auth account.membership.church.location (and locationId)

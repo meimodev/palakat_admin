@@ -103,7 +103,7 @@ class SideDrawer extends StatelessWidget {
                   if (isLoading)
                     Positioned.fill(
                       child: Container(
-                        color: theme.colorScheme.surface.withOpacity(0.8),
+                        color: theme.colorScheme.surface.withValues(alpha: 0.8),
                         child: Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,

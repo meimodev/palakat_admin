@@ -44,10 +44,10 @@ class ValidatedTextField extends StatefulWidget {
   });
 
   @override
-  State<ValidatedTextField> createState() => _ValidatedTextFieldState();
+  State<ValidatedTextField> createState() => ValidatedTextFieldState();
 }
 
-class _ValidatedTextFieldState extends State<ValidatedTextField> {
+class ValidatedTextFieldState extends State<ValidatedTextField> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
   ValidationResult _validationResult = const ValidationSuccess();
@@ -190,10 +190,10 @@ class ValidatedDropdownField<T> extends StatefulWidget {
   });
 
   @override
-  State<ValidatedDropdownField<T>> createState() => _ValidatedDropdownFieldState<T>();
+  State<ValidatedDropdownField<T>> createState() => ValidatedDropdownFieldState<T>();
 }
 
-class _ValidatedDropdownFieldState<T> extends State<ValidatedDropdownField<T>> {
+class ValidatedDropdownFieldState<T> extends State<ValidatedDropdownField<T>> {
   T? _value;
   ValidationResult _validationResult = const ValidationSuccess();
   bool _hasBeenTouched = false;
@@ -276,16 +276,16 @@ class ValidatedForm extends StatefulWidget {
 }
 
 class ValidatedFormState extends State<ValidatedForm> {
-  final List<GlobalKey<_ValidatedTextFieldState>> _textFieldKeys = [];
-  final List<GlobalKey<_ValidatedDropdownFieldState>> _dropdownKeys = [];
+  final List<GlobalKey<ValidatedTextFieldState>> _textFieldKeys = [];
+  final List<GlobalKey<ValidatedDropdownFieldState>> _dropdownKeys = [];
 
   /// Register a text field for validation
-  void registerTextField(GlobalKey<_ValidatedTextFieldState> key) {
+  void registerTextField(GlobalKey<ValidatedTextFieldState> key) {
     _textFieldKeys.add(key);
   }
 
   /// Register a dropdown field for validation
-  void registerDropdownField(GlobalKey<_ValidatedDropdownFieldState> key) {
+  void registerDropdownField(GlobalKey<ValidatedDropdownFieldState> key) {
     _dropdownKeys.add(key);
   }
 
