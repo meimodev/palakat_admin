@@ -2,33 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:palakat_admin/features/auth/application/auth_controller.dart';
+import 'package:palakat_admin/core/extension/string_extension.dart';
 
 class AppSidebar extends ConsumerWidget {
   const AppSidebar({super.key});
-
-  // Helper method to get name initials
-  String _getNameInitials(String name) {
-    final words = name.trim().split(' ');
-    if (words.isEmpty) return 'U';
-    if (words.length == 1) return words[0][0].toUpperCase();
-    return '${words[0][0]}${words[words.length - 1][0]}'.toUpperCase();
-  }
-
-  // Helper method to format phone number
-  String _formatPhone(String phone) {
-    if (phone.isEmpty) return phone;
-    final trimmed = phone.trim();
-    final hasPlus = trimmed.startsWith('+');
-    final digits = RegExp(r'\d+').allMatches(trimmed).map((m) => m.group(0)!).join();
-    if (digits.length == 12 || digits.length == 13) {
-      final p1 = digits.substring(0, 4);
-      final p2 = digits.substring(4, 8);
-      final p3 = digits.length == 12 ? digits.substring(8, 12) : digits.substring(8, 13);
-      final grouped = '$p1-$p2-$p3';
-      return hasPlus ? '+$grouped' : grouped;
-    }
-    return phone;
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -36,7 +13,13 @@ class AppSidebar extends ConsumerWidget {
     final auth = ref.watch(authControllerProvider).asData?.value;
     final account = auth?.account;
     final displayName = account?.name ?? 'Admin User';
-    final displayPhone = _formatPhone(account?.phone ?? '');
+
+    final church = ref
+        .read(authControllerProvider)
+        .value
+        ?.account
+        .membership
+        ?.church;
 
     return Drawer(
       elevation: 0,
@@ -184,7 +167,7 @@ class AppSidebar extends ConsumerWidget {
                 leading: CircleAvatar(
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   child: Text(
-                    _getNameInitials(displayName),
+                    displayName.initials,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onPrimary,
                       fontWeight: FontWeight.w600,
@@ -192,8 +175,10 @@ class AppSidebar extends ConsumerWidget {
                   ),
                 ),
                 title: Text(displayName),
-                subtitle:
-                displayPhone.isNotEmpty ? Text(displayPhone) : null,
+                subtitle: Text(
+                  church?.name ?? '',
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
                 onTap: () => context.go('/account'),
               ),
             ],

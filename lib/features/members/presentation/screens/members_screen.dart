@@ -3,12 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:palakat_admin/core/constants/enums.dart';
 import 'package:palakat_admin/core/models/account.dart';
 import 'package:palakat_admin/core/models/membership.dart';
+import 'package:palakat_admin/features/members/presentation/state/members_state.dart';
 
-import '../widgets/members_table.dart';
 import '../widgets/edit_member_drawer.dart';
-import '../state/members_providers.dart';
 import 'package:palakat_admin/core/widgets/surface_card.dart';
-import 'package:palakat_admin/core/widgets/pagination_bar.dart';
+import 'package:palakat_admin/core/widgets/app_table.dart';
+import 'package:palakat_admin/core/widgets/status_badge.dart';
+import 'package:palakat_admin/core/widgets/positions_cell.dart';
+
+import '../state/members_controller.dart';
+import 'package:palakat_admin/core/widgets/quick_stat_card.dart';
 
 class MembersScreen extends ConsumerWidget {
   const MembersScreen({super.key});
@@ -16,6 +20,12 @@ class MembersScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+
+    final MembersState state = ref.watch(membersControllerProvider);
+    final MembersController controller = ref.watch(
+      membersControllerProvider.notifier,
+    );
+
     return Material(
       child: SingleChildScrollView(
         child: Column(
@@ -40,239 +50,205 @@ class MembersScreen extends ConsumerWidget {
                   Wrap(
                     spacing: 16,
                     runSpacing: 16,
-                    children: const [
-                      _QuickStat(
+                    children: [
+                      QuickStatCard(
                         label: 'Total Members',
-                        value: '1,248',
+                        value: state.counts.value?.total.toString() ?? "",
                         icon: Icons.groups_outlined,
-                        subtitle: 'All registered members',
+                        isLoading: state.counts.isLoading,
                       ),
-                      _QuickStat(
-                        label: 'App Linked',
-                        value: '1,248',
+                      QuickStatCard(
+                        label: 'App Claimed',
+                        value: state.counts.value?.claimed.toString() ?? "",
                         icon: Icons.phone_android_outlined,
-                        subtitle: 'Connected to mobile app',
+                        isLoading: state.counts.isLoading,
                       ),
-                      _QuickStat(
+                      QuickStatCard(
                         label: 'Baptized',
-                        value: '1,102',
+                        value: state.counts.value?.baptized.toString() ?? "",
                         icon: Icons.water_drop_outlined,
-                        subtitle: 'Baptized members',
+                        isLoading: state.counts.isLoading,
                       ),
-                      _QuickStat(
+                      QuickStatCard(
                         label: 'Sidi',
-                        value: '86',
+                        value: state.counts.value?.sidi.toString() ?? "",
                         icon: Icons.emoji_people_outlined,
-                        subtitle: 'Confirmed members',
+                        isLoading: state.counts.isLoading,
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // Search / filters
-                  _FiltersBar(),
-                  const SizedBox(height: 16),
-                  // Table-like list
-                  const MembersTable(),
-                  const SizedBox(height: 8),
-                  // Pagination bar
-                  const _PaginationBar(),
+                  // AppTable with built-in filter bar
+                  AppTable<Account>(
+                    loading: state.accounts.isLoading,
+                    data: state.accounts.value ?? [],
+                    errorText: state.accounts.hasError
+                        ? state.accounts.error.toString()
+                        : null,
+                    onRetry: () => controller.refresh(),
+                    pagination: AppTablePaginationConfig(
+                      showingCount: 100,
+                      totalCount: state.accounts.value?.length ?? 0,
+                      rowsPerPage: 10,
+                      page: 0,
+                      pageCount: 1,
+                      rowSizes: [5, 10, 15, 20, 30, 50, 100],
+                      onRowsPerPageChanged: (page) {
+                        print(page);
+                      },
+                      onPrev: () {
+                        print("On Prev");
+                      },
+                      onNext: () {
+                        print("On Next");
+                      },
+                    ),
+                    filtersConfig: AppTableFiltersConfig(
+                      searchHint: 'Search members...',
+                      onSearchChanged: controller.setSearch,
+                      positionOptions: controller.fetchMemberPositions(),
+                      positionValue: null,
+                      onPositionChanged: controller.setPositionFilter,
+                      actionLabel: 'New Member',
+                      actionIcon: Icons.add,
+                      onActionPressed: () {
+                        final now = DateTime.now();
+                        final Account newAccount = Account(
+                          id: now.microsecondsSinceEpoch,
+                          name: '',
+                          phone: '',
+                          email: '',
+                          gender: Gender.male,
+                          married: false,
+                          dob: DateTime(2000, 1, 1),
+                          claimed: false,
+                          createdAt: now,
+                          updatedAt: now,
+                          membership: Membership(
+                            id: 0,
+                            baptize: false,
+                            sidi: false,
+                            createdAt: now,
+                            updatedAt: now,
+                            membershipPositions: const [],
+                          ),
+                        );
+                        showEditMemberDrawer(context, account: newAccount);
+                      },
+                    ),
+                    onRowTap: (account) async {
+                      await showEditMemberDrawer(context, account: account);
+                    },
+                    columns: [
+                      AppTableColumn<Account>(
+                        title: 'Name',
+                        flex: 4,
+                        cellBuilder: (ctx, account) {
+                          final theme = Theme.of(ctx);
+                          final membership = account.membership;
+                          final isBaptized = membership?.baptize ?? false;
+                          final isSidi = membership?.sidi ?? false;
+                          final isLinked = account.claimed;
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      account.name,
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (isBaptized)
+                                        StatusBadge(
+                                          icon: Icons.water_drop,
+                                          color: Colors.blue.shade600,
+                                          backgroundColor: Colors.blue.shade50,
+                                          tooltip: 'Baptized',
+                                        ),
+                                      if (isSidi)
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            left: 4.0,
+                                          ),
+                                          child: StatusBadge(
+                                            icon: Icons.emoji_people,
+                                            color: Colors.green.shade600,
+                                            backgroundColor:
+                                                Colors.green.shade50,
+                                            tooltip: 'Sidi',
+                                          ),
+                                        ),
+                                      if (isLinked)
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            left: 4.0,
+                                          ),
+                                          child: StatusBadge(
+                                            icon: Icons.phone_android,
+                                            color: Colors.purple.shade600,
+                                            backgroundColor:
+                                                Colors.purple.shade50,
+                                            tooltip: 'App Linked',
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Member',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      AppTableColumn<Account>(
+                        title: 'Phone',
+                        flex: 3,
+                        cellBuilder: (ctx, account) {
+                          final theme = Theme.of(ctx);
+                          return Text(
+                            account.phone,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          );
+                        },
+                      ),
+                      AppTableColumn<Account>(
+                        title: 'Positions',
+                        flex: 3,
+                        cellBuilder: (ctx, account) {
+                          final positions =
+                              (account.membership?.membershipPositions ?? [])
+                                  .map((e) => e.name)
+                                  .toList();
+                          return PositionsCell(positions: positions);
+                        },
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _FiltersBar extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final filters = ref.watch(membersFilterProvider);
-    final availablePositions = ref.watch(availablePositionsProvider);
-
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.search),
-                  hintText: 'Search members...',
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (v) =>
-                    ref.read(membersFilterProvider.notifier).setSearch(v),
-              ),
-            ),
-            const SizedBox(width: 8),
-            IntrinsicWidth(
-              child: DropdownButtonFormField<String?>(
-                value: filters.selectedPosition,
-                decoration: const InputDecoration(
-                  labelText: 'Filter by Position',
-                  border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                ),
-                items: [
-                  const DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text(
-                      'All Positions',
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  ...availablePositions.map(
-                    (position) => DropdownMenuItem<String?>(
-                      value: position,
-                      child: Text(position, overflow: TextOverflow.ellipsis),
-                    ),
-                  ),
-                ],
-                onChanged: (value) =>
-                    ref.read(membersFilterProvider.notifier).setPosition(value),
-              ),
-            ),
-            const SizedBox(width: 16),
-            FilledButton.icon(
-              onPressed: () {
-                final now = DateTime.now();
-                // Create a new empty Account with defaults
-                final Account newAccount = Account(
-                  id: now.microsecondsSinceEpoch,
-                  name: '',
-                  phone: '',
-                  email: '',
-                  gender: Gender.male,
-                  married: false,
-                  dob: DateTime(2000, 1, 1),
-                  claimed: false,
-                  createdAt: now,
-                  updatedAt: now,
-                  membership: Membership(
-                    id: 0,
-                    baptize: false,
-                    sidi: false,
-                    createdAt: now,
-                    updatedAt: now,
-                    membershipPositions: const [],
-                  ),
-                );
-                showEditMemberDrawer(context, account: newAccount);
-              },
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('New Member'),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _PaginationBar extends ConsumerWidget {
-  const _PaginationBar();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final slice = ref.watch(membersPageProvider);
-    final filters = ref.watch(membersFilterProvider);
-    final totalPages = (slice.total / filters.rowsPerPage).ceil().clamp(
-      1,
-      9999,
-    );
-    return PaginationBar(
-      showingCount: slice.rows.length,
-      totalCount: slice.total,
-      rowsPerPage: filters.rowsPerPage,
-      page: filters.page,
-      pageCount: totalPages,
-      onRowsPerPageChanged: (v) =>
-          ref.read(membersFilterProvider.notifier).setRowsPerPage(v),
-      onPrev: () => ref.read(membersFilterProvider.notifier).prevPage(),
-      onNext: () =>
-          ref.read(membersFilterProvider.notifier).nextPage(slice.total),
-    );
-  }
-}
-
-class _QuickStat extends StatelessWidget {
-  const _QuickStat({
-    required this.label,
-    required this.value,
-    this.icon,
-    this.subtitle,
-  });
-
-  final String label;
-  final String value;
-  final IconData? icon;
-  final String? subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      width: 200,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  label,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              if (icon != null)
-                Icon(
-                  icon!,
-                  size: 20,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              subtitle!,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ],
       ),
     );
   }

@@ -4,7 +4,6 @@ import 'package:palakat_admin/core/constants/enums.dart';
 import 'package:palakat_admin/core/models/account.dart';
 import 'package:palakat_admin/core/models/membership.dart';
 import 'package:palakat_admin/core/models/member_position.dart';
-import 'package:palakat_admin/features/members/presentation/state/members_providers.dart';
 import 'package:palakat_admin/core/widgets/side_drawer.dart';
 import 'package:intl/intl.dart';
 import 'package:palakat_admin/core/validation/validators.dart';
@@ -449,15 +448,12 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
         membership: updatedMembership,
       );
 
-      final membersNotifier = ref.read(membersProvider.notifier);
 
       // Check if this is a new member or an update
       final isNewMember = widget.account.email.isEmpty;
 
       if (isNewMember) {
-        membersNotifier.addMember(updatedAccount);
       } else {
-        membersNotifier.updateMember(updatedAccount);
       }
 
       if (mounted) {

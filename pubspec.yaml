@@ -50,6 +50,8 @@ dependencies:
   # Local key-value storage using Hive
   hive: ^2.2.3
   hive_flutter: ^1.1.0
+  # Shimmer loading effect
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:
