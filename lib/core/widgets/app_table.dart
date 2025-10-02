@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:palakat_admin/core/models/member_position.dart';
 import 'package:palakat_admin/core/widgets/pagination_bar.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:palakat_admin/core/utils/debouncer.dart';
 
 /// Generic, reusable data table for consistent tables across the app.
 ///
@@ -42,7 +44,7 @@ class AppTable<T> extends StatelessWidget {
 
   final bool loading;
 
-  final List<T> data ;
+  final List<T> data;
 
   /// Error text to display when a failure occurs.
   final String? errorText;
@@ -94,10 +96,7 @@ class AppTable<T> extends StatelessWidget {
         if (loading) ...[
           _ShimmerLoadingPlaceholder(columns: columns),
         ] else if (errorText != null) ...[
-          _ErrorPlaceholder(
-            message: errorText!,
-            onRetry: onRetry,
-          ),
+          _ErrorPlaceholder(message: errorText!, onRetry: onRetry),
         ] else if (data.isEmpty) ...[
           if (emptyBuilder != null)
             emptyBuilder!(context)
@@ -121,18 +120,16 @@ class AppTable<T> extends StatelessWidget {
             );
           }),
         ],
-        if (pagination != null) ...[
+        if (pagination != null && !loading && errorText == null) ...[
           const SizedBox(height: 12),
           PaginationBar(
-            showingCount: pagination!.showingCount,
-            totalCount: pagination!.totalCount,
-            rowsPerPage: pagination!.rowsPerPage,
+            total: pagination!.total,
+            pageSize: pagination!.pageSize,
             page: pagination!.page,
-            pageCount: pagination!.pageCount,
-            onRowsPerPageChanged: pagination!.onRowsPerPageChanged,
-            onPrev: pagination!.onPrev,
-            onNext: pagination!.onNext,
-            rowSizes: pagination!.rowSizes,
+            onPageSizeChanged: pagination!.onPageSizeChanged,
+            onPageChanged: pagination!.onPageChanged,
+            onPrev: pagination?.onPrev,
+            onNext: pagination?.onNext,
           ),
         ],
       ],
@@ -196,26 +193,22 @@ class AppTableSortConfig {
 
 class AppTablePaginationConfig {
   const AppTablePaginationConfig({
-    required this.showingCount,
-    required this.totalCount,
-    required this.rowsPerPage,
+    required this.total,
+    required this.pageSize,
     required this.page,
-    required this.pageCount,
-    required this.onRowsPerPageChanged,
-    required this.onPrev,
-    required this.onNext,
-    required this.rowSizes ,
+    required this.onPageSizeChanged,
+    required this.onPageChanged,
+    this.onPrev,
+    this.onNext,
   });
 
-  final int showingCount;
-  final int totalCount;
-  final int rowsPerPage;
+  final int total;
+  final int pageSize;
   final int page; // zero-based
-  final int pageCount; // total pages
-  final List<int> rowSizes;
-  final ValueChanged<int> onRowsPerPageChanged;
-  final VoidCallback onPrev;
-  final VoidCallback onNext;
+  final ValueChanged<int> onPageSizeChanged;
+  final ValueChanged<int> onPageChanged;
+  final VoidCallback? onPrev;
+  final VoidCallback? onNext;
 }
 
 class _Header<T> extends StatelessWidget {
@@ -415,10 +408,7 @@ class _ShimmerLoadingPlaceholder extends StatelessWidget {
 }
 
 class _ErrorPlaceholder extends StatelessWidget {
-  const _ErrorPlaceholder({
-    required this.message,
-    this.onRetry,
-  });
+  const _ErrorPlaceholder({required this.message, this.onRetry});
 
   final String message;
   final VoidCallback? onRetry;
@@ -432,11 +422,7 @@ class _ErrorPlaceholder extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 48,
-            color: theme.colorScheme.error,
-          ),
+          Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
           const SizedBox(height: 16),
           Text(
             message,
@@ -501,13 +487,13 @@ class AppTableFiltersConfig {
   final ValueChanged<String>? onSearchChanged;
 
   /// Optional list of position options. When null or empty, dropdown is hidden.
-  final List<String>? positionOptions;
+  final List<MemberPosition>? positionOptions;
 
   /// Currently selected position value. Null indicates "All".
-  final String? positionValue;
+  final MemberPosition? positionValue;
 
   /// Callback when position filter changes. Null value indicates "All".
-  final ValueChanged<String?>? onPositionChanged;
+  final ValueChanged<MemberPosition?>? onPositionChanged;
 
   /// Optional trailing action button label (e.g., "New Member").
   final String? actionLabel;
@@ -519,27 +505,42 @@ class AppTableFiltersConfig {
   final VoidCallback? onActionPressed;
 }
 
-class _BuiltInFiltersBar extends StatelessWidget {
+class _BuiltInFiltersBar extends StatefulWidget {
   const _BuiltInFiltersBar({required this.config});
 
   final AppTableFiltersConfig config;
+
+  @override
+  State<_BuiltInFiltersBar> createState() => _BuiltInFiltersBarState();
+}
+
+class _BuiltInFiltersBarState extends State<_BuiltInFiltersBar> {
+  late final Debouncer _debouncer = Debouncer(delay: const Duration(milliseconds: 400));
+
+  @override
+  void dispose() {
+    _debouncer.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final children = <Widget>[];
 
     // Search field
-    if (config.searchHint != null) {
+    if (widget.config.searchHint != null) {
       children.add(
         Expanded(
           child: TextField(
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.search),
-              hintText: config.searchHint,
+              hintText: widget.config.searchHint,
               border: const OutlineInputBorder(),
             ),
-            controller: config.searchController,
-            onChanged: config.onSearchChanged,
+            controller: widget.config.searchController,
+            onChanged: widget.config.onSearchChanged == null
+                ? null
+                : (value) => _debouncer(() => widget.config.onSearchChanged!(value)),
           ),
         ),
       );
@@ -553,43 +554,42 @@ class _BuiltInFiltersBar extends StatelessWidget {
     }
 
     // Position dropdown
-    if (config.positionOptions != null && config.positionOptions!.isNotEmpty) {
+    if (widget.config.positionOptions != null && widget.config.positionOptions!.isNotEmpty) {
       addSpacer();
       children.add(
         IntrinsicWidth(
-          child: DropdownButtonFormField<String?>(
-            value: config.positionValue,
+          child: DropdownButtonFormField<MemberPosition?>(
+            value: widget.config.positionValue,
             decoration: const InputDecoration(
-              labelText: 'Filter by Position',
               border: OutlineInputBorder(),
               contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
             items: [
-              const DropdownMenuItem<String?>(
+              const DropdownMenuItem<MemberPosition?>(
                 value: null,
                 child: Text('All Positions', overflow: TextOverflow.ellipsis),
               ),
-              ...config.positionOptions!.map(
-                (p) => DropdownMenuItem<String?>(
+              ...widget.config.positionOptions!.map(
+                (p) => DropdownMenuItem<MemberPosition?>(
                   value: p,
-                  child: Text(p, overflow: TextOverflow.ellipsis),
+                  child: Text(p.name, overflow: TextOverflow.ellipsis),
                 ),
               ),
             ],
-            onChanged: config.onPositionChanged,
+            onChanged: widget.config.onPositionChanged,
           ),
         ),
       );
     }
 
     // Action button
-    if (config.onActionPressed != null && config.actionLabel != null) {
+    if (widget.config.onActionPressed != null && widget.config.actionLabel != null) {
       addSpacer();
       children.add(
         FilledButton.icon(
-          onPressed: config.onActionPressed,
-          icon: Icon(config.actionIcon ?? Icons.add, size: 18),
-          label: Text(config.actionLabel!),
+          onPressed: widget.config.onActionPressed,
+          icon: Icon(widget.config.actionIcon ?? Icons.add, size: 18),
+          label: Text(widget.config.actionLabel!),
         ),
       );
     }

@@ -226,20 +226,15 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                   const SizedBox(height: 8),
                   // Pagination
                   PaginationBar(
-                    showingCount: paginatedActivities.length,
-                    totalCount: total,
-                    rowsPerPage: screenState.rowsPerPage,
+                    total: total,
+                    pageSize: screenState.rowsPerPage,
                     page: screenState.page,
-                    pageCount: (total / screenState.rowsPerPage).ceil().clamp(
-                      1,
-                      9999,
-                    ),
-                    onRowsPerPageChanged: (v) =>
+                    onPageSizeChanged: (v) =>
                         screenNotifier.updateRowsPerPage(v),
                     onPrev: () => screenNotifier.previousPage(),
                     onNext: () => screenNotifier.nextPage(
                       (total / screenState.rowsPerPage).ceil() - 1,
-                    ),
+                    ), onPageChanged: (int value) {  },
                   ),
                 ],
               ),

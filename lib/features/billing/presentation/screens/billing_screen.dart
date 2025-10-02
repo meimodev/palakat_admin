@@ -237,12 +237,10 @@ class _BillingScreenState extends State<BillingScreen> {
                   const SizedBox(height: 8),
                   // Pagination
                   PaginationBar(
-                    showingCount: pageRows.length,
-                    totalCount: total,
-                    rowsPerPage: _rowsPerPage,
+                    total: total,
+                    pageSize: _rowsPerPage,
                     page: _page,
-                    pageCount: (total / _rowsPerPage).ceil().clamp(1, 9999),
-                    onRowsPerPageChanged: (v) => setState(() {
+                    onPageSizeChanged: (v) => setState(() {
                       _rowsPerPage = v;
                       _page = 0;
                     }),
@@ -252,7 +250,7 @@ class _BillingScreenState extends State<BillingScreen> {
                     onNext: () => setState(() {
                       final maxPage = (total / _rowsPerPage).ceil() - 1;
                       if (_page < maxPage) _page += 1;
-                    }),
+                    }), onPageChanged: (int value) {  },
                   ),
                 ],
               ),

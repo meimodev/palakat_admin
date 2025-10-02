@@ -9,7 +9,7 @@ abstract class Column with _$Column {
   const factory Column({
     int? id,
     required String name,
-     DateTime? createdAt,
+    DateTime? createdAt,
     DateTime? updatedAt,
     required int churchId,
   }) = _Column;

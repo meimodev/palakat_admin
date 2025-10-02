@@ -71,7 +71,7 @@ class HttpService {
     _dio.interceptors.add(TalkerDioLogger(
       settings: const TalkerDioLoggerSettings(
         printRequestHeaders: true,
-        printResponseHeaders: true,
+        printResponseHeaders: false,
         printResponseMessage: true,
       ),
     ));
@@ -268,10 +268,7 @@ HttpService httpService(Ref ref) {
   final config = ref.watch(appConfigProvider);
   final localStorage = ref.watch(localStorageServiceProvider);
   final headers = <String, String>{};
-  final key = config.apiKey;
-  if (key != null && key.isNotEmpty) {
-    headers['Authorization'] = 'Bearer $key';
-  }
+
 
   return HttpService(
     baseUrl: config.apiBaseUrl,

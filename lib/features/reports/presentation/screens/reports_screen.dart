@@ -243,15 +243,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }).toList();
 
     final total = filtered.length;
-    final showing = _getFilteredHistoryRows().length;
 
     return PaginationBar(
-      showingCount: showing,
-      totalCount: total,
-      rowsPerPage: _historyRowsPerPage,
+      total: total,
+      pageSize: _historyRowsPerPage,
       page: _historyPage,
-      pageCount: (total / _historyRowsPerPage).ceil().clamp(1, 9999),
-      onRowsPerPageChanged: (v) => setState(() {
+      onPageSizeChanged: (v) => setState(() {
         _historyRowsPerPage = v;
         _historyPage = 0;
       }),
@@ -261,7 +258,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       onNext: () => setState(() {
         final maxPage = (total / _historyRowsPerPage).ceil() - 1;
         if (_historyPage < maxPage) _historyPage += 1;
-      }),
+      }), onPageChanged: (int value) {  },
     );
   }
 

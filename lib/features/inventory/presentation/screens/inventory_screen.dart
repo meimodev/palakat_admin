@@ -143,12 +143,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
                   // Pagination
                   PaginationBar(
-                    showingCount: _paginatedItems.length,
-                    totalCount: _filteredItems.length,
-                    rowsPerPage: _rowsPerPage,
+                    total: _filteredItems.length,
+                    pageSize: _rowsPerPage,
                     page: _currentPage - 1, // PaginationBar expects zero-based
-                    pageCount: _totalPages,
-                    onRowsPerPageChanged: (value) {
+                    onPageSizeChanged: (value) {
                       setState(() {
                         _rowsPerPage = value;
                         _currentPage = 1;
@@ -163,7 +161,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       setState(() {
                         if (_currentPage < _totalPages) _currentPage++;
                       });
-                    },
+                    }, onPageChanged: (int value) {  },
                   ),
                 ],
               ),

@@ -16,9 +16,10 @@ class Endpoints {
   static String column({required int columnId}) => '/column/$columnId';
   static const String columns = '/column';
 
-  // Members
-  static const String members = '/members';
-  static String member(String memberId) => '/members/$memberId';
+  // Account (Members)
+  static const String accounts = '/account';
+  static const String accountCount = '/account/count';
+  static String account(int accountId) => '/account/$accountId';
 
   // Activities
   static const String activities = '/activities';

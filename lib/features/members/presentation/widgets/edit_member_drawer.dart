@@ -8,6 +8,8 @@ import 'package:palakat_admin/core/widgets/side_drawer.dart';
 import 'package:intl/intl.dart';
 import 'package:palakat_admin/core/validation/validators.dart';
 import 'package:palakat_admin/core/widgets/info_section.dart';
+import 'package:palakat_admin/core/widgets/position_selector.dart';
+import 'package:palakat_admin/features/church/application/church_controller.dart';
 
 class EditMemberDrawer extends ConsumerStatefulWidget {
   final Account account;
@@ -28,8 +30,7 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
   late String _maritalStatus;
   late String _genderText;
   DateTime? _dateOfBirth;
-  final List<String> _positions = [];
-  // Positions will use the same UX as approval route editor: add via dropdown + chips
+  final List<MemberPosition> _positions = [];
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -45,9 +46,7 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
     _genderText = widget.account.gender == Gender.female ? 'Female' : 'Male';
     _dateOfBirth = widget.account.dob;
     _positions.addAll(
-      (widget.account.membership?.membershipPositions ?? []).map(
-        (mp) => mp.name,
-      ),
+      widget.account.membership?.membershipPositions ?? [],
     );
   }
 
@@ -61,7 +60,7 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    final isNewMember = widget.account.email.isEmpty;
+    final isNewMember = widget.account.email == null;
     return Material(
       child: SideDrawer(
         title: isNewMember ? 'Add New Member' : 'Edit Member',
@@ -267,47 +266,24 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
-                    child: LabeledField(
-                      label: 'Positions',
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          DropdownButtonFormField<String>(
-                            key: ValueKey(_positions.length),
-                            value: null,
-                            items: _pos
-                                .where((p) => !_positions.contains(p))
-                                .map(
-                                  (p) =>
-                                      DropdownMenuItem(value: p, child: Text(p)),
-                                )
-                                .toList(),
-                            onChanged: (v) {
-                              if (v == null) return;
-                              setState(() {
-                                _positions.add(v);
-                              });
-                            },
-                            decoration: const InputDecoration(
-                              hintText: 'Add a position...',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              for (final p in _positions)
-                                Chip(
-                                  label: Text(p),
-                                  onDeleted: () =>
-                                      setState(() => _positions.remove(p)),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
+                    child: Builder(
+                      builder: (context) {
+                        final churchState = ref.watch(churchControllerProvider);
+                        final availablePositions = churchState.positions.value ?? [];
+                        
+                        return PositionSelector(
+                          selectedPositions: _positions,
+                          onPositionsChanged: (positions) {
+                            setState(() {
+                              _positions
+                                ..clear()
+                                ..addAll(positions);
+                            });
+                          },
+                          availablePositions: availablePositions,
+                          label: 'Positions',
+                        );
+                      },
                     ),
                   ),
                   Padding(
@@ -365,17 +341,6 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
     );
   }
 
-  final List<String> _pos = [
-    'Elder',
-    'Deacon',
-    'Member',
-    'Worship Leader',
-    'Sunday School Teacher',
-    'Youth Leader',
-    'Small Group Leader',
-    'Volunteer',
-  ];
-
   String? _selectedColumn = 'General'; // Default column
   final List<String> _availableColumns = [
     'General',
@@ -425,16 +390,7 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
                 baptize: _isBaptized,
                 sidi: _isSidi,
                 updatedAt: now,
-                membershipPositions: [
-                  for (var idx = 0; idx < _positions.length; idx++)
-                    MemberPosition(
-                      id: (widget.account.membership?.id ?? 0) * 100 + idx + 1,
-                      churchId: 1,
-                      name: _positions[idx],
-                      createdAt: now,
-                      updatedAt: now,
-                    ),
-                ],
+                membershipPositions: _positions,
               );
 
       final updatedAccount = widget.account.copyWith(
@@ -450,7 +406,7 @@ class _EditMemberDrawerState extends ConsumerState<EditMemberDrawer> {
 
 
       // Check if this is a new member or an update
-      final isNewMember = widget.account.email.isEmpty;
+      final isNewMember = widget.account.email == null;
 
       if (isNewMember) {
       } else {

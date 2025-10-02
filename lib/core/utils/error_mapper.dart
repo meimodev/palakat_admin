@@ -6,8 +6,8 @@ import 'package:palakat_admin/core/models/app_error.dart';
 /// Centralized error mapping utilities
 class ErrorMapper {
   /// Map DioException to AppError with a contextual message
-  static AppError fromDio(DioException error, String message) {
-    dev.log('Dio error: $message: $error', error: error, name: 'ErrorMapper');
+  static AppError fromDio(DioException error, String message, [StackTrace? st]) {
+    dev.log('Dio error: $message: $error', error: error, name: 'ErrorMapper', stackTrace: st);
     switch (error.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:

@@ -3,6 +3,7 @@ import 'package:palakat_admin/core/constants/enums.dart';
 import 'package:palakat_admin/core/models/membership.dart';
 
 part 'account.freezed.dart';
+
 part 'account.g.dart';
 
 @freezed
@@ -11,7 +12,7 @@ abstract class Account with _$Account {
     required int id,
     required String name,
     required String phone,
-    required String email,
+    String? email,
     required Gender gender,
     required bool married,
     required DateTime dob,

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:palakat_admin/core/constants/enums.dart';
+import 'package:palakat_admin/core/extension/extension.dart';
 import 'package:palakat_admin/core/models/account.dart';
 import 'package:palakat_admin/core/models/membership.dart';
-import 'package:palakat_admin/features/members/presentation/state/members_state.dart';
+import 'package:palakat_admin/features/members/presentation/state/members_screen_state.dart';
 
 import '../widgets/edit_member_drawer.dart';
 import 'package:palakat_admin/core/widgets/surface_card.dart';
@@ -21,7 +22,7 @@ class MembersScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
-    final MembersState state = ref.watch(membersControllerProvider);
+    final MembersScreenState state = ref.watch(membersControllerProvider);
     final MembersController controller = ref.watch(
       membersControllerProvider.notifier,
     );
@@ -78,37 +79,40 @@ class MembersScreen extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // AppTable with built-in filter bar
                   AppTable<Account>(
                     loading: state.accounts.isLoading,
-                    data: state.accounts.value ?? [],
+                    data: state.accounts.value?.data ?? [],
                     errorText: state.accounts.hasError
                         ? state.accounts.error.toString()
                         : null,
                     onRetry: () => controller.refresh(),
-                    pagination: AppTablePaginationConfig(
-                      showingCount: 100,
-                      totalCount: state.accounts.value?.length ?? 0,
-                      rowsPerPage: 10,
-                      page: 0,
-                      pageCount: 1,
-                      rowSizes: [5, 10, 15, 20, 30, 50, 100],
-                      onRowsPerPageChanged: (page) {
-                        print(page);
-                      },
-                      onPrev: () {
-                        print("On Prev");
-                      },
-                      onNext: () {
-                        print("On Next");
-                      },
-                    ),
+                    pagination: () {
+                      final pageSize =
+                          state.accounts.value?.pagination.pageSize ?? 10;
+                      final page = state.accounts.value?.pagination.page ?? 1;
+                      final total = state.accounts.value?.pagination.total ?? 0;
+
+                      final hasPrev =
+                          state.accounts.value?.pagination.hasPrev ?? false;
+                      final hasNext =
+                          state.accounts.value?.pagination.hasNext ?? false;
+
+                      return AppTablePaginationConfig(
+                        total: total,
+                        pageSize: pageSize,
+                        page: page,
+                        onPageSizeChanged: controller.onChangedPageSize,
+                        onPageChanged: controller.onChangedPage,
+                        onPrev: hasPrev ? controller.onPressedPrevPage : null,
+                        onNext: hasNext ? controller.onPressedNextPage : null,
+                      );
+                    }.call(),
                     filtersConfig: AppTableFiltersConfig(
-                      searchHint: 'Search members...',
-                      onSearchChanged: controller.setSearch,
-                      positionOptions: controller.fetchMemberPositions(),
+                      searchHint: 'Search name / column / position ...',
+                      onSearchChanged: controller.onChangedSearch,
+                      positionOptions: state.positions.value,
                       positionValue: null,
-                      onPositionChanged: controller.setPositionFilter,
+                      onPositionChanged: controller.onChangedPosition,
                       actionLabel: 'New Member',
                       actionIcon: Icons.add,
                       onActionPressed: () {
@@ -146,6 +150,7 @@ class MembersScreen extends ConsumerWidget {
                         cellBuilder: (ctx, account) {
                           final theme = Theme.of(ctx);
                           final membership = account.membership;
+                          final column = membership?.column;
                           final isBaptized = membership?.baptize ?? false;
                           final isSidi = membership?.sidi ?? false;
                           final isLinked = account.claimed;
@@ -157,13 +162,12 @@ class MembersScreen extends ConsumerWidget {
                               Row(
                                 children: [
                                   Flexible(
-                                    child: Text(
+                                    child: SelectableText(
                                       account.name,
                                       style: theme.textTheme.bodyMedium
                                           ?.copyWith(
                                             fontWeight: FontWeight.w600,
                                           ),
-                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                   const SizedBox(width: 8),
@@ -208,8 +212,8 @@ class MembersScreen extends ConsumerWidget {
                                 ],
                               ),
                               const SizedBox(height: 4),
-                              Text(
-                                'Member',
+                              SelectableText(
+                                column?.name ?? '',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
@@ -223,8 +227,8 @@ class MembersScreen extends ConsumerWidget {
                         flex: 3,
                         cellBuilder: (ctx, account) {
                           final theme = Theme.of(ctx);
-                          return Text(
-                            account.phone,
+                          return SelectableText(
+                            account.phone.formattedPhone,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
