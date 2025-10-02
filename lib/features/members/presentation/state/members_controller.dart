@@ -56,7 +56,7 @@ class MembersController extends _$MembersController {
       );
       state = state.copyWith(counts: AsyncData(data));
     } catch (e, st) {
-      state = state.copyWith(accounts: AsyncError(e, st));
+      state = state.copyWith(counts: AsyncError(e, st));
     }
   }
 

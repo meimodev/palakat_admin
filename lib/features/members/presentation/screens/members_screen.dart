@@ -7,6 +7,7 @@ import 'package:palakat_admin/core/models/membership.dart';
 import 'package:palakat_admin/features/members/presentation/state/members_screen_state.dart';
 
 import '../widgets/edit_member_drawer.dart';
+import '../widgets/member_name_cell.dart';
 import 'package:palakat_admin/core/widgets/surface_card.dart';
 import 'package:palakat_admin/core/widgets/app_table.dart';
 import 'package:palakat_admin/core/widgets/status_badge.dart';
@@ -111,7 +112,7 @@ class MembersScreen extends ConsumerWidget {
                       searchHint: 'Search name / column / position ...',
                       onSearchChanged: controller.onChangedSearch,
                       positionOptions: state.positions.value,
-                      positionValue: null,
+                      positionValue: state.selectedPosition,
                       onPositionChanged: controller.onChangedPosition,
                       actionLabel: 'New Member',
                       actionIcon: Icons.add,
@@ -143,110 +144,7 @@ class MembersScreen extends ConsumerWidget {
                     onRowTap: (account) async {
                       await showEditMemberDrawer(context, account: account);
                     },
-                    columns: [
-                      AppTableColumn<Account>(
-                        title: 'Name',
-                        flex: 4,
-                        cellBuilder: (ctx, account) {
-                          final theme = Theme.of(ctx);
-                          final membership = account.membership;
-                          final column = membership?.column;
-                          final isBaptized = membership?.baptize ?? false;
-                          final isSidi = membership?.sidi ?? false;
-                          final isLinked = account.claimed;
-
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    child: SelectableText(
-                                      account.name,
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      if (isBaptized)
-                                        StatusBadge(
-                                          icon: Icons.water_drop,
-                                          color: Colors.blue.shade600,
-                                          backgroundColor: Colors.blue.shade50,
-                                          tooltip: 'Baptized',
-                                        ),
-                                      if (isSidi)
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            left: 4.0,
-                                          ),
-                                          child: StatusBadge(
-                                            icon: Icons.emoji_people,
-                                            color: Colors.green.shade600,
-                                            backgroundColor:
-                                                Colors.green.shade50,
-                                            tooltip: 'Sidi',
-                                          ),
-                                        ),
-                                      if (isLinked)
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            left: 4.0,
-                                          ),
-                                          child: StatusBadge(
-                                            icon: Icons.phone_android,
-                                            color: Colors.purple.shade600,
-                                            backgroundColor:
-                                                Colors.purple.shade50,
-                                            tooltip: 'App Linked',
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              SelectableText(
-                                column?.name ?? '',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                      AppTableColumn<Account>(
-                        title: 'Phone',
-                        flex: 3,
-                        cellBuilder: (ctx, account) {
-                          final theme = Theme.of(ctx);
-                          return SelectableText(
-                            account.phone.formattedPhone,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          );
-                        },
-                      ),
-                      AppTableColumn<Account>(
-                        title: 'Positions',
-                        flex: 3,
-                        cellBuilder: (ctx, account) {
-                          final positions =
-                              (account.membership?.membershipPositions ?? [])
-                                  .map((e) => e.name)
-                                  .toList();
-                          return PositionsCell(positions: positions);
-                        },
-                      ),
-                    ],
+                    columns: _buildTableColumns(),
                   ),
                 ],
               ),
@@ -255,5 +153,40 @@ class MembersScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// Builds the table column configuration for the members table
+  static List<AppTableColumn<Account>> _buildTableColumns() {
+    return [
+      AppTableColumn<Account>(
+        title: 'Name',
+        flex: 4,
+        cellBuilder: (ctx, account) => MemberNameCell(account: account),
+      ),
+      AppTableColumn<Account>(
+        title: 'Phone',
+        flex: 3,
+        cellBuilder: (ctx, account) {
+          final theme = Theme.of(ctx);
+          return SelectableText(
+            account.phone.formattedPhone,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          );
+        },
+      ),
+      AppTableColumn<Account>(
+        title: 'Positions',
+        flex: 3,
+        cellBuilder: (ctx, account) {
+          final positions =
+              (account.membership?.membershipPositions ?? [])
+                  .map((e) => e.name)
+                  .toList();
+          return PositionsCell(positions: positions);
+        },
+      ),
+    ];
   }
 }
