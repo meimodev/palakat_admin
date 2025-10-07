@@ -9,7 +9,7 @@ abstract class BillingItem with _$BillingItem {
   const BillingItem._();
 
   const factory BillingItem({
-    required String id,
+    String? id,
     required String description,
     required double amount,
     required BillingType type,
@@ -19,8 +19,8 @@ abstract class BillingItem with _$BillingItem {
     PaymentMethod? paymentMethod,
     String? transactionId,
     String? notes,
-    required DateTime createdAt,
-    required DateTime updatedAt,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) = _BillingItem;
 
   factory BillingItem.fromJson(Map<String, dynamic> json) => _$BillingItemFromJson(json);
@@ -35,7 +35,7 @@ abstract class PaymentHistory with _$PaymentHistory {
   const PaymentHistory._();
 
   const factory PaymentHistory({
-    required String id,
+    String? id,
     required String billingItemId,
     required double amount,
     required PaymentMethod paymentMethod,

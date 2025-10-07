@@ -112,9 +112,9 @@ class ApiService {
   Future<Activity> updateActivity(Activity activity) async {
     try {
       final response = await _httpService.put(
-        '/posts/${activity.id}',
+        '/posts/${activity.id ?? ''}',
         data: {
-          'id': int.tryParse(activity.id) ?? 1,
+          'id': int.tryParse(activity.id ?? '') ?? 1,
           'title': activity.title,
           'body': activity.description,
           'userId': 1, // Demo user ID

@@ -14,7 +14,7 @@ abstract class Membership with _$Membership {
     int? id,
     required bool baptize,
     required bool sidi,
-    required DateTime createdAt,
+    DateTime? createdAt,
     DateTime? updatedAt,
     @Default([]) List<MemberPosition> membershipPositions,
     Church? church,

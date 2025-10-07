@@ -293,8 +293,8 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
           alignment: Alignment.centerRight,
           child: Material(
             child: PositionEditDrawer(
-              churchId: state.church.value!.id,
-              positionId: position.id,
+              churchId: state.church.value!.id!,
+              positionId: position.id!,
               onSave: (updatedPosition) async {
                 try {
                   await churchController.savePosition(updatedPosition);
@@ -377,7 +377,7 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
           alignment: Alignment.centerRight,
           child: Material(
             child: PositionEditDrawer(
-              churchId: state.church.value!.id,
+              churchId: state.church.value!.id!,
               onSave: (newPosition) async {
                 try {
                   await churchController.createPosition(newPosition);
@@ -700,7 +700,7 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
           ? 'Manage your church columns. Total columns: ${columnsAsync.value!.length}'
           : 'Manage your church columns.',
       trailing: ElevatedButton.icon(
-        onPressed: () => _openAddColumnDrawer(state.church.value!.id),
+        onPressed: () => _openAddColumnDrawer(state.church.value!.id!),
         icon: const Icon(Icons.add),
         label: const Text('Add Column'),
         style: ElevatedButton.styleFrom(
@@ -725,7 +725,7 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
         error: (e, st) => _cardError(
           theme: theme,
           error: e,
-          onRetry: () => churchController.fetchColumns(state.church.value?.id ?? churchController.locallyStoredChurch.id),
+          onRetry: () => churchController.fetchColumns((state.church.value?.id ?? churchController.locallyStoredChurch.id)!),
         ),
         data: (columns) => Column(
           children: [
@@ -830,7 +830,7 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
           theme: theme,
           error: e,
           onRetry: () =>
-              churchController.fetchPositions(state.church.value?.id  ?? churchController.locallyStoredChurch.id),
+              churchController.fetchPositions((state.church.value?.id  ?? churchController.locallyStoredChurch.id)!),
         ),
         data: (positions) => Column(
           children: [

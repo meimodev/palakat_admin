@@ -9,7 +9,7 @@ part 'activity.g.dart';
 @freezed
 abstract class Activity with _$Activity {
   const factory Activity({
-    required String id,
+    String? id,
     required String title,
     required String description,
     required ActivityType type,
@@ -21,8 +21,8 @@ abstract class Activity with _$Activity {
     required List<String> participants,
     String? location,
     String? notes,
-    required DateTime createdAt,
-    required DateTime updatedAt,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) = _Activity;
 
   factory Activity.fromJson(Map<String, dynamic> json) => _$ActivityFromJson(json);

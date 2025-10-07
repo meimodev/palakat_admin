@@ -10,7 +10,7 @@ abstract class MemberPosition with _$MemberPosition {
     int? id,
     required int churchId,
     required String name,
-    required DateTime createdAt,
+    DateTime? createdAt,
     DateTime? updatedAt,
   }) = _MemberPosition;
 

@@ -73,7 +73,7 @@ class _BillingScreenState extends State<BillingScreen> {
 
       final matchesQuery =
           q.isEmpty ||
-          item.id.toLowerCase().contains(q) ||
+          (item.id?.toLowerCase().contains(q) ?? false) ||
           item.description.toLowerCase().contains(q) ||
           item.type.displayName.toLowerCase().contains(q) ||
           item.status.displayName.toLowerCase().contains(q) ||
@@ -317,7 +317,7 @@ class _BillingScreenState extends State<BillingScreen> {
                               0,
                               PaymentHistory(
                                 id: 'PAY-${DateTime.now().millisecondsSinceEpoch}',
-                                billingItemId: item.id,
+                                billingItemId: item.id ?? '',
                                 amount: item.amount,
                                 paymentMethod: paymentMethod,
                                 transactionId: transactionId,
@@ -572,7 +572,7 @@ class _BillingRow extends StatelessWidget {
                   children: [
                     _cell(
                       Text(
-                        item.id,
+                        item.id ?? '-',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -716,7 +716,7 @@ class _PaymentHistoryRow extends StatelessWidget {
             children: [
               _cell(
                 Text(
-                  payment.id,
+                  payment.id ?? '-',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),

@@ -1,8 +1,10 @@
+import 'package:palakat_admin/core/extension/extension.dart';
+import 'package:palakat_admin/core/models/account.dart';
 import 'package:palakat_admin/core/models/church.dart';
 import 'package:palakat_admin/core/models/member_position.dart';
 import 'package:palakat_admin/core/models/request/request.dart';
 import 'package:palakat_admin/core/models/request/get_fetch_member_position_request.dart';
-import 'package:palakat_admin/core/repositories/auth_repository.dart';
+import 'package:palakat_admin/core/utils/debouncer.dart';
 import 'package:palakat_admin/features/auth/application/auth_controller.dart';
 import 'package:palakat_admin/features/members/presentation/state/members_screen_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -12,8 +14,13 @@ part 'members_controller.g.dart';
 
 @riverpod
 class MembersController extends _$MembersController {
+  late final Debouncer _searchDebouncer;
+
   @override
   MembersScreenState build() {
+    _searchDebouncer = Debouncer(delay: const Duration(milliseconds: 300));
+    ref.onDispose(() => _searchDebouncer.dispose());
+
     final initial = const MembersScreenState();
     Future.microtask(() {
       _fetchMemberPositions();
@@ -47,7 +54,7 @@ class MembersController extends _$MembersController {
     }
   }
 
-  void _fetchCounts() async {
+  Future<void> _fetchCounts() async {
     state = state.copyWith(counts: const AsyncLoading());
     try {
       final repository = ref.read(membersRepositoryProvider);
@@ -66,7 +73,6 @@ class MembersController extends _$MembersController {
       final repository = ref.read(membersRepositoryProvider);
       final positions = await repository.fetchMemberPositionsPagination(
         paginationRequest: PaginationRequestWrapper(
-
           data: GetFetchMemberPosition(churchId: church.id),
         ),
       );
@@ -81,7 +87,7 @@ class MembersController extends _$MembersController {
       searchQuery: value,
       currentPage: 1, // Reset to first page on search
     );
-    _fetchAccounts();
+    _searchDebouncer(() => _fetchAccounts());
   }
 
   void onChangedPosition(MemberPosition? position) {
@@ -119,5 +125,87 @@ class MembersController extends _$MembersController {
 
   Future<void> refresh() async {
     await _fetchAccounts();
+  }
+
+  // Fetch single member detail (doesn't mutate state)
+  Future<Account> fetchMember(int memberId) async {
+    final repository = ref.read(membersRepositoryProvider);
+    return await repository.fetchAccount(accountId: memberId);
+  }
+
+  // Save member (create or update)
+  Future<void> saveMember(Account account) async {
+    final repository = ref.read(membersRepositoryProvider);
+
+      final payload = account.toJson();
+    if (account.id != null) {
+
+
+      await repository.updateAccount(accountId: account.id!, update: payload);
+    } else {
+      // For creates, strip timestamp fields
+      await repository.createAccount(data: payload);
+      await _fetchCounts();
+    }
+
+    // Refresh the list after save
+    await _fetchAccounts();
+  }
+
+  // Delete member
+  Future<void> deleteMember(int memberId) async {
+    final repository = ref.read(membersRepositoryProvider);
+    await repository.deleteAccount(accountId: memberId);
+
+    // Refresh the list after delete
+    await _fetchAccounts();
+    await _fetchCounts();
+  }
+
+  /// Helper method to convert nested objects to IDs within membership field
+  /// - Converts membershipPositions list to membershipPositionIds list
+  /// - Converts column object to columnId
+  /// - Only processes data within 'membership' field, preserves all other data
+  Map<String, dynamic> _convertNestedObjectsToIds(Map<String, dynamic> data) {
+    final result = Map<String, dynamic>.from(data);
+
+    // Recursively find and process 'membership' field
+    result.forEach((key, value) {
+      if (key == 'membership' && value is Map<String, dynamic>) {
+        result[key] = _processMembershipField(value);
+      } else if (value is Map<String, dynamic>) {
+        result[key] = _convertNestedObjectsToIds(value);
+      }
+    });
+
+    return result;
+  }
+
+  /// Process the membership field to convert nested objects to IDs
+  Map<String, dynamic> _processMembershipField(
+    Map<String, dynamic> membership,
+  ) {
+    final result = Map<String, dynamic>.from(membership);
+
+    // Convert membershipPositions to membershipPositionIds
+    if (membership.containsKey('membershipPositions') &&
+        membership['membershipPositions'] is List) {
+      final positions = membership['membershipPositions'] as List;
+      result['membershipPositionIds'] = positions
+          .map((pos) => pos is Map ? pos['id'] : pos)
+          .where((id) => id != null)
+          .toList();
+      result.remove('membershipPositions');
+    }
+
+    // Convert column object to columnId
+    if (membership.containsKey('column') && membership['column'] is Map) {
+      final column = membership['column'] as Map;
+      if (column.containsKey('id')) {
+        result['columnId'] = column['id'];
+      }
+      result.remove('column');
+    }
+    return result;
   }
 }

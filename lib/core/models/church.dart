@@ -10,7 +10,7 @@ part 'church.g.dart';
 @freezed
 abstract class Church with _$Church {
   const factory Church({
-    required int id,
+    int? id,
     required String name,
     String? phoneNumber,
     String? email,
@@ -20,8 +20,8 @@ abstract class Church with _$Church {
     @Default([]) List<Column> columns,
     @Default([]) List<Membership> memberships,
     @Default([]) List<MemberPosition> membershipPositions,
-    required DateTime createdAt,
-    required DateTime updatedAt,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) = _Church;
 
   factory Church.fromJson(Map<String, dynamic> json) => _$ChurchFromJson(json);

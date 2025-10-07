@@ -7,10 +7,10 @@ part 'column_detail.g.dart';
 @freezed
 abstract class ColumnDetail with _$ColumnDetail {
   const factory ColumnDetail({
-    required int id,
+    int? id,
     required String name,
-    required DateTime createdAt,
-    required DateTime updatedAt,
+    DateTime? createdAt,
+    DateTime? updatedAt,
     required int churchId,
     @Default([]) List<ColumnDetailMembership> memberships,
   }) = _ColumnDetail;

@@ -6,7 +6,7 @@ part 'document.g.dart';
 @freezed
 abstract class Document with _$Document {
   const factory Document({
-    required String id,
+    String? id,
     required String name,
     required String identityNumber,
     required DateTime approvedDate,

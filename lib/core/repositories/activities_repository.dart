@@ -188,7 +188,7 @@ class ActivitiesRepository {
       // Search filter
       final query = searchQuery.trim().toLowerCase();
       final matchesQuery = query.isEmpty ||
-          activity.id.toLowerCase().contains(query) ||
+          (activity.id?.toLowerCase().contains(query) ?? false) ||
           activity.title.toLowerCase().contains(query) ||
           activity.description.toLowerCase().contains(query) ||
           activity.type.displayName.toLowerCase().contains(query) ||

@@ -8,20 +8,23 @@ part 'account.g.dart';
 
 @freezed
 abstract class Account with _$Account {
-  const factory Account({
-    required int id,
+  // ignore: invalid_annotation_target
+  @JsonSerializable(includeIfNull: false)
+  factory Account({
+    int? id,
     required String name,
     required String phone,
     String? email,
-    required Gender gender,
-    required bool married,
+    @Default(Gender.male) Gender gender,
+    @Default(MaritalStatus.single) MaritalStatus maritalStatus,
     required DateTime dob,
-    required bool claimed,
-    required DateTime createdAt,
-    required DateTime updatedAt,
+    @Default(false) bool claimed,
+    DateTime? createdAt,
+    DateTime? updatedAt,
     Membership? membership,
   }) = _Account;
 
   factory Account.fromJson(Map<String, dynamic> json) =>
       _$AccountFromJson(json);
 }
+

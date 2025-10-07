@@ -1,3 +1,4 @@
+import 'package:palakat_admin/core/extension/extension.dart';
 import 'package:palakat_admin/core/models/column_detail.dart';
 import 'package:palakat_admin/core/models/member_position.dart';
 import 'package:palakat_admin/core/models/member_position_detail.dart';
@@ -33,8 +34,8 @@ class ChurchController extends _$ChurchController {
     Future.microtask(() {
       fetchChurch();
       fetchLocation(church.locationId!);
-      fetchColumns(church.id);
-      fetchPositions(church.id);
+      fetchColumns(church.id!);
+      fetchPositions(church.id!);
     });
 
     return initial;
@@ -45,13 +46,10 @@ class ChurchController extends _$ChurchController {
     try {
       state = state.copyWith(church: AsyncLoading());
 
-      final payload = stripUnchangedFields(
-        original: previous.toJson(),
-        altered: updated.toJson(),
-      );
+      final payload = updated.toJson().stripUnchangedFields(previous.toJson());
 
       final result = await churchRepo.updateChurchProfile(
-        churchId: updated.id,
+        churchId: updated.id!,
         update: payload,
       );
       state = state.copyWith(church: AsyncData(result));
@@ -77,10 +75,7 @@ class ChurchController extends _$ChurchController {
 
       final original = existing.toJson();
       final altered = updated.toJson();
-      final payload = stripUnchangedFields(
-        original: original,
-        altered: altered,
-      );
+      final payload = altered.stripUnchangedFields(original);
 
       final result = await churchRepo.updateMemberPosition(
         positionId: updated.id ?? 0,
@@ -102,7 +97,7 @@ class ChurchController extends _$ChurchController {
     final previous = state.church.value ?? locallyStoredChurch;
     try {
       state = state.copyWith(church: AsyncLoading());
-      final result = await churchRepo.fetchChurchProfile(previous.id);
+      final result = await churchRepo.fetchChurchProfile(previous.id!);
       state = state.copyWith(church: AsyncData(result));
     } catch (e, st) {
       _catchError(e, st);
@@ -116,13 +111,10 @@ class ChurchController extends _$ChurchController {
 
       final originalLoc = previous.value?.toJson() ?? <String, dynamic>{};
       final alteredLoc = updated.toJson();
-      final payload = stripUnchangedFields(
-        original: originalLoc,
-        altered: alteredLoc,
-      );
+      final payload = alteredLoc.stripUnchangedFields(originalLoc);
 
       final result = await churchRepo.updateLocation(
-        locationId: updated.id,
+        locationId: updated.id!,
         update: payload,
       );
 
@@ -173,10 +165,7 @@ class ChurchController extends _$ChurchController {
 
       final original = existing.toJson();
       final altered = updated.toJson();
-      final payload = stripUnchangedFields(
-        original: original,
-        altered: altered,
-      );
+      final payload = altered.stripUnchangedFields(original);
 
       final result = await churchRepo.updateColumn(
         columnId: updated.id ?? 0,
@@ -247,18 +236,6 @@ class ChurchController extends _$ChurchController {
     }
   }
 
-  Map<String, dynamic> stripUnchangedFields({
-    required Map<String, dynamic> original,
-    required Map<String, dynamic> altered,
-  }) {
-    final result = <String, dynamic>{};
-    for (final key in altered.keys) {
-      if (original[key].toString() != altered[key].toString()) {
-        result[key] = altered[key];
-      }
-    }
-    return result;
-  }
 
   void fetchColumns(int churchId) async {
     try {
@@ -316,7 +293,7 @@ class ChurchController extends _$ChurchController {
     try {
       final fetched = await churchRepo.fetchChurchProfile(churchId);
       return fetched;
-    } catch (e, st) {
+    } catch (e) {
       rethrow;
     }
   }
@@ -325,7 +302,7 @@ class ChurchController extends _$ChurchController {
   // value (when available) to avoid leaving the UI stuck in loading state; otherwise
   // set it to AsyncError. Always rethrow with the original stack to let callers handle UI.
   void _catchError(Object e, StackTrace st) {
-    AsyncValue<T> _restore<T>(AsyncValue<T> slice) {
+    AsyncValue<T> restore<T>(AsyncValue<T> slice) {
       if (slice.isLoading) {
         if (slice.hasValue) {
           return AsyncData(slice.value as T);
@@ -337,10 +314,10 @@ class ChurchController extends _$ChurchController {
     }
 
     state = state.copyWith(
-      church: _restore(state.church),
-      location: _restore(state.location),
-      columns: _restore(state.columns),
-      positions: _restore(state.positions),
+      church: restore(state.church),
+      location: restore(state.location),
+      columns: restore(state.columns),
+      positions: restore(state.positions),
     );
 
     // Preserve original stack trace on rethrow

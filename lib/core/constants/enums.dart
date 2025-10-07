@@ -26,7 +26,7 @@ enum ActivityType {
 
 @JsonEnum(valueField: 'abv')
 enum Bipra {
-  general("Jemaat", "JMT"),
+  elder("Lanjut Usia", "ELD"),
   fathers("Pria / Kaum Bapa", "PKB"),
   mothers("Wanita / Kaum Ibu", "WKI"),
   youths("Pemuda", "PMD"),

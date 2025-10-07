@@ -54,7 +54,7 @@ class _InfoEditDrawerState extends ConsumerState<InfoEditDrawer> {
     try {
       final latest = await ref
           .read(churchControllerProvider.notifier)
-          .fetchChurchDetail(widget.church.id);
+          .fetchChurchDetail(widget.church.id!);
       if (!mounted) return;
       _nameController.text = latest.name;
       _phoneController.text = latest.phoneNumber ?? '';

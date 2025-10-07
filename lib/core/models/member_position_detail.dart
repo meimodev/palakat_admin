@@ -11,7 +11,7 @@ abstract class MemberPositionDetail with _$MemberPositionDetail {
     int? id,
     required int churchId,
     required String name,
-    required DateTime createdAt,
+    DateTime? createdAt,
     DateTime? updatedAt,
     @Default([]) List<String> positions,
     String? accountName,

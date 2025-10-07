@@ -1,26 +1,129 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:palakat_admin/core/constants/enums.dart';
 import 'package:palakat_admin/core/extension/extension.dart';
 import 'package:palakat_admin/core/models/account.dart';
-import 'package:palakat_admin/core/models/membership.dart';
+import 'package:palakat_admin/core/models/app_error.dart';
+import 'package:palakat_admin/core/utils/date_utils.dart';
+import 'package:palakat_admin/core/widgets/app_snackbars.dart';
 import 'package:palakat_admin/features/members/presentation/state/members_screen_state.dart';
 
-import '../widgets/edit_member_drawer.dart';
+import '../widgets/member_edit_drawer.dart';
 import '../widgets/member_name_cell.dart';
 import 'package:palakat_admin/core/widgets/surface_card.dart';
 import 'package:palakat_admin/core/widgets/app_table.dart';
-import 'package:palakat_admin/core/widgets/status_badge.dart';
 import 'package:palakat_admin/core/widgets/positions_cell.dart';
 
 import '../state/members_controller.dart';
 import 'package:palakat_admin/core/widgets/quick_stat_card.dart';
 
-class MembersScreen extends ConsumerWidget {
+class MembersScreen extends ConsumerStatefulWidget {
   const MembersScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MembersScreen> createState() => _MembersScreenState();
+}
+
+class _MembersScreenState extends ConsumerState<MembersScreen> {
+  /// Shows member drawer for editing or creating
+  void _showMemberDrawer({int? accountId}) {
+    final isEditing = accountId != null;
+    
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Align(
+          alignment: Alignment.centerRight,
+          child: Material(
+            child: MemberEditDrawer(
+              accountId: accountId,
+              onSave: (account) async {
+                try {
+                  final controller = ref.read(membersControllerProvider.notifier);
+                  await controller.saveMember(account);
+                  if (!context.mounted) return;
+                  AppSnackbars.showSuccess(
+                    context,
+                    title: isEditing ? 'Saved' : 'Created',
+                    message: isEditing 
+                        ? 'Member saved successfully'
+                        : 'Member created successfully',
+                  );
+                } catch (e) {
+                  if (!context.mounted) return;
+                  _handleMemberOperationError(
+                    context,
+                    e,
+                    operation: isEditing ? 'save' : 'create',
+                  );
+                }
+              },
+              onDelete: isEditing
+                  ? () {
+                      final controller = ref.read(membersControllerProvider.notifier);
+                      controller
+                          .deleteMember(accountId)
+                          .then((_) {
+                            if (!context.mounted) return;
+                            AppSnackbars.showSuccess(
+                              context,
+                              title: 'Deleted',
+                              message: 'Member deleted successfully',
+                            );
+                          })
+                          .catchError((e) {
+                            if (!context.mounted) return;
+                            _handleMemberOperationError(
+                              context,
+                              e,
+                              operation: 'delete',
+                            );
+                          });
+                    }
+                  : null,
+              onClose: () => Navigator.of(context).pop(),
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(1.0, 0.0),
+            end: Offset.zero,
+          ).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeInOut),
+          ),
+          child: child,
+        );
+      },
+    );
+  }
+
+  /// Handles errors from member operations (save/create/delete)
+  void _handleMemberOperationError(
+    BuildContext context,
+    dynamic error, {
+    required String operation,
+  }) {
+    final msg = error is AppError
+        ? error.userMessage
+        : 'Failed to $operation member';
+    final code = error is AppError ? error.statusCode : null;
+    
+    AppSnackbars.showError(
+      context,
+      title: '${operation.toUpperCase()} failed',
+      message: msg,
+      statusCode: code,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     final MembersScreenState state = ref.watch(membersControllerProvider);
@@ -116,33 +219,10 @@ class MembersScreen extends ConsumerWidget {
                       onPositionChanged: controller.onChangedPosition,
                       actionLabel: 'New Member',
                       actionIcon: Icons.add,
-                      onActionPressed: () {
-                        final now = DateTime.now();
-                        final Account newAccount = Account(
-                          id: now.microsecondsSinceEpoch,
-                          name: '',
-                          phone: '',
-                          email: '',
-                          gender: Gender.male,
-                          married: false,
-                          dob: DateTime(2000, 1, 1),
-                          claimed: false,
-                          createdAt: now,
-                          updatedAt: now,
-                          membership: Membership(
-                            id: 0,
-                            baptize: false,
-                            sidi: false,
-                            createdAt: now,
-                            updatedAt: now,
-                            membershipPositions: const [],
-                          ),
-                        );
-                        showEditMemberDrawer(context, account: newAccount);
-                      },
+                      onActionPressed: () => _showMemberDrawer(),
                     ),
                     onRowTap: (account) async {
-                      await showEditMemberDrawer(context, account: account);
+                      _showMemberDrawer(accountId: account.id);
                     },
                     columns: _buildTableColumns(),
                   ),
@@ -177,13 +257,56 @@ class MembersScreen extends ConsumerWidget {
         },
       ),
       AppTableColumn<Account>(
+        title: 'Birth',
+        flex: 2,
+        cellBuilder: (ctx, account) {
+          final theme = Theme.of(ctx);
+          final formattedDob = AppDateUtils.formatDisplayDate(account.dob);
+          final age = account.calculateAge;
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                formattedDob,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                age.formatted,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+      AppTableColumn<Account>(
+        title: 'BIPRA',
+        flex: 2,
+        cellBuilder: (ctx, account) {
+          final theme = Theme.of(ctx);
+          final bipra = account.calculateBipra;
+          return Text(
+            bipra.abv,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w500,
+            ),
+          );
+        },
+      ),
+      AppTableColumn<Account>(
         title: 'Positions',
         flex: 3,
         cellBuilder: (ctx, account) {
-          final positions =
-              (account.membership?.membershipPositions ?? [])
-                  .map((e) => e.name)
-                  .toList();
+          final positions = (account.membership?.membershipPositions ?? [])
+              .map((e) => e.name)
+              .toList();
           return PositionsCell(positions: positions);
         },
       ),

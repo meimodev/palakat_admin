@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:palakat_admin/core/constants/enums.dart';
 import 'package:palakat_admin/core/models/member_position.dart';
 import 'package:palakat_admin/core/models/membership.dart';
 import '../../../../core/models/account.dart';
@@ -29,12 +28,7 @@ class _AccountScreenState extends State<AccountScreen> {
       name: 'Admin User',
       email: 'admin@palakat.com',
       phone: '+62 812-3456-7890',
-      gender: Gender.male,
-      married: false,
       dob: DateTime.now(),
-      claimed: false,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
       membership: Membership(
         id: 0,
         baptize: false,

@@ -38,7 +38,7 @@ class ActivityDetailView extends ConsumerWidget {
           InfoSection(
             title: 'Basic Information',
             children: [
-              InfoRow(label: 'Activity ID', value: activity.id),
+              InfoRow(label: 'Activity ID', value: activity.id ?? '-'),
               InfoRow(label: 'Title', value: activity.title),
               InfoRow(label: 'Description', value: activity.description),
               InfoRow(
