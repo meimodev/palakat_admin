@@ -19,7 +19,8 @@ class LocationEditDrawer extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<LocationEditDrawer> createState() => _ChurchLocationEditDrawerState();
+  ConsumerState<LocationEditDrawer> createState() =>
+      _ChurchLocationEditDrawerState();
 }
 
 class _ChurchLocationEditDrawerState extends ConsumerState<LocationEditDrawer> {
@@ -34,12 +35,14 @@ class _ChurchLocationEditDrawerState extends ConsumerState<LocationEditDrawer> {
   @override
   void initState() {
     super.initState();
-    _addressController = TextEditingController(text: widget.church.location.name);
+    _addressController = TextEditingController(
+      text: widget.church.location?.name,
+    );
     _latitudeController = TextEditingController(
-      text: widget.church.location.latitude.toString(),
+      text: widget.church.location?.latitude.toString(),
     );
     _longitudeController = TextEditingController(
-      text: widget.church.location.longitude.toString(),
+      text: widget.church.location?.longitude.toString(),
     );
     _fetchLatestLocation();
   }
@@ -83,10 +86,10 @@ class _ChurchLocationEditDrawerState extends ConsumerState<LocationEditDrawer> {
     final parsedLat = double.tryParse(_latitudeController.text.trim());
     final parsedLng = double.tryParse(_longitudeController.text.trim());
 
-    final updatedLocation = widget.church.location.copyWith(
+    final updatedLocation = widget.church.location?.copyWith(
       name: _addressController.text.trim(),
-      latitude: parsedLat ?? widget.church.location.latitude,
-      longitude: parsedLng ?? widget.church.location.longitude,
+      latitude: parsedLat ?? widget.church.location!.latitude,
+      longitude: parsedLng ?? widget.church.location!.longitude,
     );
 
     final updatedChurch = widget.church.copyWith(location: updatedLocation);
@@ -118,7 +121,9 @@ class _ChurchLocationEditDrawerState extends ConsumerState<LocationEditDrawer> {
       subtitle: 'Update address and coordinates for your church',
       onClose: widget.onClose,
       isLoading: _saving || _loading,
-      loadingMessage: _loading ? 'Loading location details...' : 'Saving changes...',
+      loadingMessage: _loading
+          ? 'Loading location details...'
+          : 'Saving changes...',
       errorMessage: _errorMessage,
       onRetry: _loading ? _fetchLatestLocation : null,
       content: Form(
@@ -166,8 +171,8 @@ class _ChurchLocationEditDrawerState extends ConsumerState<LocationEditDrawer> {
                           filled: true,
                           fillColor: theme.colorScheme.surface,
                         ),
-                        validator: (value) =>
-                            ChurchValidators.latitude().asFormFieldValidator(value),
+                        validator: (value) => ChurchValidators.latitude()
+                            .asFormFieldValidator(value),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -187,8 +192,8 @@ class _ChurchLocationEditDrawerState extends ConsumerState<LocationEditDrawer> {
                           filled: true,
                           fillColor: theme.colorScheme.surface,
                         ),
-                        validator: (value) =>
-                            ChurchValidators.longitude().asFormFieldValidator(value),
+                        validator: (value) => ChurchValidators.longitude()
+                            .asFormFieldValidator(value),
                       ),
                     ),
                   ],

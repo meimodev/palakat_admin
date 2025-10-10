@@ -137,19 +137,15 @@ class MembersController extends _$MembersController {
   Future<void> saveMember(Account account) async {
     final repository = ref.read(membersRepositoryProvider);
 
-      final payload = account.toJson();
+    final payload = account.toJson();
     if (account.id != null) {
-
-
       await repository.updateAccount(accountId: account.id!, update: payload);
     } else {
-      // For creates, strip timestamp fields
       await repository.createAccount(data: payload);
-      await _fetchCounts();
     }
 
-    // Refresh the list after save
     await _fetchAccounts();
+    await _fetchCounts();
   }
 
   // Delete member

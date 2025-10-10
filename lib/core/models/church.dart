@@ -16,7 +16,7 @@ abstract class Church with _$Church {
     String? email,
     String? description,
     int? locationId,
-    required Location location,
+     Location? location,
     @Default([]) List<Column> columns,
     @Default([]) List<Membership> memberships,
     @Default([]) List<MemberPosition> membershipPositions,

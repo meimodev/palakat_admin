@@ -41,25 +41,16 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
             child: MemberEditDrawer(
               accountId: accountId,
               onSave: (account) async {
-                try {
-                  final controller = ref.read(membersControllerProvider.notifier);
-                  await controller.saveMember(account);
-                  if (!context.mounted) return;
-                  AppSnackbars.showSuccess(
-                    context,
-                    title: isEditing ? 'Saved' : 'Created',
-                    message: isEditing 
-                        ? 'Member saved successfully'
-                        : 'Member created successfully',
-                  );
-                } catch (e) {
-                  if (!context.mounted) return;
-                  _handleMemberOperationError(
-                    context,
-                    e,
-                    operation: isEditing ? 'save' : 'create',
-                  );
-                }
+                final controller = ref.read(membersControllerProvider.notifier);
+                await controller.saveMember(account);
+                if (!context.mounted) return;
+                AppSnackbars.showSuccess(
+                  context,
+                  title: isEditing ? 'Saved' : 'Created',
+                  message: isEditing 
+                      ? 'Member saved successfully'
+                      : 'Member created successfully',
+                );
               },
               onDelete: isEditing
                   ? () {

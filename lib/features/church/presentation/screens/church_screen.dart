@@ -99,7 +99,7 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
               church: church,
               onSave: (updatedChurch) async {
                 try {
-                  await churchController.saveLocation(updatedChurch.location);
+                  await churchController.saveLocation(updatedChurch.location!);
                   if (!context.mounted) return;
                   // Refresh the specific location card to reflect latest data
                   final locationId = church.locationId;
@@ -163,7 +163,8 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
                 try {
                   await churchController.saveColumn(updatedColumn);
                   if (!context.mounted) return;
-                  final churchId = state.church.value?.id ?? updatedColumn.churchId;
+                  final churchId =
+                      state.church.value?.id ?? updatedColumn.churchId;
                   churchController.fetchColumns(churchId);
                   AppSnackbars.showSuccess(
                     context,
@@ -172,7 +173,9 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
                   );
                 } catch (e) {
                   if (!context.mounted) return;
-                  final msg = e is AppError ? e.userMessage : 'Failed to save column';
+                  final msg = e is AppError
+                      ? e.userMessage
+                      : 'Failed to save column';
                   final code = e is AppError ? e.statusCode : null;
                   AppSnackbars.showError(
                     context,
@@ -183,28 +186,32 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
                 }
               },
               onDelete: () {
-                return churchController.deleteColumn(column.id!).then((_) async {
-                  if (!context.mounted) return;
-                  final churchId = state.church.value?.id ?? column.churchId;
-                  churchController.fetchColumns(churchId);
-                  AppSnackbars.showSuccess(
-                    context,
-                    title: 'Deleted',
-                    message: 'Column deleted successfully',
-                  );
-                }).catchError((e) {
-                  if (!context.mounted) return;
-                  final msg = e is AppError
-                      ? e.userMessage
-                      : 'Failed to delete column';
-                  final code = e is AppError ? e.statusCode : null;
-                  AppSnackbars.showError(
-                    context,
-                    title: 'Delete failed',
-                    message: msg,
-                    statusCode: code,
-                  );
-                });
+                return churchController
+                    .deleteColumn(column.id!)
+                    .then((_) async {
+                      if (!context.mounted) return;
+                      final churchId =
+                          state.church.value?.id ?? column.churchId;
+                      churchController.fetchColumns(churchId);
+                      AppSnackbars.showSuccess(
+                        context,
+                        title: 'Deleted',
+                        message: 'Column deleted successfully',
+                      );
+                    })
+                    .catchError((e) {
+                      if (!context.mounted) return;
+                      final msg = e is AppError
+                          ? e.userMessage
+                          : 'Failed to delete column';
+                      final code = e is AppError ? e.statusCode : null;
+                      AppSnackbars.showError(
+                        context,
+                        title: 'Delete failed',
+                        message: msg,
+                        statusCode: code,
+                      );
+                    });
               },
               onClose: () => Navigator.of(context).pop(),
             ),
@@ -251,7 +258,9 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
                   );
                 } catch (e) {
                   if (!context.mounted) return;
-                  final msg = e is AppError ? e.userMessage : 'Failed to create column';
+                  final msg = e is AppError
+                      ? e.userMessage
+                      : 'Failed to create column';
                   final code = e is AppError ? e.statusCode : null;
                   AppSnackbars.showError(
                     context,
@@ -307,7 +316,9 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
                   );
                 } catch (e) {
                   if (!context.mounted) return;
-                  final msg = e is AppError ? e.userMessage : 'Failed to save position';
+                  final msg = e is AppError
+                      ? e.userMessage
+                      : 'Failed to save position';
                   final code = e is AppError ? e.statusCode : null;
                   AppSnackbars.showError(
                     context,
@@ -390,7 +401,9 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
                   );
                 } catch (e) {
                   if (!context.mounted) return;
-                  final msg = e is AppError ? e.userMessage : 'Failed to create position';
+                  final msg = e is AppError
+                      ? e.userMessage
+                      : 'Failed to create position';
                   final code = e is AppError ? e.statusCode : null;
                   AppSnackbars.showError(
                     context,
@@ -464,7 +477,9 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: theme.colorScheme.error.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: theme.colorScheme.error.withValues(alpha: 0.2),
+        ),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -655,8 +670,10 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
         error: (e, st) => _cardError(
           theme: theme,
           error: e,
-          onRetry: () =>
-              churchController.fetchLocation(state.location.value?.id ?? churchController.locallyStoredChurch.locationId!),
+          onRetry: () => churchController.fetchLocation(
+            state.location.value?.id ??
+                churchController.locallyStoredChurch.locationId!,
+          ),
         ),
         data: (location) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -725,7 +742,10 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
         error: (e, st) => _cardError(
           theme: theme,
           error: e,
-          onRetry: () => churchController.fetchColumns((state.church.value?.id ?? churchController.locallyStoredChurch.id)!),
+          onRetry: () => churchController.fetchColumns(
+            (state.church.value?.id ??
+                churchController.locallyStoredChurch.id)!,
+          ),
         ),
         data: (columns) => Column(
           children: [
@@ -739,8 +759,8 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    onTap: ()  {
-                       _openColumnEditDrawer(column);
+                    onTap: () {
+                      _openColumnEditDrawer(column);
                     },
                     hoverColor: hoverColor,
                     child: Container(
@@ -829,8 +849,10 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
         error: (e, st) => _cardError(
           theme: theme,
           error: e,
-          onRetry: () =>
-              churchController.fetchPositions((state.church.value?.id  ?? churchController.locallyStoredChurch.id)!),
+          onRetry: () => churchController.fetchPositions(
+            (state.church.value?.id ??
+                churchController.locallyStoredChurch.id)!,
+          ),
         ),
         data: (positions) => Column(
           children: [

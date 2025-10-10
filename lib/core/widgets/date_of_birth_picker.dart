@@ -6,12 +6,14 @@ class DateOfBirthPicker extends StatelessWidget {
   final DateTime? value;
   final ValueChanged<DateTime?>? onChanged;
   final bool enabled;
+  final String? errorText;
 
   const DateOfBirthPicker({
     super.key,
     this.value,
     this.onChanged,
     this.enabled = true,
+    this.errorText,
   });
 
   Future<void> _selectDate(BuildContext context) async {
@@ -31,6 +33,7 @@ class DateOfBirthPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final hasError = errorText != null && errorText!.isNotEmpty;
 
     return InkWell(
       onTap: enabled ? () => _selectDate(context) : null,
@@ -38,6 +41,14 @@ class DateOfBirthPicker extends StatelessWidget {
         decoration: InputDecoration(
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: theme.colorScheme.error),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: theme.colorScheme.error, width: 2),
           ),
           filled: true,
           fillColor: !enabled
@@ -47,6 +58,8 @@ class DateOfBirthPicker extends StatelessWidget {
             Icons.calendar_today,
             color: !enabled ? theme.colorScheme.onSurfaceVariant : null,
           ),
+          errorText: errorText,
+          errorStyle: const TextStyle(fontSize: 12),
         ),
         child: Text(
           value != null

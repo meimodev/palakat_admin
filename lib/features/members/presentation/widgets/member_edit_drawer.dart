@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:palakat_admin/core/constants/enums.dart';
 import 'package:palakat_admin/core/extension/extension.dart';
 import 'package:palakat_admin/core/models/account.dart';
+import 'package:palakat_admin/core/models/app_error.dart';
 import 'package:palakat_admin/core/models/membership.dart';
 import 'package:palakat_admin/core/models/member_position.dart';
 import 'package:palakat_admin/core/widgets/date_of_birth_picker.dart';
@@ -37,6 +38,9 @@ class MemberEditDrawer extends ConsumerStatefulWidget {
 
 class _MemberEditDrawerState extends ConsumerState<MemberEditDrawer> {
   final _formKey = GlobalKey<FormState>();
+  final _scrollController = ScrollController();
+  final _emailFieldKey = GlobalKey();
+  final _phoneFieldKey = GlobalKey();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
@@ -55,6 +59,10 @@ class _MemberEditDrawerState extends ConsumerState<MemberEditDrawer> {
   cm.Column? _selectedColumn;
   String? _errorMessage;
   bool _isFormatting = false; // Prevent recursive formatting in onChanged
+  String? _dateOfBirthError;
+  String? _columnError;
+  String? _emailError;
+  String? _phoneError;
 
   @override
   void initState() {
@@ -67,10 +75,25 @@ class _MemberEditDrawerState extends ConsumerState<MemberEditDrawer> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     super.dispose();
+  }
+
+  void _scrollToField(GlobalKey fieldKey) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = fieldKey.currentContext;
+      if (context != null) {
+        Scrollable.ensureVisible(
+          context,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          alignment: 0.2, // Position field at 20% from top of viewport
+        );
+      }
+    });
   }
 
   String _normalizePhoneDigits(String input) {
@@ -138,7 +161,35 @@ class _MemberEditDrawerState extends ConsumerState<MemberEditDrawer> {
   }
 
   Future<void> _saveChanges() async {
+    // Clear previous validation errors
+    setState(() {
+      _dateOfBirthError = null;
+      _columnError = null;
+      _emailError = null;
+      _phoneError = null;
+    });
+    
     if (!_formKey.currentState!.validate()) return;
+    
+    // Validate date of birth
+    bool hasError = false;
+    if (_dateOfBirth == null) {
+      setState(() {
+        _dateOfBirthError = 'Date of birth is required';
+      });
+      hasError = true;
+    }
+    
+    // Validate column
+    if (_selectedColumn == null) {
+      setState(() {
+        _columnError = 'Column is required';
+      });
+      hasError = true;
+    }
+    
+    if (hasError) return;
+    
     Account account;
 
     //read locally saved account
@@ -146,15 +197,15 @@ class _MemberEditDrawerState extends ConsumerState<MemberEditDrawer> {
 
     // Normalize phone number (strip formatting) before saving
     final normalizedPhone = _normalizePhoneDigits(_phoneController.text.trim());
-    
+
     account = Account(
       id: _fetchedAccount?.id,
       claimed: _fetchedAccount?.claimed ?? false,
-      name: _nameController.text.trim(),
+      name: _nameController.text.trim().toCamelCase,
       phone: normalizedPhone,
       email: _emailController.text.trim().isEmpty
           ? null
-          : _emailController.text.trim(),
+          : _emailController.text.trim().toLowerCase(),
       maritalStatus: _maritalStatus,
       gender: _gender,
       dob: _dateOfBirth!,
@@ -182,11 +233,39 @@ class _MemberEditDrawerState extends ConsumerState<MemberEditDrawer> {
       widget.onClose();
     } catch (e) {
       if (!mounted) return;
+      
+      // Check if error is a 400 status error with unique constraint violation
+      if (e is AppError && e.statusCode == 400) {
+        final message = e.message.toLowerCase();
+        final details = (e.details ?? '').toLowerCase();
+        final combinedMessage = '$message $details';
+        
+        // Check for unique email constraint
+        if (combinedMessage.contains('unique') && combinedMessage.contains('email')) {
+          setState(() {
+            _emailError = 'This email is already in use';
+            _saving = false;
+          });
+          _scrollToField(_emailFieldKey);
+          return;
+        }
+        
+        // Check for unique phone constraint
+        if (combinedMessage.contains('unique') && combinedMessage.contains('phone')) {
+          setState(() {
+            _phoneError = 'This phone number is already in use';
+            _saving = false;
+          });
+          _scrollToField(_phoneFieldKey);
+          return;
+        }
+      }
+      
+      // For other errors, show generic error message
       setState(() {
         _errorMessage = 'Failed to save member';
+        _saving = false;
       });
-    } finally {
-      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -338,6 +417,7 @@ class _MemberEditDrawerState extends ConsumerState<MemberEditDrawer> {
                 ),
                 const SizedBox(height: 16),
                 LabeledField(
+                  key: _emailFieldKey,
                   label: 'Email',
                   child: TextFormField(
                     controller: _emailController,
@@ -348,31 +428,67 @@ class _MemberEditDrawerState extends ConsumerState<MemberEditDrawer> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      filled: true,
-                      fillColor: _isClaimed
-                          ? theme.colorScheme.surfaceContainerHighest
-                          : theme.colorScheme.surface,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                LabeledField(
-                  label: 'Phone',
-                  child: TextFormField(
-                    controller: _phoneController,
-                    enabled: !_isClaimed,
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      hintText: 'e.g. 1234-5678-9012',
-                      border: OutlineInputBorder(
+                      errorBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: theme.colorScheme.error),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: theme.colorScheme.error, width: 2),
                       ),
                       filled: true,
                       fillColor: _isClaimed
                           ? theme.colorScheme.surfaceContainerHighest
                           : theme.colorScheme.surface,
+                      errorText: _emailError,
+                      errorStyle: const TextStyle(fontSize: 12),
                     ),
                     onChanged: (value) {
+                      // Clear error when user starts typing
+                      if (_emailError != null) {
+                        setState(() => _emailError = null);
+                      }
+                    },
+                    validator: (value) => Validators.email(
+                      'Please enter a valid email address',
+                    ).asFormFieldValidator(value),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                LabeledField(
+                  key: _phoneFieldKey,
+                  label: 'Phone',
+                  child: TextFormField(
+                    controller: _phoneController,
+                    enabled: !_isClaimed,
+                    keyboardType: TextInputType.phone,
+                    maxLength: 15,
+                    decoration: InputDecoration(
+                      hintText: '08xx-xxxx-xxxx',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: theme.colorScheme.error),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: theme.colorScheme.error, width: 2),
+                      ),
+                      filled: true,
+                      fillColor: _isClaimed
+                          ? theme.colorScheme.surfaceContainerHighest
+                          : theme.colorScheme.surface,
+                      errorText: _phoneError,
+                      errorStyle: const TextStyle(fontSize: 12),
+                    ),
+                    onChanged: (value) {
+                      // Clear error when user starts typing
+                      if (_phoneError != null) {
+                        setState(() => _phoneError = null);
+                      }
+                      
                       if (_isFormatting) return;
                       // Strip all non-digits and limit to 13 (no country code)
                       final digits = _normalizePhoneDigits(value);
@@ -426,9 +542,11 @@ class _MemberEditDrawerState extends ConsumerState<MemberEditDrawer> {
                   child: DateOfBirthPicker(
                     value: _dateOfBirth,
                     enabled: !_isClaimed,
+                    errorText: _dateOfBirthError,
                     onChanged: (DateTime? newDate) {
                       setState(() {
                         _dateOfBirth = newDate;
+                        _dateOfBirthError = null; // Clear error when user selects a date
                       });
                     },
                   ),
@@ -465,8 +583,18 @@ class _MemberEditDrawerState extends ConsumerState<MemberEditDrawer> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: theme.colorScheme.error),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: theme.colorScheme.error, width: 2),
+                      ),
                       filled: true,
                       fillColor: theme.colorScheme.surface,
+                      errorText: _columnError,
+                      errorStyle: const TextStyle(fontSize: 12),
                     ),
                     items: availableColumns.map((column) {
                       return DropdownMenuItem<cm.Column?>(
@@ -477,6 +605,7 @@ class _MemberEditDrawerState extends ConsumerState<MemberEditDrawer> {
                     onChanged: (cm.Column? newValue) {
                       setState(() {
                         _selectedColumn = newValue;
+                        _columnError = null; // Clear error when user selects a column
                       });
                     },
                   ),

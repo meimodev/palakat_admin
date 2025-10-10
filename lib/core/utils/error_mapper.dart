@@ -3,11 +3,13 @@ import 'dart:developer' as dev;
 import 'package:dio/dio.dart';
 import 'package:palakat_admin/core/models/app_error.dart';
 
-/// Centralized error mapping utilities
+/// Centralized error mapping utilities with comprehensive logging
 class ErrorMapper {
   /// Map DioException to AppError with a contextual message
   static AppError fromDio(DioException error, String message, [StackTrace? st]) {
-    dev.log('Dio error: $message: $error', error: error, name: 'ErrorMapper', stackTrace: st);
+    // Comprehensive logging with structured information
+    _logDioError(error, message, st);
+    
     switch (error.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
@@ -32,7 +34,74 @@ class ErrorMapper {
 
   /// Wrap an unknown error with AppError.unknown and context message
   static AppError unknown(String message, Object error, {StackTrace? st}) {
-    dev.log('Unknown error: $message: $error', error: error, name: 'ErrorMapper', stackTrace: st);
-    return AppError.unknown('$message: $error', details: "");
+    // Comprehensive logging with full error details
+    _logUnknownError(message, error, st);
+    return AppError.unknown('$message: $error', details: error.toString());
   }
+
+  /// Comprehensive logging for DioException with stacktrace
+  static void _logDioError(DioException error, String context, StackTrace? st) {
+    final buffer = StringBuffer();
+    buffer.writeln('══════════════════════════════════════════════════════════════');
+    buffer.writeln('DIO ERROR: $context');
+    buffer.writeln('══════════════════════════════════════════════════════════════');
+    buffer.writeln('Type: ${error.type}');
+    buffer.writeln('Message: ${error.message}');
+    
+    // Stacktrace
+    if (st != null) {
+      buffer.writeln('──────────────────────────────────────────────────────────────');
+      buffer.writeln('STACKTRACE:');
+      final stackLines = st.toString().split('\n').take(15);
+      for (final line in stackLines) {
+        buffer.writeln('  $line');
+      }
+      if (st.toString().split('\n').length > 15) {
+        buffer.writeln('  ... (truncated)');
+      }
+    }
+    
+    buffer.writeln('══════════════════════════════════════════════════════════════');
+    
+    dev.log(
+      buffer.toString(),
+      name: 'ErrorMapper',
+      error: error,
+      stackTrace: st,
+      level: 1000, // Error level
+    );
+  }
+
+  /// Comprehensive logging for unknown errors
+  static void _logUnknownError(String context, Object error, StackTrace? st) {
+    final buffer = StringBuffer();
+    buffer.writeln('══════════════════════════════════════════════════════════════');
+    buffer.writeln('UNKNOWN ERROR: $context');
+    buffer.writeln('══════════════════════════════════════════════════════════════');
+    buffer.writeln('Error Type: ${error.runtimeType}');
+    buffer.writeln('Error: $error');
+    
+    if (st != null) {
+      buffer.writeln('──────────────────────────────────────────────────────────────');
+      buffer.writeln('STACKTRACE:');
+      final stackLines = st.toString().split('\n').take(20);
+      for (final line in stackLines) {
+        buffer.writeln('  $line');
+      }
+      if (st.toString().split('\n').length > 20) {
+        buffer.writeln('  ... (truncated)');
+      }
+    }
+    
+    buffer.writeln('══════════════════════════════════════════════════════════════');
+    
+    dev.log(
+      buffer.toString(),
+      name: 'ErrorMapper',
+      error: error,
+      stackTrace: st,
+      level: 1000, // Error level
+    );
+  }
+
 }

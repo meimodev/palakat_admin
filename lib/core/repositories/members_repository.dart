@@ -164,8 +164,8 @@ class MembersRepository {
       return Account.fromJson(json);
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to create account');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to create account', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to create account', e, st: st);
     }
   }
 
