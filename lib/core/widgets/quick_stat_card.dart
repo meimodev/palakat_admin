@@ -9,6 +9,8 @@ class QuickStatCard extends StatelessWidget {
     required this.label,
     required this.value,
     this.icon,
+    this.iconColor,
+    this.iconBackgroundColor,
     this.subtitle,
     this.isLoading = false,
     this.width = 200,
@@ -17,6 +19,8 @@ class QuickStatCard extends StatelessWidget {
   final String label;
   final String value;
   final IconData? icon;
+  final Color? iconColor;
+  final Color? iconBackgroundColor;
   final String? subtitle;
   final bool isLoading;
   final double width;
@@ -46,10 +50,17 @@ class QuickStatCard extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               if (icon != null)
-                Icon(
-                  icon!,
-                  size: 20,
-                  color: theme.colorScheme.onSurfaceVariant,
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: iconBackgroundColor ?? theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(
+                    icon!,
+                    size: 16,
+                    color: iconColor ?? theme.colorScheme.primary,
+                  ),
                 ),
             ],
           ),

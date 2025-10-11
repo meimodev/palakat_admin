@@ -151,24 +151,32 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                         label: 'Total Members',
                         value: state.counts.value?.total.toString() ?? "",
                         icon: Icons.groups_outlined,
+                        iconColor: Colors.orange.shade700,
+                        iconBackgroundColor: Colors.orange.shade50,
                         isLoading: state.counts.isLoading,
                       ),
                       QuickStatCard(
                         label: 'App Claimed',
                         value: state.counts.value?.claimed.toString() ?? "",
                         icon: Icons.phone_android_outlined,
+                        iconColor: Colors.purple.shade600,
+                        iconBackgroundColor: Colors.purple.shade50,
                         isLoading: state.counts.isLoading,
                       ),
                       QuickStatCard(
                         label: 'Baptized',
                         value: state.counts.value?.baptized.toString() ?? "",
                         icon: Icons.water_drop_outlined,
+                        iconColor: Colors.blue.shade600,
+                        iconBackgroundColor: Colors.blue.shade50,
                         isLoading: state.counts.isLoading,
                       ),
                       QuickStatCard(
                         label: 'Sidi',
                         value: state.counts.value?.sidi.toString() ?? "",
                         icon: Icons.emoji_people_outlined,
+                        iconColor: Colors.green.shade600,
+                        iconBackgroundColor: Colors.green.shade50,
                         isLoading: state.counts.isLoading,
                       ),
                     ],
@@ -252,7 +260,7 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
         flex: 2,
         cellBuilder: (ctx, account) {
           final theme = Theme.of(ctx);
-          final formattedDob = AppDateUtils.formatDisplayDate(account.dob);
+          final formattedDob = AppDateUtils.formatCustom(account.dob, 'yyyy, MMMM dd');
           final age = account.calculateAge;
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -283,7 +291,7 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
           final theme = Theme.of(ctx);
           final bipra = account.calculateBipra;
           return Text(
-            bipra.abv,
+            bipra.name,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurface,
               fontWeight: FontWeight.w500,
