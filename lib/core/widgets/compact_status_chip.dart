@@ -15,20 +15,20 @@ class CompactStatusChip extends StatelessWidget {
 
   factory CompactStatusChip.forApproval(ApprovalStatus status) {
     final (bg, fg, label) = switch (status) {
-      ApprovalStatus.pending => (
+      ApprovalStatus.unconfirmed => (
         Colors.orange.shade50,
         Colors.orange.shade700,
-        'Pending',
+        ApprovalStatus.unconfirmed.name.toUpperCase(),
       ),
       ApprovalStatus.approved => (
         Colors.green.shade50,
         Colors.green.shade700,
-        'Approved',
+        ApprovalStatus.approved.name.toUpperCase(),
       ),
       ApprovalStatus.rejected => (
         Colors.red.shade50,
         Colors.red.shade700,
-        'Rejected',
+        ApprovalStatus.rejected.name.toUpperCase(),
       ),
     };
     return CompactStatusChip(label: label, background: bg, foreground: fg);
@@ -43,9 +43,29 @@ class CompactStatusChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: foreground.withValues(alpha: 0.2)),
       ),
-      child: Text(
-        label,
-        style: TextStyle(color: foreground, fontWeight: FontWeight.w500, fontSize: 12),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            switch (label.toUpperCase()) {
+              "UNCONFIRMED" => Icons.pending,
+              "APPROVED" => Icons.check_circle,
+              "REJECTED" => Icons.cancel,
+              _ => Icons.help_outline,
+            },
+            color: foreground,
+            size: 14,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: foreground,
+              fontWeight: FontWeight.w500,
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
     );
   }

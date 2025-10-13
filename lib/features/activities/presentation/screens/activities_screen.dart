@@ -1,22 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:palakat_admin/core/constants/enums.dart';
-
-import '../../../../core/models/activity.dart';
-import '../../../../core/widgets/surface_card.dart';
-import '../../../../core/widgets/pagination_bar.dart';
-import '../../../../core/widgets/date_range_filter.dart';
-import '../widgets/activity_detail_view.dart';
-import '../../../../core/widgets/supervisor_chip.dart';
-import '../../../../core/widgets/status_chip.dart';
-import '../../../../core/services/approver_service.dart';
-import '../../../../core/utils/date_utils.dart';
-import '../../../../core/utils/debouncer.dart';
-import '../../../../core/repositories/activities_repository.dart';
-import '../../../../core/models/approver.dart';
-import '../../../../core/models/app_error.dart';
-import '../../../../core/widgets/error_widget.dart';
-import '../../../../core/widgets/loading_widget.dart';
+import 'package:palakat_admin/core/extension/extension.dart';
+import 'package:palakat_admin/core/models/activity.dart';
+import 'package:palakat_admin/core/models/approval_status.dart';
+import 'package:palakat_admin/core/utils/date_utils.dart';
+import 'package:palakat_admin/core/widgets/positions_cell.dart';
+import 'package:palakat_admin/core/widgets/surface_card.dart';
+import 'package:palakat_admin/core/widgets/app_table.dart';
+import 'package:palakat_admin/core/widgets/activity_type_chip.dart';
+import 'package:palakat_admin/core/widgets/approver_card.dart';
+import 'package:palakat_admin/core/widgets/compact_status_chip.dart';
+import 'package:palakat_admin/features/activities/presentation/state/activities_screen_state.dart';
+import '../state/activities_controller.dart';
+import '../widgets/activity_detail_drawer.dart';
 
 class ActivitiesScreen extends ConsumerStatefulWidget {
   const ActivitiesScreen({super.key});
@@ -25,146 +22,49 @@ class ActivitiesScreen extends ConsumerStatefulWidget {
   ConsumerState<ActivitiesScreen> createState() => _ActivitiesScreenState();
 }
 
-// Approver logic moved to shared ApproverService
-
-class _ActivityApproverChip extends StatelessWidget {
-  final ApproverDecision approver;
-
-  const _ActivityApproverChip({required this.approver});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    IconData icon;
-    Color color;
-    String? dateText;
-    switch (approver.decision) {
-      case ApprovalStatus.approved:
-        icon = Icons.check;
-        color = Colors.green;
-        if (approver.decisionAt != null) {
-          dateText = AppDateUtils.formatStandardDate(approver.decisionAt!);
-        }
-        break;
-      case ApprovalStatus.rejected:
-        icon = Icons.close;
-        color = Colors.red;
-        if (approver.decisionAt != null) {
-          dateText = AppDateUtils.formatStandardDate(approver.decisionAt!);
-        }
-        break;
-      case ApprovalStatus.pending:
-        icon = Icons.watch_later_outlined;
-        color = Colors.orange;
-        break;
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
-      child: Wrap(
-        spacing: 3,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          const Icon(Icons.person, size: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(approver.name, style: theme.textTheme.labelMedium),
-              if (dateText != null) ...[
-                Text(
-                  dateText,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ],
-          ),
-          Icon(icon, size: 14, color: color),
-        ],
-      ),
-    );
-  }
-}
-
 class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
-  final TextEditingController _searchController = TextEditingController();
-  late final Debouncer _searchDebouncer;
-
-  @override
-  void initState() {
-    super.initState();
-    _searchDebouncer = Debouncer(delay: const Duration(milliseconds: 300));
-    _searchController.addListener(_onSearchChanged);
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _searchDebouncer.dispose();
-    super.dispose();
-  }
-
-  void _onSearchChanged() {
-    _searchDebouncer(() {
-      ref
-          .read(activitiesScreenStateProvider.notifier)
-          .updateSearchQuery(_searchController.text);
-    });
+  /// Shows activity drawer for viewing
+  void _showActivityDrawer(int activityId) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Align(
+          alignment: Alignment.centerRight,
+          child: Material(
+            child: ActivityDetailDrawer(
+              activityId: activityId,
+              onClose: () => Navigator.of(context).pop(),
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return SlideTransition(
+          position:
+              Tween<Offset>(
+                begin: const Offset(1.0, 0.0),
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeInOut),
+              ),
+          child: child,
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final screenState = ref.watch(activitiesScreenStateProvider);
-    final activitiesAsync = ref.watch(activitiesAsyncProvider);
-    final screenNotifier = ref.read(activitiesScreenStateProvider.notifier);
 
-    return Material(
-      color: theme.colorScheme.surface,
-      child: activitiesAsync.when(
-        loading: () => const AppLoadingWidget(message: 'Loading activities...'),
-        error: (error, stackTrace) => CompactErrorWidget(
-          error: error is AppError
-              ? error
-              : AppError.unknown('Failed to load activities'),
-          onRetry: () => ref.refresh(activitiesAsyncProvider),
-        ),
-        data: (activities) => _buildActivitiesContent(
-          context,
-          theme,
-          screenState,
-          activities,
-          screenNotifier,
-        ),
-      ),
+    final ActivitiesScreenState state = ref.watch(activitiesControllerProvider);
+    final ActivitiesController controller = ref.watch(
+      activitiesControllerProvider.notifier,
     );
-  }
-
-  Widget _buildActivitiesContent(
-    BuildContext context,
-    ThemeData theme,
-    ActivitiesScreenStateData screenState,
-    List<Activity> activities,
-    ActivitiesScreenState screenNotifier,
-  ) {
-    final repository = ref.read(activitiesRepositoryProvider);
-    final filteredActivities = repository.filterActivities(
-      activities,
-      screenState.searchQuery,
-      screenState.dateRange,
-    );
-    final paginatedActivities = repository.getPaginatedActivities(
-      filteredActivities,
-      screenState.page,
-      screenState.rowsPerPage,
-    );
-
-    final total = filteredActivities.length;
 
     return Material(
       child: SingleChildScrollView(
@@ -181,60 +81,70 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
             ),
             const SizedBox(height: 16),
             SurfaceCard(
-              title: 'Activities',
-              subtitle: 'Manage church activities and events.',
+              title: 'Activity Directory',
+              subtitle: 'A record of all church activities and events.',
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Search + Date Range
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          decoration: const InputDecoration(
-                            hintText: 'Search activities...',
-                            prefixIcon: Icon(Icons.search),
-                            border: OutlineInputBorder(),
-                          ),
-                          onChanged: (_) {}, // Handled by debouncer
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      DateRangeFilter(
-                        value: screenState.dateRange,
-                        onChanged: (r) => screenNotifier.updateDateRange(r),
-                        onClear: () => screenNotifier.clearDateRange(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
+                  AppTable<Activity>(
+                    loading: state.activities.isLoading,
+                    data: state.activities.value?.data ?? [],
+                    errorText: state.activities.hasError
+                        ? state.activities.error.toString()
+                        : null,
+                    onRetry: () => controller.refresh(),
+                    pagination: () {
+                      final pageSize =
+                          state.activities.value?.pagination.pageSize ?? 10;
+                      final page = state.activities.value?.pagination.page ?? 1;
+                      final total =
+                          state.activities.value?.pagination.total ?? 0;
 
-                  // Header Row (table-like)
-                  _ActivitiesHeader(),
-                  const Divider(height: 1),
+                      final hasPrev =
+                          state.activities.value?.pagination.hasPrev ?? false;
+                      final hasNext =
+                          state.activities.value?.pagination.hasNext ?? false;
 
-                  // Rows
-                  ...[
-                    for (final activity in paginatedActivities)
-                      _ActivityRow(
-                        key: ValueKey(activity.id),
-                        activity: activity,
-                        onTap: () => _showActivityDetail(activity),
-                      ),
-                  ],
-
-                  const SizedBox(height: 8),
-                  // Pagination
-                  PaginationBar(
-                    total: total,
-                    pageSize: screenState.rowsPerPage,
-                    page: screenState.page,
-                    onPageSizeChanged: (v) =>
-                        screenNotifier.updateRowsPerPage(v),
-                    onPrev: () => screenNotifier.previousPage(),
-                    onNext: () => screenNotifier.nextPage(
-                      (total / screenState.rowsPerPage).ceil() - 1,
-                    ), onPageChanged: (int value) {  },
+                      return AppTablePaginationConfig(
+                        total: total,
+                        pageSize: pageSize,
+                        page: page,
+                        onPageSizeChanged: controller.onChangedPageSize,
+                        onPageChanged: controller.onChangedPage,
+                        onPrev: hasPrev ? controller.onPressedPrevPage : null,
+                        onNext: hasNext ? controller.onPressedNextPage : null,
+                      );
+                    }.call(),
+                    filtersConfig: AppTableFiltersConfig(
+                      searchHint: 'Search by title, description, or supervisor name ...',
+                      onSearchChanged: controller.onChangedSearch,
+                      dateRangePreset: state.dateRangePreset,
+                      customDateRange: state.customDateRange,
+                      onDateRangePresetChanged: controller.onChangedDateRangePreset,
+                      onCustomDateRangeSelected: controller.onCustomDateRangeSelected,
+                      dropdownLabel: 'Type',
+                      dropdownOptions: {
+                        ActivityType.service.name: ActivityType.service.displayName,
+                        ActivityType.event.name: ActivityType.event.displayName,
+                        ActivityType.announcement.name: ActivityType.announcement.displayName,
+                      },
+                      dropdownValue: state.activityTypeFilter?.name,
+                      onDropdownChanged: (value) {
+                        if (value == null) {
+                          controller.onChangedActivityType(null);
+                        } else {
+                          controller.onChangedActivityType(
+                            ActivityType.values.firstWhere((e) => e.name == value),
+                          );
+                        }
+                      },
+                    ),
+                    onRowTap: (activity) async {
+                      if (activity.id != null) {
+                        _showActivityDrawer(activity.id!);
+                      }
+                    },
+                    columns: _buildTableColumns(),
                   ),
                 ],
               ),
@@ -245,241 +155,98 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
     );
   }
 
-  void _showActivityDetail(Activity? activity) {
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Close',
-      pageBuilder: (ctx, anim, secAnim) {
-        return const SizedBox.shrink();
-      },
-      transitionBuilder: (ctx, anim, secAnim, child) {
-        final curved = CurvedAnimation(
-          parent: anim,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        );
-        return Stack(
-          children: [
-            // Dimmed background
-            Opacity(
-              opacity: 0.4 * curved.value,
-              child: ModalBarrier(dismissible: true, color: Colors.black54),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(1, 0),
-                  end: Offset.zero,
-                ).animate(curved),
-                child: ActivityDetailView(
-                  activity: activity!,
-                  onClose: () => Navigator.of(ctx).pop(),
+  /// Builds the table column configuration for the activities table
+  static List<AppTableColumn<Activity>> _buildTableColumns() {
+    return [
+      AppTableColumn<Activity>(
+        title: 'Title',
+        flex: 3,
+        cellBuilder: (ctx, activity) {
+          final theme = Theme.of(ctx);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                activity.title,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ),
-          ],
-        );
-      },
-      transitionDuration: const Duration(milliseconds: 300),
-    );
-  }
-
-  // Mock data generation moved to ActivitiesRepository
-}
-
-class _ActivitiesHeader extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final textStyle = Theme.of(context).textTheme.labelLarge;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-      child: Row(
-        children: [
-          _cell(const Text('Title'), flex: 3, style: textStyle),
-          _cell(const Text('Type'), flex: 2, style: textStyle),
-          _cell(const Text('Start Date'), flex: 2, style: textStyle),
-          _cell(const Text('Supervisor'), flex: 3, style: textStyle),
-          _cell(const Text('Approver'), flex: 3, style: textStyle),
-          _cell(const Text('Status'), flex: 2, style: textStyle),
-        ],
-      ),
-    );
-  }
-
-  Widget _cell(Widget child, {int flex = 1, TextStyle? style}) => Expanded(
-    flex: flex,
-    child: DefaultTextStyle.merge(style: style, child: child),
-  );
-}
-
-class _ActivityRow extends ConsumerWidget {
-  final Activity activity;
-  final VoidCallback onTap;
-
-  const _ActivityRow({super.key, required this.activity, required this.onTap});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final hoverColor = theme.colorScheme.primary.withValues(alpha: 0.04);
-    final approvers = ref.watch(activityApproversProvider(activity));
-    final approvalStatus = ref.watch(activityApprovalStatusProvider(activity));
-    final approverService = ref.watch(approverServiceProvider);
-    return Column(
-      children: [
-        MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(8),
-              hoverColor: hoverColor,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 10,
-                  horizontal: 8,
+              if (activity.description != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  activity.description ?? "",
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    _cell(
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            activity.title,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            activity.description,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                      flex: 3,
-                    ),
-                    _cell(
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: _TypeChip(type: activity.type),
-                      ),
-                      flex: 2,
-                    ),
-                    _cell(
-                      Text(
-                        _formatDate(activity.startDate),
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                      flex: 2,
-                    ),
-                    _cell(
-                      flex: 3,
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: SupervisorChip(
-                          name: activity.supervisor,
-                          positions: activity.supervisorPositions,
-                        ),
-                      ),
-                    ),
-                    _cell(
-                      Wrap(
-                        spacing: 8,
-                        direction: Axis.vertical,
-                        runSpacing: 8,
-                        children: [
-                          for (final approver in approvers)
-                            _ActivityApproverChip(approver: approver),
-                        ],
-                      ),
-                      flex: 3,
-                    ),
-                    _cell(
-                      Builder(
-                        builder: (context) {
-                          final statusDisplay = approverService
-                              .getStatusDisplay(approvalStatus);
-                          return StatusChip(
-                            label: statusDisplay.label,
-                            background: Color(
-                              statusDisplay.colorValue,
-                            ).withValues(alpha: 0.1),
-                            foreground: Color(statusDisplay.colorValue),
-                            icon: IconData(
-                              statusDisplay.iconCodePoint,
-                              fontFamily: 'MaterialIcons',
-                            ),
-                          );
-                        },
-                      ),
-                      flex: 2,
-                    ),
-                    const Icon(
-                      Icons.chevron_right,
-                      size: 18,
-                      color: Colors.black54,
-                    ),
-                  ],
-                ),
-              ),
+              ],
+            ],
+          );
+        },
+      ),
+      AppTableColumn<Activity>(
+        title: 'Type',
+        flex: 2,
+        cellBuilder: (ctx, activity) {
+          return ActivityTypeChip(type: activity.activityType);
+        },
+      ),
+      AppTableColumn<Activity>(
+        title: 'Request Date Time',
+        flex: 2,
+        cellBuilder: (ctx, activity) {
+          final theme = Theme.of(ctx);
+          final date = AppDateUtils.formatCustom(
+            activity.createdAt,
+            "EEEE, dd MMMM yyyy",
+          );
+          final time = AppDateUtils.formatCustom(
+            activity.createdAt,
+            "HH:mm ",
+          );
+          return Text(
+            "$date\n$time",
+            style: theme.textTheme.bodyMedium,
+          );
+        },
+      ),
+      AppTableColumn<Activity>(
+        title: 'Supervisor',
+        flex: 2,
+        cellBuilder: (ctx, activity) {
+          final theme = Theme.of(ctx);
+
+          return Text(
+            activity.supervisor.account?.name ?? "",
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500,
             ),
-          ),
-        ),
-        const Divider(height: 1),
-      ],
-    );
-  }
+          );
+        },
+      ),
+      AppTableColumn<Activity>(
+        title: 'Approval',
+        flex: 2,
+        cellBuilder: (ctx, activity) {
+          return CompactStatusChip.forApproval(activity.approvers.approvalStatus);
+        },
+      ),
+      AppTableColumn<Activity>(
+        title: 'Approvers',
+        flex: 3,
+        cellBuilder: (ctx, activity) {
+          return ApproversWrapDisplay(
+            approvers: activity.approvers,
+            fallbackDate: activity.updatedAt ?? activity.createdAt,
+          );
+        },
+      ),
 
-  String _formatDate(DateTime d) {
-    return AppDateUtils.formatStandardDate(d);
+    ];
   }
-
-  Widget _cell(Widget child, {int flex = 1}) =>
-      Expanded(flex: flex, child: child);
 }
 
-class _TypeChip extends StatelessWidget {
-  final ActivityType type;
-
-  const _TypeChip({required this.type});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final (color, icon) = switch (type) {
-      ActivityType.service => (Colors.teal, Icons.handshake),
-      ActivityType.event => (Colors.red, Icons.event),
-      ActivityType.announcement => (Colors.orange, Icons.campaign),
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(
-            type.displayName,
-            style: theme.textTheme.labelMedium?.copyWith(color: color),
-          ),
-        ],
-      ),
-    );
-  }
-}

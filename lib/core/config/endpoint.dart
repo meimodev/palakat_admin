@@ -22,8 +22,8 @@ class Endpoints {
   static String account(int accountId) => '/account/$accountId';
 
   // Activities
-  static const String activities = '/activities';
-  static String activity(String activityId) => '/activities/$activityId';
+  static const String activities = '/activity';
+  static String activity(String activityId) => '/activity/$activityId';
 
   // Approvals (rules, requests, etc.)
   static const String approvals = '/approvals';

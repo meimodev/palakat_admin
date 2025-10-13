@@ -6,7 +6,6 @@ import 'package:palakat_admin/core/models/approval_status.dart';
 import 'package:palakat_admin/core/widgets/surface_card.dart';
 import 'package:palakat_admin/core/widgets/approval_id_cell.dart';
 import 'package:palakat_admin/core/widgets/pagination_bar.dart';
-import 'package:palakat_admin/core/models/approver.dart';
 import 'package:palakat_admin/core/widgets/date_range_filter.dart';
 
 class IncomeScreen extends StatefulWidget {
@@ -217,20 +216,8 @@ class _IncomeScreenState extends State<IncomeScreen> {
         approvalId: 'APR-0995',
         approvalStatus: ApprovalStatus.approved,
         approvedAt: DateTime(2024, 5, 2),
-        approvers: [
-          ApproverDecision(
-            name: 'Pastor John',
-            positions: const ['Pastor'],
-            decision: ApprovalStatus.approved,
-            decisionAt: DateTime(2024, 5, 2),
-          ),
-          ApproverDecision(
-            name: 'Administrator',
-            positions: const ['Administrator'],
-            decision: ApprovalStatus.approved,
-            decisionAt: DateTime(2024, 5, 2),
-          ),
-        ],
+        approvers: const [],
+        // TODO: Fix approvers - Approver model doesn't have name/positions/decision fields
       ),
       IncomeEntry(
         accountId: 'INC-002',
@@ -240,14 +227,8 @@ class _IncomeScreenState extends State<IncomeScreen> {
         approvalId: 'APR-0996',
         approvalStatus: ApprovalStatus.approved,
         approvedAt: DateTime(2024, 5, 3),
-        approvers: [
-          ApproverDecision(
-            name: 'Deacon Mary',
-            positions: const ['Deacon'],
-            decision: ApprovalStatus.approved,
-            decisionAt: DateTime(2024, 5, 3),
-          ),
-        ],
+        approvers: const [],
+        // TODO: Fix approvers - Approver model doesn't have name/positions/decision fields
       ),
       IncomeEntry(
         accountId: 'INC-001',
@@ -255,15 +236,10 @@ class _IncomeScreenState extends State<IncomeScreen> {
         notes: 'Tithe - Weekly offering',
         amount: 1350.00,
         approvalId: 'APR-0997',
-        approvalStatus: ApprovalStatus.pending,
+        approvalStatus: ApprovalStatus.unconfirmed,
         approvedAt: null,
-        approvers: [
-          ApproverDecision(
-            name: 'Pastor John',
-            positions: const ['Pastor'],
-            decision: ApprovalStatus.pending,
-          ),
-        ],
+        approvers: const [],
+        // TODO: Fix approvers - Approver model doesn't have name/positions/decision fields
       ),
       IncomeEntry(
         accountId: 'INC-003',
@@ -273,14 +249,8 @@ class _IncomeScreenState extends State<IncomeScreen> {
         approvalId: 'APR-0998',
         approvalStatus: ApprovalStatus.rejected,
         approvedAt: DateTime(2024, 5, 11),
-        approvers: [
-          ApproverDecision(
-            name: 'Elder Bob',
-            positions: const ['Elder'],
-            decision: ApprovalStatus.rejected,
-            decisionAt: DateTime(2024, 5, 11),
-          ),
-        ],
+        approvers: const [],
+        // TODO: Fix approvers - Approver model doesn't have name/positions/decision fields
       ),
       IncomeEntry(
         accountId: 'INC-001',
@@ -290,14 +260,8 @@ class _IncomeScreenState extends State<IncomeScreen> {
         approvalId: 'APR-1001',
         approvalStatus: ApprovalStatus.approved,
         approvedAt: DateTime(2024, 5, 16),
-        approvers: [
-          ApproverDecision(
-            name: 'Pastor John',
-            positions: const ['Pastor'],
-            decision: ApprovalStatus.approved,
-            decisionAt: DateTime(2024, 5, 16),
-          ),
-        ],
+        approvers: const [],
+        // TODO: Fix approvers - Approver model doesn't have name/positions/decision fields
       ),
       // Additional rows for pagination demo
       for (int i = 1; i <= 3; i++)
@@ -308,21 +272,11 @@ class _IncomeScreenState extends State<IncomeScreen> {
           amount: 300 + (i * 25.75),
           approvalId: 'APR-10${i + 1}',
           approvalStatus: i % 2 == 0
-              ? ApprovalStatus.pending
+              ? ApprovalStatus.unconfirmed
               : ApprovalStatus.approved,
           approvedAt: i % 2 == 0 ? null : base.subtract(Duration(days: i + 9)),
-          approvers: [
-            ApproverDecision(
-              name: 'Administrator',
-              positions: const ['Administrator'],
-              decision: i % 2 == 0
-                  ? ApprovalStatus.pending
-                  : ApprovalStatus.approved,
-              decisionAt: i % 2 == 0
-                  ? null
-                  : base.subtract(Duration(days: i + 9)),
-            ),
-          ],
+          approvers: const [],
+          // TODO: Fix approvers - Approver model doesn't have name/positions/decision fields
         ),
     ];
   }

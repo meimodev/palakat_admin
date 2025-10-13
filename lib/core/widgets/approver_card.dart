@@ -1,98 +1,249 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:palakat_admin/core/constants/enums.dart';
+import 'package:palakat_admin/core/models/approver.dart';
+import 'package:palakat_admin/core/services/approver_service.dart';
+import 'package:palakat_admin/core/utils/date_utils.dart';
 
-class ApproverCard extends StatelessWidget {
-  final String name;
-  final List<String>? positions;
-  final String? statusText;
-  final Color? statusColor;
-  final IconData? leadingIcon;
-  final Color? leadingColor;
-  final String? trailingText;
+/// Compact approver card for displaying in table cells (wrapped layout)
+class ApproverCardCompact extends ConsumerWidget {
+  final Approver approver;
+  final DateTime? fallbackDate;
 
-  const ApproverCard({
+  const ApproverCardCompact({
     super.key,
-    required this.name,
-    this.positions,
-    this.statusText,
-    this.statusColor,
-    this.leadingIcon,
-    this.leadingColor,
-    this.trailingText,
+    required this.approver,
+    this.fallbackDate,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final approverService = ref.watch(approverServiceProvider);
+    
+    final approverName = approver.membership?.account?.name ?? 'Unknown';
+    final status = approver.status;
+    final statusDisplay = approverService.getStatusDisplay(status);
+    final statusColor = Color(statusDisplay.colorValue);
+    final lastUpdate = approver.updatedAt ?? approver.createdAt ?? fallbackDate;
+
+    final statusIcon = switch (status) {
+      ApprovalStatus.approved => Icons.check_circle,
+      ApprovalStatus.rejected => Icons.cancel,
+      ApprovalStatus.unconfirmed => Icons.pending,
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            statusIcon,
+            size: 16,
+            color: statusColor,
+          ),
+          const SizedBox(width: 6),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                approverName,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (lastUpdate != null) ...[
+                const SizedBox(height: 1),
+                Text(
+                  AppDateUtils.formatCustom(lastUpdate, "MMM dd, yyyy"),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Full-width approver card for displaying in detail views (stacked layout)
+class ApproverCardFull extends ConsumerWidget {
+  final Approver approver;
+  final DateTime? fallbackDate;
+
+  const ApproverCardFull({
+    super.key,
+    required this.approver,
+    this.fallbackDate,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final approverService = ref.watch(approverServiceProvider);
+
+    final approverName = approver.membership?.account?.name ?? 'Unknown';
+    final status = approver.status;
+    final statusDisplay = approverService.getStatusDisplay(status);
+    final statusColor = Color(statusDisplay.colorValue);
+    final lastUpdate = approver.updatedAt ?? approver.createdAt ?? fallbackDate;
+    final positions = approver.membership?.membershipPositions ?? [];
+
+    final statusIcon = switch (status) {
+      ApprovalStatus.approved => Icons.check_circle,
+      ApprovalStatus.rejected => Icons.cancel,
+      ApprovalStatus.unconfirmed => Icons.pending,
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          Icon(statusIcon, size: 16, color: statusColor),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  approverName,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (positions.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    direction: Axis.horizontal,
+                    children: positions.map((position) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: theme.colorScheme.outlineVariant,
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          position.name,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 10,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+
+                if (lastUpdate != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    AppDateUtils.formatCustom(lastUpdate, "MMM dd, yyyy"),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Wrapped display of multiple approvers (for table cells)
+class ApproversWrapDisplay extends StatelessWidget {
+  final List<Approver> approvers;
+  final DateTime? fallbackDate;
+
+  const ApproversWrapDisplay({
+    super.key,
+    required this.approvers,
+    this.fallbackDate,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              if (leadingIcon != null) ...[
-                Icon(leadingIcon, color: leadingColor, size: 20),
-                const SizedBox(width: 12),
-              ],
-              Expanded(
-                child: Text(
-                  name,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              if (trailingText != null)
-                Text(
-                  trailingText!,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-            ],
-          ),
-          if (statusText != null && statusColor != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              statusText!,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: statusColor,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-          if (positions != null && positions!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                for (final position in positions!)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surface,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                        color: theme.colorScheme.outlineVariant,
-                      ),
-                    ),
-                    child: Text(position, style: theme.textTheme.labelSmall),
-                  ),
-              ],
-            ),
-          ],
-        ],
-      ),
+    if (approvers.isEmpty) {
+      return Text(
+        'No approvers',
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+          fontStyle: FontStyle.italic,
+        ),
+      );
+    }
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: approvers
+          .map((approver) => ApproverCardCompact(
+                approver: approver,
+                fallbackDate: fallbackDate,
+              ))
+          .toList(),
+    );
+  }
+}
+
+/// Stacked display of multiple approvers (for detail views)
+class ApproversStackDisplay extends StatelessWidget {
+  final List<Approver> approvers;
+  final DateTime? fallbackDate;
+
+  const ApproversStackDisplay({
+    super.key,
+    required this.approvers,
+    this.fallbackDate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (approvers.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 8,
+      children: approvers
+          .map((approver) => ApproverCardFull(
+                approver: approver,
+                fallbackDate: fallbackDate,
+              ))
+          .toList(),
     );
   }
 }

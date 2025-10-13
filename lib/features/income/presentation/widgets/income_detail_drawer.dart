@@ -4,7 +4,6 @@ import '../../domain/models/income_entry.dart';
 import 'package:palakat_admin/core/widgets/side_drawer.dart';
 import 'package:palakat_admin/core/widgets/info_section.dart';
 import 'package:palakat_admin/core/widgets/status_chip.dart';
-import 'package:palakat_admin/core/widgets/approver_card.dart';
 import 'package:palakat_admin/core/models/approval_status.dart';
 
 class IncomeDetailDrawer extends StatelessWidget {
@@ -71,7 +70,7 @@ class IncomeDetailDrawer extends StatelessWidget {
               Builder(
                 builder: (context) {
                   final (bg, fg, label, icon) = switch (entry.approvalStatus) {
-                    ApprovalStatus.pending => (
+                    ApprovalStatus.unconfirmed => (
                       Colors.orange.shade100,
                       Colors.orange.shade800,
                       'Pending',
@@ -105,64 +104,65 @@ class IncomeDetailDrawer extends StatelessWidget {
             ],
           ),
 
-          if (entry.approvers.isNotEmpty) ...[
-            const SizedBox(height: 24),
-            InfoSection(
-              title: 'Approvers',
-              children: [
-                for (final approver in entry.approvers)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Builder(
-                      builder: (context) {
-                        IconData icon;
-                        Color color;
-                        String statusText;
-                        String? dateText;
-
-                        switch (approver.decision) {
-                          case ApprovalStatus.approved:
-                            icon = Icons.check_circle;
-                            color = Colors.green;
-                            statusText = 'Approved';
-                            if (approver.decisionAt != null) {
-                              final d = approver.decisionAt!;
-                              dateText =
-                                  'on ${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-                            }
-                            break;
-                          case ApprovalStatus.rejected:
-                            icon = Icons.cancel;
-                            color = Colors.red;
-                            statusText = 'Rejected';
-                            if (approver.decisionAt != null) {
-                              final d = approver.decisionAt!;
-                              dateText =
-                                  'on ${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-                            }
-                            break;
-                          case ApprovalStatus.pending:
-                            icon = Icons.pending;
-                            color = Colors.orange;
-                            statusText = 'Pending';
-                            break;
-                        }
-
-                        return ApproverCard(
-                          name: approver.name,
-                          positions: approver.positions,
-                          statusText: statusText,
-                          statusColor: color,
-                          leadingIcon: icon,
-                          leadingColor: color,
-                          trailingText: dateText,
-                        );
-                      },
-                    ),
-                  ),
-              ],
-            ),
-          ],
+          // TODO: Fix approvers display - Approver model doesn't have name/positions/decision fields
+          // if (entry.approvers.isNotEmpty) ...[
+          //   const SizedBox(height: 24),
+          //   InfoSection(
+          //     title: 'Approvers',
+          //     children: [
+          //       for (final approver in entry.approvers)
+          //         Padding(
+          //           padding: const EdgeInsets.only(bottom: 12),
+          //           child: Builder(
+          //             builder: (context) {
+          //               IconData icon;
+          //               Color color;
+          //               String statusText;
+          //               String? dateText;
+          //
+          //               switch (approver.status) {
+          //                 case ApprovalStatus.approved:
+          //                   icon = Icons.check_circle;
+          //                   color = Colors.green;
+          //                   statusText = 'Approved';
+          //                   if (approver.updatedAt != null) {
+          //                     final d = approver.updatedAt!;
+          //                     dateText =
+          //                         'on ${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+          //                   }
+          //                   break;
+          //                 case ApprovalStatus.rejected:
+          //                   icon = Icons.cancel;
+          //                   color = Colors.red;
+          //                   statusText = 'Rejected';
+          //                   if (approver.updatedAt != null) {
+          //                     final d = approver.updatedAt!;
+          //                     dateText =
+          //                         'on ${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+          //                   }
+          //                   break;
+          //                 case ApprovalStatus.unconfirmed:
+          //                   icon = Icons.pending;
+          //                   color = Colors.orange;
+          //                   statusText = 'Pending';
+          //                   break;
+          //               }
+          //
+          //               return ApproverCard(
+          //                 name: approver.membership?.name ?? 'Unknown',
+          //                 positions: approver.membership?.positions ?? [],
+          //                 statusText: statusText,
+          //                 statusColor: color,
+          //                 leadingIcon: icon,
+          //                 leadingColor: color,
+          //                 trailingText: dateText,
+          //               );
+          //             },
+          //           ),
+          //         ),
+          //     ],
+          //   ),
+          // ],
 
           const SizedBox(height: 24),
 

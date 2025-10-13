@@ -21,7 +21,6 @@ enum ActivityType {
   event,
   @JsonValue("ANNOUNCEMENT")
   announcement,
-  // articles,
 }
 
 @JsonEnum(valueField: 'abv')
@@ -56,11 +55,11 @@ enum MapOperationType {
 }
 
 enum ApprovalStatus {
-  @JsonValue('pending')
-  pending,
-  @JsonValue('approved')
+  @JsonValue('UNCONFIRMED')
+  unconfirmed,
+  @JsonValue('APPROVED')
   approved,
-  @JsonValue('rejected')
+  @JsonValue('REJECTED')
   rejected,
 }
 
@@ -87,16 +86,16 @@ enum AccountStatus {
 }
 
 // Activities
-enum ActivityStatus {
-  @JsonValue('planned')
-  planned,
-  @JsonValue('ongoing')
-  ongoing,
-  @JsonValue('completed')
-  completed,
-  @JsonValue('cancelled')
-  cancelled,
-}
+// enum ActivityStatus {
+//   @JsonValue('planned')
+//   planned,
+//   @JsonValue('ongoing')
+//   ongoing,
+//   @JsonValue('completed')
+//   completed,
+//   @JsonValue('cancelled')
+//   cancelled,
+// }
 
 // Errors
 enum ErrorType {
@@ -195,18 +194,18 @@ extension ActivityTypeExtension on ActivityType {
     }
   }
 }
-
-extension ActivityStatusExtension on ActivityStatus {
-  String get displayName {
-    switch (this) {
-      case ActivityStatus.planned:
-        return 'Planned';
-      case ActivityStatus.ongoing:
-        return 'Ongoing';
-      case ActivityStatus.completed:
-        return 'Completed';
-      case ActivityStatus.cancelled:
-        return 'Cancelled';
-    }
-  }
-}
+//
+// extension ActivityStatusExtension on ActivityStatus {
+//   String get displayName {
+//     switch (this) {
+//       case ActivityStatus.planned:
+//         return 'Planned';
+//       case ActivityStatus.ongoing:
+//         return 'Ongoing';
+//       case ActivityStatus.completed:
+//         return 'Completed';
+//       case ActivityStatus.cancelled:
+//         return 'Cancelled';
+//     }
+//   }
+// }

@@ -1,4 +1,3 @@
-import 'package:palakat_admin/core/extension/extension.dart';
 import 'package:palakat_admin/core/models/account.dart';
 import 'package:palakat_admin/core/models/church.dart';
 import 'package:palakat_admin/core/models/member_position.dart';
@@ -156,52 +155,5 @@ class MembersController extends _$MembersController {
     // Refresh the list after delete
     await _fetchAccounts();
     await _fetchCounts();
-  }
-
-  /// Helper method to convert nested objects to IDs within membership field
-  /// - Converts membershipPositions list to membershipPositionIds list
-  /// - Converts column object to columnId
-  /// - Only processes data within 'membership' field, preserves all other data
-  Map<String, dynamic> _convertNestedObjectsToIds(Map<String, dynamic> data) {
-    final result = Map<String, dynamic>.from(data);
-
-    // Recursively find and process 'membership' field
-    result.forEach((key, value) {
-      if (key == 'membership' && value is Map<String, dynamic>) {
-        result[key] = _processMembershipField(value);
-      } else if (value is Map<String, dynamic>) {
-        result[key] = _convertNestedObjectsToIds(value);
-      }
-    });
-
-    return result;
-  }
-
-  /// Process the membership field to convert nested objects to IDs
-  Map<String, dynamic> _processMembershipField(
-    Map<String, dynamic> membership,
-  ) {
-    final result = Map<String, dynamic>.from(membership);
-
-    // Convert membershipPositions to membershipPositionIds
-    if (membership.containsKey('membershipPositions') &&
-        membership['membershipPositions'] is List) {
-      final positions = membership['membershipPositions'] as List;
-      result['membershipPositionIds'] = positions
-          .map((pos) => pos is Map ? pos['id'] : pos)
-          .where((id) => id != null)
-          .toList();
-      result.remove('membershipPositions');
-    }
-
-    // Convert column object to columnId
-    if (membership.containsKey('column') && membership['column'] is Map) {
-      final column = membership['column'] as Map;
-      if (column.containsKey('id')) {
-        result['columnId'] = column['id'];
-      }
-      result.remove('column');
-    }
-    return result;
   }
 }

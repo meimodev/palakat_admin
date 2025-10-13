@@ -33,7 +33,6 @@ class DateOfBirthPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasError = errorText != null && errorText!.isNotEmpty;
 
     return InkWell(
       onTap: enabled ? () => _selectDate(context) : null,

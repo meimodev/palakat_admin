@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:palakat_admin/core/constants/date_range_preset.dart';
 import 'package:palakat_admin/core/models/member_position.dart';
 import 'package:palakat_admin/core/widgets/pagination_bar.dart';
 import 'package:shimmer/shimmer.dart';
@@ -472,6 +473,14 @@ class AppTableFiltersConfig {
     this.positionOptions,
     this.positionValue,
     this.onPositionChanged,
+    this.dateRangePreset,
+    this.customDateRange,
+    this.onDateRangePresetChanged,
+    this.onCustomDateRangeSelected,
+    this.dropdownLabel,
+    this.dropdownOptions,
+    this.dropdownValue,
+    this.onDropdownChanged,
     this.actionLabel,
     this.actionIcon,
     this.onActionPressed,
@@ -495,6 +504,30 @@ class AppTableFiltersConfig {
   /// Callback when position filter changes. Null value indicates "All".
   final ValueChanged<MemberPosition?>? onPositionChanged;
 
+  /// Optional date range preset value. When not null, date range dropdown is shown.
+  final DateRangePreset? dateRangePreset;
+
+  /// Optional custom date range (only used when preset is 'custom').
+  final DateTimeRange? customDateRange;
+
+  /// Callback when date range preset changes. When provided, date range dropdown is shown.
+  final ValueChanged<DateRangePreset>? onDateRangePresetChanged;
+
+  /// Callback when custom date range is selected via picker.
+  final ValueChanged<DateTimeRange?>? onCustomDateRangeSelected;
+
+  /// Optional label for generic dropdown (e.g., "Activity Type").
+  final String? dropdownLabel;
+
+  /// Optional list of dropdown options as map of value -> label.
+  final Map<String, String>? dropdownOptions;
+
+  /// Currently selected dropdown value.
+  final String? dropdownValue;
+
+  /// Callback when dropdown value changes.
+  final ValueChanged<String?>? onDropdownChanged;
+
   /// Optional trailing action button label (e.g., "New Member").
   final String? actionLabel;
 
@@ -516,31 +549,66 @@ class _BuiltInFiltersBar extends StatefulWidget {
 
 class _BuiltInFiltersBarState extends State<_BuiltInFiltersBar> {
   late final Debouncer _debouncer = Debouncer(delay: const Duration(milliseconds: 400));
+  TextEditingController? _internalSearchController;
+
+  TextEditingController get _searchController {
+    return widget.config.searchController ?? _internalSearchController!;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Create internal controller only if none provided
+    if (widget.config.searchController == null && widget.config.searchHint != null) {
+      _internalSearchController = TextEditingController();
+    }
+  }
 
   @override
   void dispose() {
+    _internalSearchController?.dispose();
     _debouncer.dispose();
     super.dispose();
   }
 
+  void _clearSearch() {
+    _searchController.clear();
+    if (widget.config.onSearchChanged != null) {
+      widget.config.onSearchChanged!('');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final children = <Widget>[];
 
     // Search field
     if (widget.config.searchHint != null) {
       children.add(
         Expanded(
-          child: TextField(
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search),
-              hintText: widget.config.searchHint,
-              border: const OutlineInputBorder(),
-            ),
-            controller: widget.config.searchController,
-            onChanged: widget.config.onSearchChanged == null
-                ? null
-                : (value) => _debouncer(() => widget.config.onSearchChanged!(value)),
+          child: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _searchController,
+            builder: (context, value, child) {
+              return TextField(
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: value.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 20),
+                          onPressed: _clearSearch,
+                          tooltip: 'Clear search',
+                        )
+                      : null,
+                  hintText: widget.config.searchHint,
+                  border: const OutlineInputBorder(),
+                ),
+                controller: _searchController,
+                onChanged: widget.config.onSearchChanged == null
+                    ? null
+                    : (value) => _debouncer(() => widget.config.onSearchChanged!(value)),
+              );
+            },
           ),
         ),
       );
@@ -551,6 +619,79 @@ class _BuiltInFiltersBarState extends State<_BuiltInFiltersBar> {
       if (children.isNotEmpty) {
         children.add(const SizedBox(width: 8));
       }
+    }
+
+    // Date range preset dropdown
+    if (widget.config.onDateRangePresetChanged != null) {
+      addSpacer();
+      children.add(
+        IntrinsicWidth(
+          child: DropdownButtonFormField<DateRangePreset>(
+            value: widget.config.dateRangePreset ?? DateRangePreset.allTime,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              labelText: 'Date Range',
+              prefixIcon: Icon(Icons.date_range, size: 18),
+            ),
+            items: DateRangePreset.values.map(
+              (preset) => DropdownMenuItem<DateRangePreset>(
+                value: preset,
+                child: Text(preset.displayName, overflow: TextOverflow.ellipsis),
+              ),
+            ).toList(),
+            onChanged: (preset) async {
+              if (preset == null) return;
+
+              if (preset == DateRangePreset.custom) {
+                // Open date picker for custom range
+                final picked = await showDateRangePicker(
+                  context: context,
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2100),
+                  initialDateRange: widget.config.customDateRange,
+                );
+                if (picked != null && widget.config.onCustomDateRangeSelected != null) {
+                  widget.config.onCustomDateRangeSelected!(picked);
+                }
+                widget.config.onDateRangePresetChanged!(preset);
+              } else {
+                // Use preset date range
+                widget.config.onDateRangePresetChanged!(preset);
+              }
+            },
+          ),
+        ),
+      );
+    }
+
+    // Generic dropdown
+    if (widget.config.dropdownOptions != null && widget.config.dropdownOptions!.isNotEmpty) {
+      addSpacer();
+      children.add(
+        IntrinsicWidth(
+          child: DropdownButtonFormField<String?>(
+            value: widget.config.dropdownValue,
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
+              labelText: widget.config.dropdownLabel,
+            ),
+            items: [
+              DropdownMenuItem<String?>(
+                value: null,
+                child: Text('All ${widget.config.dropdownLabel ?? "Items"}', overflow: TextOverflow.ellipsis),
+              ),
+              ...widget.config.dropdownOptions!.entries.map(
+                (entry) => DropdownMenuItem<String?>(
+                  value: entry.key,
+                  child: Text(entry.value, overflow: TextOverflow.ellipsis),
+                ),
+              ),
+            ],
+            onChanged: widget.config.onDropdownChanged,
+          ),
+        ),
+      );
     }
 
     // Position dropdown

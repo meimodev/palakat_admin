@@ -11,7 +11,7 @@ class IncomeEntry {
   final String approvalId;
   final ApprovalStatus approvalStatus;
   final DateTime? approvedAt;
-  final List<ApproverDecision> approvers;
+  final List<Approver> approvers;
 
   const IncomeEntry({
     required this.accountId,

@@ -12,8 +12,8 @@ part 'membership.g.dart';
 abstract class Membership with _$Membership {
   const factory Membership({
     int? id,
-    required bool baptize,
-    required bool sidi,
+    @Default(false) bool baptize,
+    @Default(false) bool sidi,
     DateTime? createdAt,
     DateTime? updatedAt,
     @Default([]) List<MemberPosition> membershipPositions,

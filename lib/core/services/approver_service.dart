@@ -1,6 +1,5 @@
 import 'package:palakat_admin/core/constants/enums.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../models/activity.dart';
 import '../models/approver.dart';
 
 part 'approver_service.g.dart';
@@ -9,76 +8,22 @@ part 'approver_service.g.dart';
 class ApproverService {
   /// Generate mock approvers for an activity based on its status
   /// This consolidates the duplicated logic from activities_screen.dart and activity_detail_view.dart
-  List<ApproverDecision> getApproversForActivity(Activity activity) {
-    switch (activity.status) {
-      case ActivityStatus.planned:
-        return [
-          ApproverDecision(
-            name: 'Pastor John',
-            positions: const ['Senior Pastor'],
-            decision: ApprovalStatus.pending,
-          ),
-        ];
-      case ActivityStatus.ongoing:
-        return [
-          ApproverDecision(
-            name: 'Pastor John',
-            positions: const ['Senior Pastor'],
-            decision: ApprovalStatus.approved,
-            decisionAt: activity.startDate.subtract(const Duration(hours: 2)),
-          ),
-          ApproverDecision(
-            name: 'Deacon Mary',
-            positions: const ['Deacon'],
-            decision: ApprovalStatus.pending,
-          ),
-        ];
-      case ActivityStatus.completed:
-        return [
-          ApproverDecision(
-            name: 'Pastor John',
-            positions: const ['Senior Pastor'],
-            decision: ApprovalStatus.approved,
-            decisionAt: activity.startDate.subtract(
-              const Duration(days: 1, hours: 3),
-            ),
-          ),
-          ApproverDecision(
-            name: 'Admin Bob',
-            positions: const ['Administrator'],
-            decision: ApprovalStatus.approved,
-            decisionAt: activity.startDate.subtract(
-              const Duration(days: 1, hours: 1),
-            ),
-          ),
-        ];
-      case ActivityStatus.cancelled:
-        return [
-          ApproverDecision(
-            name: 'Admin Bob',
-            positions: const ['Administrator'],
-            decision: ApprovalStatus.rejected,
-            decisionAt: activity.startDate.subtract(const Duration(hours: 4)),
-          ),
-        ];
-    }
-  }
 
   /// Calculate overall approval status from individual approver decisions
-  ApprovalStatus calculateOverallStatus(List<ApproverDecision> approvers) {
-    if (approvers.isEmpty) return ApprovalStatus.pending;
+  ApprovalStatus calculateOverallStatus(List<Approver> approvers) {
+    if (approvers.isEmpty) return ApprovalStatus.unconfirmed;
 
     final hasRejected = approvers.any(
-      (a) => a.decision == ApprovalStatus.rejected,
+      (a) => a.status == ApprovalStatus.rejected,
     );
     if (hasRejected) return ApprovalStatus.rejected;
 
     final allApproved = approvers.every(
-      (a) => a.decision == ApprovalStatus.approved,
+      (a) => a.status == ApprovalStatus.approved,
     );
     if (allApproved) return ApprovalStatus.approved;
 
-    return ApprovalStatus.pending;
+    return ApprovalStatus.unconfirmed;
   }
 
   /// Get status display information (label, colors, icon)
@@ -96,7 +41,7 @@ class ApproverService {
           colorValue: 0xFFF44336, // Colors.red
           iconCodePoint: 0xe5c9, // Icons.cancel
         );
-      case ApprovalStatus.pending:
+      case ApprovalStatus.unconfirmed:
         return const ApprovalStatusDisplay(
           label: 'Unconfirmed',
           colorValue: 0xFFFF9800, // Colors.orange
@@ -126,16 +71,12 @@ ApproverService approverService(Ref ref) {
 }
 
 /// Provider for getting approvers for a specific activity
-@riverpod
-List<ApproverDecision> activityApprovers(Ref ref, Activity activity) {
-  final service = ref.watch(approverServiceProvider);
-  return service.getApproversForActivity(activity);
-}
+
 
 /// Provider for getting overall approval status for a specific activity
-@riverpod
-ApprovalStatus activityApprovalStatus(Ref ref, Activity activity) {
-  final approvers = ref.watch(activityApproversProvider(activity));
-  final service = ref.watch(approverServiceProvider);
-  return service.calculateOverallStatus(approvers);
-}
+// @riverpod
+// ApprovalStatus activityApprovalStatus(Ref ref, Activity activity) {
+//   final approvers = ref.watch(activityApproversProvider(activity));
+//   final service = ref.watch(approverServiceProvider);
+//   return service.calculateOverallStatus(approvers);
+// }
