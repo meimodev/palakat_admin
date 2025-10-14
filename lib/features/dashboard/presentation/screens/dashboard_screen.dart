@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/widgets/surface_card.dart';
+import 'package:palakat_admin/widgets.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});

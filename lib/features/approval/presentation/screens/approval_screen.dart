@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/widgets/surface_card.dart';
-import '../../../../core/widgets/error_widget.dart';
-import '../../../../core/widgets/loading_widget.dart';
-import '../../../../core/repositories/approval_repository.dart';
-import '../../../../core/models/app_error.dart';
-import '../../../../core/utils/debouncer.dart';
-import '../../../../core/widgets/app_snackbars.dart';
+import 'package:palakat_admin/models.dart' hide Column;
+import 'package:palakat_admin/utils.dart';
+import 'package:palakat_admin/widgets.dart';
+import 'package:palakat_admin/repositories.dart';
 
 class ApprovalScreen extends ConsumerStatefulWidget {
   const ApprovalScreen({super.key});

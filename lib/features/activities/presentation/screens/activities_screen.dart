@@ -1,19 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:palakat_admin/core/constants/enums.dart';
-import 'package:palakat_admin/core/extension/extension.dart';
-import 'package:palakat_admin/core/models/activity.dart';
-import 'package:palakat_admin/core/models/approval_status.dart';
-import 'package:palakat_admin/core/utils/date_utils.dart';
-import 'package:palakat_admin/core/widgets/positions_cell.dart';
-import 'package:palakat_admin/core/widgets/surface_card.dart';
-import 'package:palakat_admin/core/widgets/app_table.dart';
-import 'package:palakat_admin/core/widgets/activity_type_chip.dart';
-import 'package:palakat_admin/core/widgets/approver_card.dart';
-import 'package:palakat_admin/core/widgets/compact_status_chip.dart';
-import 'package:palakat_admin/features/activities/presentation/state/activities_screen_state.dart';
-import '../state/activities_controller.dart';
-import '../widgets/activity_detail_drawer.dart';
+import 'package:palakat_admin/constants.dart';
+import 'package:palakat_admin/extensions.dart';
+import 'package:palakat_admin/models.dart' hide Column;
+import 'package:palakat_admin/utils.dart';
+import 'package:palakat_admin/widgets.dart';
+import 'package:palakat_admin/features/activities/activities.dart';
 
 class ActivitiesScreen extends ConsumerStatefulWidget {
   const ActivitiesScreen({super.key});

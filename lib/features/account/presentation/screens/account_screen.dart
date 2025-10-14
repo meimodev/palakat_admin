@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:palakat_admin/core/models/member_position.dart';
-import 'package:palakat_admin/core/models/membership.dart';
-import '../../../../core/models/account.dart';
-import '../../../../core/widgets/surface_card.dart';
-import '../../../../core/widgets/side_drawer.dart';
-import '../../../../core/widgets/app_snackbars.dart';
+import 'package:palakat_admin/models.dart' hide Column;
+import 'package:palakat_admin/widgets.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});

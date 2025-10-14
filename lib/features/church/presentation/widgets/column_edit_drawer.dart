@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:palakat_admin/core/extension/string_extension.dart';
-import 'package:palakat_admin/core/models/column_detail.dart';
-import '../../../../core/widgets/side_drawer.dart';
-import '../../../../core/models/column.dart' as cm;
-import '../../../../core/widgets/info_section.dart';
-import '../../application/church_controller.dart';
-import 'package:palakat_admin/core/validation/validators.dart';
+import 'package:palakat_admin/extensions.dart';
+import 'package:palakat_admin/models.dart' hide Column;
+import 'package:palakat_admin/validation.dart';
+import 'package:palakat_admin/widgets.dart';
+import 'package:palakat_admin/models.dart' as cm show Column;
+import 'package:palakat_admin/features/church/church.dart';
 
 class ColumnEditDrawer extends ConsumerStatefulWidget {
   final Function(cm.Column) onSave;

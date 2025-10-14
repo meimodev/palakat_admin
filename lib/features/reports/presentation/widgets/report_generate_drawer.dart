@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:palakat_admin/core/widgets/side_drawer.dart';
-import 'package:palakat_admin/core/widgets/date_range_filter.dart';
 import 'package:intl/intl.dart';
-import 'package:palakat_admin/core/widgets/info_section.dart';
+import 'package:palakat_admin/widgets.dart';
 
 class ReportGenerateDrawer extends StatefulWidget {
   final String reportTitle;

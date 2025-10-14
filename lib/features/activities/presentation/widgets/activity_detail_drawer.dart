@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:palakat_admin/core/constants/enums.dart';
-import 'package:palakat_admin/core/extension/extension.dart';
-import 'package:palakat_admin/core/widgets/positions_cell.dart';
-import 'package:palakat_admin/core/widgets/status_chip.dart';
-import 'package:palakat_admin/core/widgets/approver_card.dart';
-import '../../../../core/models/activity.dart';
-import '../../../../core/widgets/side_drawer.dart';
-import '../../../../core/widgets/info_section.dart';
-import '../../../../core/utils/date_utils.dart';
-import '../../../../core/widgets/activity_type_chip.dart';
-import '../state/activities_controller.dart';
+import 'package:palakat_admin/constants.dart';
+import 'package:palakat_admin/extensions.dart';
+import 'package:palakat_admin/models.dart' hide Column;
+import 'package:palakat_admin/utils.dart';
+import 'package:palakat_admin/widgets.dart';
+import 'package:palakat_admin/features/activities/activities.dart';
 
 class ActivityDetailDrawer extends ConsumerStatefulWidget {
   final int activityId;

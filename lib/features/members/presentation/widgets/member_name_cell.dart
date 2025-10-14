@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:palakat_admin/core/models/account.dart';
-import 'package:palakat_admin/core/widgets/status_badge.dart';
+import 'package:palakat_admin/models.dart' hide Column;
+import 'package:palakat_admin/widgets.dart';
 
 /// Widget for displaying member name with status badges in table cells
 /// Shows name, column, and badges for baptized, sidi, and app linked status

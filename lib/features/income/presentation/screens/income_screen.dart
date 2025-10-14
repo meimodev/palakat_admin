@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../domain/models/income_entry.dart';
-import '../widgets/income_detail_drawer.dart';
-import 'package:palakat_admin/core/models/approval_status.dart';
-import 'package:palakat_admin/core/widgets/surface_card.dart';
-import 'package:palakat_admin/core/widgets/approval_id_cell.dart';
-import 'package:palakat_admin/core/widgets/pagination_bar.dart';
-import 'package:palakat_admin/core/widgets/date_range_filter.dart';
+import 'package:palakat_admin/models.dart' hide Column;
+import 'package:palakat_admin/widgets.dart';
+import 'package:palakat_admin/features/income/income.dart';
 
 class IncomeScreen extends StatefulWidget {
   const IncomeScreen({super.key});

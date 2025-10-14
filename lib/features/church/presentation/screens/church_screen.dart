@@ -1,18 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:palakat_admin/features/church/application/church_state.dart';
-import '../../../../core/widgets/expandable_surface_card.dart';
-import '../../../../core/models/church.dart';
-import '../../../../core/models/column.dart' as cm;
-import '../../../../core/models/member_position.dart';
-import '../../../../core/widgets/loading_shimmer.dart';
-import '../widgets/info_edit_drawer.dart';
-import '../widgets/location_edit_drawer.dart';
-import '../widgets/column_edit_drawer.dart';
-import '../widgets/position_edit_drawer.dart';
-import '../../application/church_controller.dart';
-import '../../../../core/models/app_error.dart';
-import '../../../../core/widgets/app_snackbars.dart';
+import 'package:palakat_admin/models.dart' hide Column;
+import 'package:palakat_admin/widgets.dart';
+import 'package:palakat_admin/models.dart' as cm show Column;
+import 'package:palakat_admin/features/church/church.dart';
 
 class ChurchScreen extends ConsumerStatefulWidget {
   const ChurchScreen({super.key});

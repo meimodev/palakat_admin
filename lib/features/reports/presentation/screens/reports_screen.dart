@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:palakat_admin/core/widgets/surface_card.dart';
-import 'package:palakat_admin/core/widgets/pagination_bar.dart';
-import 'package:palakat_admin/features/reports/presentation/widgets/report_generate_drawer.dart';
-import 'package:palakat_admin/core/widgets/app_snackbars.dart';
+import 'package:palakat_admin/widgets.dart';
+import 'package:palakat_admin/features/reports/reports.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});

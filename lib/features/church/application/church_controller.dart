@@ -1,13 +1,9 @@
-import 'package:palakat_admin/core/extension/extension.dart';
-import 'package:palakat_admin/core/models/column_detail.dart';
-import 'package:palakat_admin/core/models/member_position.dart';
-import 'package:palakat_admin/core/models/member_position_detail.dart';
-import 'package:palakat_admin/core/repositories/church_repository.dart';
+import 'package:palakat_admin/extensions.dart';
+import 'package:palakat_admin/models.dart' hide Column;
+import 'package:palakat_admin/repositories.dart';
 import 'package:palakat_admin/features/auth/application/auth_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../core/models/church.dart';
-import '../../../core/models/column.dart' as cm;
-import '../../../core/models/location.dart';
+import 'package:palakat_admin/models.dart' as cm show Column;
 import 'church_state.dart';
 
 part 'church_controller.g.dart';

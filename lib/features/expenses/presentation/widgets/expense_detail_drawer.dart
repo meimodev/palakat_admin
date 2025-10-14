@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../domain/models/expense_entry.dart';
-import 'package:palakat_admin/core/widgets/side_drawer.dart';
-import 'package:palakat_admin/core/widgets/info_section.dart';
-import 'package:palakat_admin/core/widgets/status_chip.dart';
-import 'package:palakat_admin/core/models/approval_status.dart';
+import 'package:palakat_admin/models.dart' hide Column;
+import 'package:palakat_admin/widgets.dart';
+import 'package:palakat_admin/features/expenses/expenses.dart';
 
 class ExpenseDetailDrawer extends StatelessWidget {
   final ExpenseEntry entry;

@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-
-import '../../../../core/models/document.dart';
-import '../../../../core/widgets/surface_card.dart';
-// Removed pagination import as the card no longer paginates
-import '../../../../core/widgets/side_drawer.dart';
+import 'package:palakat_admin/models.dart' hide Column;
+import 'package:palakat_admin/widgets.dart';
 
 class DocumentScreen extends ConsumerStatefulWidget {
   const DocumentScreen({super.key});

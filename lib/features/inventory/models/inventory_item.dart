@@ -1,4 +1,4 @@
-import 'package:palakat_admin/core/constants/enums.dart';
+import 'package:palakat_admin/constants.dart';
 
 class InventoryItem {
   final String itemName;

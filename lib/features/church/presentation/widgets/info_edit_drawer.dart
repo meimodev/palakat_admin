@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../application/church_controller.dart';
-import '../../../../core/widgets/side_drawer.dart';
-import '../../../../core/models/church.dart';
-import '../../../../core/widgets/info_section.dart';
-import 'package:palakat_admin/core/validation/validators.dart';
+import 'package:palakat_admin/models.dart' hide Column;
+import 'package:palakat_admin/validation.dart';
+import 'package:palakat_admin/widgets.dart';
+import 'package:palakat_admin/features/church/church.dart';
 
 class InfoEditDrawer extends ConsumerStatefulWidget {
   final Church church;
