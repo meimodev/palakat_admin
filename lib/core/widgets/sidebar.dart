@@ -70,15 +70,15 @@ class AppSidebar extends ConsumerWidget {
                     _NavItem(
                       icon: Icons.group_outlined,
                       label: 'Member',
-                      selected: route.startsWith('/members'),
-                      onTap: () => context.go('/members'),
+                      selected: route.startsWith('/member'),
+                      onTap: () => context.go('/member'),
                       color: Colors.teal,
                     ),
                     _NavItem(
                       icon: Icons.event_note,
                       label: 'Activity',
-                      selected: route.startsWith('/activities'),
-                      onTap: () => context.go('/activities'),
+                      selected: route.startsWith('/activity'),
+                      onTap: () => context.go('/activity'),
                       color: Colors.deepOrange,
                     ),
                     const Padding(
@@ -102,8 +102,8 @@ class AppSidebar extends ConsumerWidget {
                     _NavItem(
                       icon: Icons.credit_card,
                       label: 'Expense',
-                      selected: route.startsWith('/expenses'),
-                      onTap: () => context.go('/expenses'),
+                      selected: route.startsWith('/expense'),
+                      onTap: () => context.go('/expense'),
                       color: Colors.purple,
                     ),
                     _NavItem(
@@ -116,8 +116,8 @@ class AppSidebar extends ConsumerWidget {
                     _NavItem(
                       icon: Icons.insert_drive_file_outlined,
                       label: 'Report',
-                      selected: route.startsWith('/reports'),
-                      onTap: () => context.go('/reports'),
+                      selected: route.startsWith('/report'),
+                      onTap: () => context.go('/report'),
                       color: Colors.orange,
                     ),
                     const Padding(

@@ -89,11 +89,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(
-            path: '/members',
-            name: 'members',
+            path: '/member',
+            name: 'member',
             pageBuilder: (context, state) => SmoothPageTransition<void>(
               key: state.pageKey,
-              name: 'members',
+              name: 'member',
               child: const MemberScreen(),
             ),
           ),
@@ -107,11 +107,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(
-            path: '/activities',
-            name: 'activities',
+            path: '/activity',
+            name: 'activity',
             pageBuilder: (context, state) => SmoothPageTransition<void>(
               key: state.pageKey,
-              name: 'activities',
+              name: 'activity',
               child: const ActivityScreen(),
             ),
           ),
@@ -152,11 +152,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(
-            path: '/expenses',
-            name: 'expenses',
+            path: '/expense',
+            name: 'expense',
             pageBuilder: (context, state) => SmoothPageTransition<void>(
               key: state.pageKey,
-              name: 'expenses',
+              name: 'expense',
               child: const ExpenseScreen(),
             ),
           ),
@@ -170,11 +170,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(
-            path: '/reports',
-            name: 'reports',
+            path: '/report',
+            name: 'report',
             pageBuilder: (context, state) => SmoothPageTransition<void>(
               key: state.pageKey,
-              name: 'reports',
+              name: 'report',
               child: const ReportScreen(),
             ),
           ),
