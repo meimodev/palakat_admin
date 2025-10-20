@@ -13,9 +13,9 @@ extension DateTimeFormatExtension on DateTime {
     return DateFormat('MMM dd, yyyy').format(this);
   }
 
-  /// Format date and time as MMM dd, yyyy - HH:mm (used in activity details)
+  /// Format date and time as EEEE, dd MMMM yyyy - HH:mm (used in activity details)
   String toDateTimeString() {
-    return DateFormat('MMM dd, yyyy - HH:mm').format(this);
+    return DateFormat('EEEE, dd MMMM yyyy - HH:mm').format(this);
   }
 
   /// Format date as MM/dd/yyyy (alternative short format)

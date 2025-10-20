@@ -93,6 +93,20 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                           controller.onChangedDateRangePreset,
                       onCustomDateRangeSelected:
                           controller.onCustomDateRangeSelected,
+                      dropdownLabel: 'Payment Method',
+                      dropdownOptions: {
+                        'cash': 'Cash',
+                        'cashless': 'Cashless',
+                      },
+                      dropdownValue: state.paymentMethodFilter?.name,
+                      onDropdownChanged: (value) {
+                        final paymentMethod = value == null
+                            ? null
+                            : PaymentMethod.values.firstWhere(
+                                (e) => e.name == value,
+                              );
+                        controller.onChangedPaymentMethod(paymentMethod);
+                      },
                     ),
                     onRowTap: (expense) async {
                       if (expense.id != null) {
@@ -157,6 +171,19 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
         },
       ),
       AppTableColumn<Expense>(
+        title: 'Request Date',
+        flex: 2,
+        cellBuilder: (ctx, expense) {
+          final theme = Theme.of(ctx);
+          if (expense.createdAt == null) {
+            return Text('-', style: theme.textTheme.bodyMedium);
+          }
+          final requestDate = expense.createdAt!;
+          final date = requestDate.toCustomFormat("EEEE, dd MMMM yyyy");
+          return Text(date, style: theme.textTheme.bodyMedium);
+        },
+      ),
+      AppTableColumn<Expense>(
         title: 'Approval Date',
         flex: 2,
         cellBuilder: (ctx, expense) {
@@ -166,8 +193,7 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
           }
           final approvalDate = expense.activity!.approvers.approvalDate;
           final date = approvalDate.toCustomFormat("EEEE, dd MMMM yyyy");
-          final time = approvalDate.toCustomFormat("HH:mm");
-          return Text("$date\n$time", style: theme.textTheme.bodyMedium);
+          return Text(date, style: theme.textTheme.bodyMedium);
         },
       ),
       AppTableColumn<Expense>(

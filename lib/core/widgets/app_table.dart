@@ -629,7 +629,7 @@ class _BuiltInFiltersBarState extends State<_BuiltInFiltersBar> {
             decoration: const InputDecoration(
               border: OutlineInputBorder(),
               contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              labelText: 'Date Range',
+              labelText: 'Request Date',
               prefixIcon: Icon(Icons.date_range, size: 18),
             ),
             items: DateRangePreset.values.map(

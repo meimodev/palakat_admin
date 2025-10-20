@@ -48,6 +48,7 @@ class RevenueController extends _$RevenueController {
             search: state.searchQuery.isEmpty ? null : state.searchQuery,
             startDate: actualDateRange?.start,
             endDate: actualDateRange?.end,
+            paymentMethod: state.paymentMethodFilter,
           ),
           page: state.currentPage,
           pageSize: state.pageSize,
@@ -78,6 +79,14 @@ class RevenueController extends _$RevenueController {
   void onCustomDateRangeSelected(DateTimeRange? dateRange) {
     state = state.copyWith(
       customDateRange: dateRange,
+      currentPage: 1, // Reset to first page on filter change
+    );
+    _fetchRevenues();
+  }
+
+  void onChangedPaymentMethod(PaymentMethod? paymentMethod) {
+    state = state.copyWith(
+      paymentMethodFilter: paymentMethod,
       currentPage: 1, // Reset to first page on filter change
     );
     _fetchRevenues();
@@ -148,12 +157,14 @@ class GetFetchRevenuesRequest {
   final String? search;
   final DateTime? startDate;
   final DateTime? endDate;
+  final PaymentMethod? paymentMethod;
 
   GetFetchRevenuesRequest({
     required this.churchId,
     this.search,
     this.startDate,
     this.endDate,
+    this.paymentMethod,
   });
 
   Map<String, dynamic> toJson() {
@@ -162,6 +173,7 @@ class GetFetchRevenuesRequest {
       if (search != null) 'search': search,
       if (startDate != null) 'startDate': startDate!.toIso8601String(),
       if (endDate != null) 'endDate': endDate!.toIso8601String(),
+      if (paymentMethod != null) 'paymentMethod': paymentMethod!.name.toUpperCase(),
     };
   }
 }

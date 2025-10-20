@@ -48,6 +48,7 @@ class ExpenseController extends _$ExpenseController {
             search: state.searchQuery.isEmpty ? null : state.searchQuery,
             startDate: actualDateRange?.start,
             endDate: actualDateRange?.end,
+            paymentMethod: state.paymentMethodFilter,
           ),
           page: state.currentPage,
           pageSize: state.pageSize,
@@ -78,6 +79,14 @@ class ExpenseController extends _$ExpenseController {
   void onCustomDateRangeSelected(DateTimeRange? dateRange) {
     state = state.copyWith(
       customDateRange: dateRange,
+      currentPage: 1, // Reset to first page on filter change
+    );
+    _fetchExpenses();
+  }
+
+  void onChangedPaymentMethod(PaymentMethod? paymentMethod) {
+    state = state.copyWith(
+      paymentMethodFilter: paymentMethod,
       currentPage: 1, // Reset to first page on filter change
     );
     _fetchExpenses();
@@ -148,12 +157,14 @@ class GetFetchExpensesRequest {
   final String? search;
   final DateTime? startDate;
   final DateTime? endDate;
+  final PaymentMethod? paymentMethod;
 
   GetFetchExpensesRequest({
     required this.churchId,
     this.search,
     this.startDate,
     this.endDate,
+    this.paymentMethod,
   });
 
   Map<String, dynamic> toJson() {
@@ -162,6 +173,7 @@ class GetFetchExpensesRequest {
       if (search != null) 'search': search,
       if (startDate != null) 'startDate': startDate!.toIso8601String(),
       if (endDate != null) 'endDate': endDate!.toIso8601String(),
+      if (paymentMethod != null) 'paymentMethod': paymentMethod!.name.toUpperCase(),
     };
   }
 }
