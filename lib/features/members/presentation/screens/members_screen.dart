@@ -18,69 +18,47 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
   void _showMemberDrawer({int? accountId}) {
     final isEditing = accountId != null;
     
-    showGeneralDialog(
+    DrawerUtils.showDrawer(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      barrierColor: Colors.black54,
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return Align(
-          alignment: Alignment.centerRight,
-          child: Material(
-            child: MemberEditDrawer(
-              accountId: accountId,
-              onSave: (account) async {
+      drawer: MemberEditDrawer(
+        accountId: accountId,
+        onSave: (account) async {
+          final controller = ref.read(membersControllerProvider.notifier);
+          await controller.saveMember(account);
+          if (!context.mounted) return;
+          AppSnackbars.showSuccess(
+            context,
+            title: isEditing ? 'Saved' : 'Created',
+            message: isEditing 
+                ? 'Member saved successfully'
+                : 'Member created successfully',
+          );
+        },
+        onDelete: isEditing
+            ? () {
                 final controller = ref.read(membersControllerProvider.notifier);
-                await controller.saveMember(account);
-                if (!context.mounted) return;
-                AppSnackbars.showSuccess(
-                  context,
-                  title: isEditing ? 'Saved' : 'Created',
-                  message: isEditing 
-                      ? 'Member saved successfully'
-                      : 'Member created successfully',
-                );
-              },
-              onDelete: isEditing
-                  ? () {
-                      final controller = ref.read(membersControllerProvider.notifier);
-                      controller
-                          .deleteMember(accountId)
-                          .then((_) {
-                            if (!context.mounted) return;
-                            AppSnackbars.showSuccess(
-                              context,
-                              title: 'Deleted',
-                              message: 'Member deleted successfully',
-                            );
-                          })
-                          .catchError((e) {
-                            if (!context.mounted) return;
-                            _handleMemberOperationError(
-                              context,
-                              e,
-                              operation: 'delete',
-                            );
-                          });
-                    }
-                  : null,
-              onClose: () => Navigator.of(context).pop(),
-            ),
-          ),
-        );
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(1.0, 0.0),
-            end: Offset.zero,
-          ).animate(
-            CurvedAnimation(parent: animation, curve: Curves.easeInOut),
-          ),
-          child: child,
-        );
-      },
+                controller
+                    .deleteMember(accountId)
+                    .then((_) {
+                      if (!context.mounted) return;
+                      AppSnackbars.showSuccess(
+                        context,
+                        title: 'Deleted',
+                        message: 'Member deleted successfully',
+                      );
+                    })
+                    .catchError((e) {
+                      if (!context.mounted) return;
+                      _handleMemberOperationError(
+                        context,
+                        e,
+                        operation: 'delete',
+                      );
+                    });
+              }
+            : null,
+        onClose: () => DrawerUtils.closeDrawer(context),
+      ),
     );
   }
 
@@ -250,7 +228,7 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
         flex: 2,
         cellBuilder: (ctx, account) {
           final theme = Theme.of(ctx);
-          final formattedDob = AppDateUtils.formatCustom(account.dob, 'yyyy, MMMM dd');
+          final formattedDob = account.dob.toCustomFormat('yyyy, MMMM dd');
           final age = account.calculateAge;
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,

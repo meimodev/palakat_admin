@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:palakat_admin/utils.dart';
 import 'package:palakat_admin/widgets.dart';
 import 'package:palakat_admin/features/reports/reports.dart';
 
@@ -160,55 +161,24 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   void _openGenerateDrawer(String reportTitle, String description) {
-    showGeneralDialog(
+    DrawerUtils.showDrawer(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Close',
-      pageBuilder: (ctx, anim, secAnim) => const SizedBox.shrink(),
-      transitionBuilder: (ctx, anim, secAnim, child) {
-        final curved = CurvedAnimation(
-          parent: anim,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        );
-        return Stack(
-          children: [
-            Opacity(
-              opacity: 0.4 * curved.value,
-              child: const ModalBarrier(
-                dismissible: true,
-                color: Colors.black54,
-              ),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(1, 0),
-                  end: Offset.zero,
-                ).animate(curved),
-                child: ReportGenerateDrawer(
-                  reportTitle: reportTitle,
-                  description: description,
-                  onClose: () => Navigator.of(ctx).pop(),
-                  onGenerate: (range) {
-                    Navigator.of(ctx).pop();
-                    final suffix = range == null
-                        ? ''
-                        : ' for ${DateFormat('y-MM-dd').format(range.start)} - ${DateFormat('y-MM-dd').format(range.end)}';
-                    AppSnackbars.showSuccess(
-                      context,
-                      title: 'Generating',
-                      message: '$reportTitle$suffix',
-                    );
-                  },
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-      transitionDuration: const Duration(milliseconds: 300),
+      drawer: ReportGenerateDrawer(
+        reportTitle: reportTitle,
+        description: description,
+        onClose: () => DrawerUtils.closeDrawer(context),
+        onGenerate: (range) {
+          DrawerUtils.closeDrawer(context);
+          final suffix = range == null
+              ? ''
+              : ' for ${DateFormat('y-MM-dd').format(range.start)} - ${DateFormat('y-MM-dd').format(range.end)}';
+          AppSnackbars.showSuccess(
+            context,
+            title: 'Generating',
+            message: '$reportTitle$suffix',
+          );
+        },
+      ),
     );
   }
 

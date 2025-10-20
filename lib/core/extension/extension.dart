@@ -1,4 +1,5 @@
 export 'account_extension.dart';
+export 'approval_status_extension.dart';
 export 'approver_extension.dart';
 export 'map_extension.dart';
 export 'number_string_extensions.dart';

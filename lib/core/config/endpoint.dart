@@ -25,6 +25,14 @@ class Endpoints {
   static const String activities = '/activity';
   static String activity(String activityId) => '/activity/$activityId';
 
+  // Revenue
+  static const String revenues = '/revenue';
+  static String revenue(String revenueId) => '/revenue/$revenueId';
+
+  // Expense
+  static const String expenses = '/expense';
+ static String expense(String expenseId) => '/expense/$expenseId';
+
   // Approvals (rules, requests, etc.)
   static const String approvals = '/approvals';
   static String approval(String approvalId) => '/approvals/$approvalId';

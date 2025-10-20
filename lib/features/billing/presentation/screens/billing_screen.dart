@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:palakat_admin/constants.dart';
 import 'package:palakat_admin/models.dart' hide Column;
+import 'package:palakat_admin/utils.dart';
 import 'package:palakat_admin/widgets.dart';
 
 class BillingScreen extends StatefulWidget {
@@ -257,137 +258,75 @@ class _BillingScreenState extends State<BillingScreen> {
   }
 
   void _showBillingItemDetail(BillingItem? item) {
-    showGeneralDialog(
+    DrawerUtils.showDrawer(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Close',
-      pageBuilder: (ctx, anim, secAnim) => const SizedBox.shrink(),
-      transitionBuilder: (ctx, anim, secAnim, child) {
-        final curved = CurvedAnimation(
-          parent: anim,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        );
-        return Stack(
-          children: [
-            Opacity(
-              opacity: 0.4 * curved.value,
-              child: const ModalBarrier(
-                dismissible: true,
-                color: Colors.black54,
-              ),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(1, 0),
-                  end: Offset.zero,
-                ).animate(curved),
-                child: _BillingDetailDrawer(
-                  item: item!,
-                  onClose: () => Navigator.of(ctx).pop(),
-                  onPayment: () {
-                    showDialog(
-                      context: context,
-                      builder: (dialogCtx) => _PaymentDialog(
-                        item: item,
-                        onPayment: (paymentMethod, transactionId, notes) {
-                          setState(() {
-                            final index = _allBillingItems.indexWhere(
-                              (i) => i.id == item.id,
-                            );
-                            if (index != -1) {
-                              _allBillingItems[index] = item.copyWith(
-                                status: BillingStatus.paid,
-                                paidDate: DateTime.now(),
-                                paymentMethod: paymentMethod,
-                                transactionId: transactionId,
-                                notes: notes,
-                                updatedAt: DateTime.now(),
-                              );
-                            }
-
-                            _allPaymentHistory.insert(
-                              0,
-                              PaymentHistory(
-                                id: 'PAY-${DateTime.now().millisecondsSinceEpoch}',
-                                billingItemId: item.id ?? '',
-                                amount: item.amount,
-                                paymentMethod: paymentMethod,
-                                transactionId: transactionId,
-                                paymentDate: DateTime.now(),
-                                notes: notes,
-                                processedBy: 'Admin User',
-                              ),
-                            );
-                          });
-                        },
-                      ),
+      drawer: _BillingDetailDrawer(
+        item: item!,
+        onClose: () => DrawerUtils.closeDrawer(context),
+        onPayment: () {
+          showDialog(
+            context: context,
+            builder: (dialogCtx) => _PaymentDialog(
+              item: item,
+              onPayment: (paymentMethod, transactionId, notes) {
+                setState(() {
+                  final index = _allBillingItems.indexWhere(
+                    (i) => i.id == item.id,
+                  );
+                  if (index != -1) {
+                    _allBillingItems[index] = item.copyWith(
+                      status: BillingStatus.paid,
+                      paidDate: DateTime.now(),
+                      paymentMethod: paymentMethod,
+                      transactionId: transactionId,
+                      notes: notes,
+                      updatedAt: DateTime.now(),
                     );
-                  },
-                ),
-              ),
+                  }
+
+                  _allPaymentHistory.insert(
+                    0,
+                    PaymentHistory(
+                      id: 'PAY-${DateTime.now().millisecondsSinceEpoch}',
+                      billingItemId: item.id ?? '',
+                      amount: item.amount,
+                      paymentMethod: paymentMethod,
+                      transactionId: transactionId,
+                      paymentDate: DateTime.now(),
+                      notes: notes,
+                      processedBy: 'Admin User',
+                    ),
+                  );
+                });
+              },
             ),
-          ],
-        );
-      },
-      transitionDuration: const Duration(milliseconds: 300),
+          );
+        },
+      ),
     );
   }
 
   // Payment dialog removed with actions column
 
   void _showFullPaymentHistory() {
-    showGeneralDialog(
+    DrawerUtils.showDrawer(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Close',
-      pageBuilder: (ctx, anim, secAnim) => const SizedBox.shrink(),
-      transitionBuilder: (ctx, anim, secAnim, child) {
-        final curved = CurvedAnimation(
-          parent: anim,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        );
-        return Stack(
+      drawer: SideDrawer(
+        title: 'Payment History',
+        subtitle: 'Complete payment transaction history',
+        onClose: () => DrawerUtils.closeDrawer(context),
+        width: 600,
+        content: Column(
           children: [
-            Opacity(
-              opacity: 0.4 * curved.value,
-              child: const ModalBarrier(
-                dismissible: true,
-                color: Colors.black54,
-              ),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(1, 0),
-                  end: Offset.zero,
-                ).animate(curved),
-                child: SideDrawer(
-                  title: 'Payment History',
-                  subtitle: 'Complete payment transaction history',
-                  onClose: () => Navigator.of(ctx).pop(),
-                  width: 600,
-                  content: Column(
-                    children: [
-                      _PaymentHistoryHeader(),
-                      const Divider(height: 1),
-                      ...[
-                        for (final payment in _allPaymentHistory)
-                          _PaymentHistoryRow(payment: payment),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            _PaymentHistoryHeader(),
+            const Divider(height: 1),
+            ...[
+              for (final payment in _allPaymentHistory)
+                _PaymentHistoryRow(payment: payment),
+            ],
           ],
-        );
-      },
-      transitionDuration: const Duration(milliseconds: 300),
+        ),
+      ),
     );
   }
 
@@ -402,7 +341,7 @@ class _BillingScreenState extends State<BillingScreen> {
         status: BillingStatus.paid,
         dueDate: now.subtract(const Duration(days: 15)),
         paidDate: now.subtract(const Duration(days: 10)),
-        paymentMethod: PaymentMethod.creditCard,
+        paymentMethod: PaymentMethod.cashless,
         transactionId: 'TXN-CC-001',
         notes: 'Paid via credit card ending in 4532',
         createdAt: now.subtract(const Duration(days: 30)),
@@ -416,7 +355,7 @@ class _BillingScreenState extends State<BillingScreen> {
         status: BillingStatus.paid,
         dueDate: now.subtract(const Duration(days: 45)),
         paidDate: now.subtract(const Duration(days: 40)),
-        paymentMethod: PaymentMethod.bankTransfer,
+        paymentMethod: PaymentMethod.cashless,
         transactionId: 'TXN-BT-001',
         createdAt: now.subtract(const Duration(days: 50)),
         updatedAt: now.subtract(const Duration(days: 40)),
@@ -473,7 +412,7 @@ class _BillingScreenState extends State<BillingScreen> {
         id: 'PAY-1001',
         billingItemId: 'BILL-1001',
         amount: 1499.00,
-        paymentMethod: PaymentMethod.creditCard,
+        paymentMethod: PaymentMethod.cashless,
         transactionId: 'TXN-CC-001',
         paymentDate: now.subtract(const Duration(days: 10)),
         notes: 'Automatic payment via saved card',
@@ -483,7 +422,7 @@ class _BillingScreenState extends State<BillingScreen> {
         id: 'PAY-1002',
         billingItemId: 'BILL-1002',
         amount: 2500.00,
-        paymentMethod: PaymentMethod.bankTransfer,
+        paymentMethod: PaymentMethod.cashless,
         transactionId: 'TXN-BT-001',
         paymentDate: now.subtract(const Duration(days: 40)),
         notes: 'Bank transfer from church account',
@@ -493,7 +432,7 @@ class _BillingScreenState extends State<BillingScreen> {
         id: 'PAY-1003',
         billingItemId: 'BILL-0998',
         amount: 1499.00,
-        paymentMethod: PaymentMethod.creditCard,
+        paymentMethod: PaymentMethod.cashless,
         transactionId: 'TXN-CC-002',
         paymentDate: now.subtract(const Duration(days: 45)),
         notes: 'Monthly subscription payment',
@@ -503,7 +442,7 @@ class _BillingScreenState extends State<BillingScreen> {
         id: 'PAY-1004',
         billingItemId: 'BILL-0997',
         amount: 599.00,
-        paymentMethod: PaymentMethod.digitalWallet,
+        paymentMethod: PaymentMethod.cashless,
         transactionId: 'TXN-DW-001',
         paymentDate: now.subtract(const Duration(days: 60)),
         notes: 'Paid via PayPal',
@@ -735,7 +674,12 @@ class _PaymentHistoryRow extends StatelessWidget {
               _cell(
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: _PaymentMethodChip(method: payment.paymentMethod),
+                  child: PaymentMethodChip(
+                    method: payment.paymentMethod,
+                    iconSize: 10,
+                    fontSize: 11,
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  ),
                 ),
                 flex: 2,
               ),
@@ -758,43 +702,6 @@ class _PaymentHistoryRow extends StatelessWidget {
       Expanded(flex: flex, child: child);
 }
 
-class _PaymentMethodChip extends StatelessWidget {
-  final PaymentMethod method;
-
-  const _PaymentMethodChip({required this.method});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final (color, icon) = switch (method) {
-      PaymentMethod.creditCard => (Colors.blue, Icons.credit_card),
-      PaymentMethod.bankTransfer => (Colors.green, Icons.account_balance),
-      PaymentMethod.cash => (Colors.orange, Icons.money),
-      PaymentMethod.check => (Colors.purple, Icons.receipt),
-      PaymentMethod.digitalWallet => (Colors.teal, Icons.wallet),
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 10, color: color),
-          const SizedBox(width: 2),
-          Text(
-            method.displayName,
-            style: theme.textTheme.labelSmall?.copyWith(color: color),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _BillingDetailDrawer extends StatelessWidget {
   final BillingItem item;
@@ -871,6 +778,12 @@ class _BillingDetailDrawer extends StatelessWidget {
               InfoRow(
                 label: 'Method',
                 value: item.paymentMethod?.displayName ?? '—',
+                valueWidget: item.paymentMethod != null
+                    ? Align(
+                        alignment: Alignment.centerLeft,
+                        child: PaymentMethodChip(method: item.paymentMethod!),
+                      )
+                    : null,
                 labelWidth: 140,
                 spacing: 16,
                 contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -923,7 +836,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
   final _formKey = GlobalKey<FormState>();
   final _transactionController = TextEditingController();
   final _notesController = TextEditingController();
-  PaymentMethod _paymentMethod = PaymentMethod.creditCard;
+  PaymentMethod _paymentMethod = PaymentMethod.cashless;
 
   @override
   void dispose() {

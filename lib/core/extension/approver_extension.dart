@@ -1,10 +1,10 @@
 import 'package:palakat_admin/core/constants/enums.dart';
 import 'package:palakat_admin/core/models/approver.dart';
 
-/// Extension methods for List of Approver
+/// Extension methods for List of approver
 extension ApproverListExtension on List<Approver> {
   /// Calculate overall approval status from individual approver decisions
-  /// 
+  ///
   /// Returns:
   /// - [ApprovalStatus.approved] if all approvers have approved status
   /// - [ApprovalStatus.rejected] if any approver has rejected status
@@ -26,5 +26,18 @@ extension ApproverListExtension on List<Approver> {
 
     // Otherwise unconfirmed (some pending or mixed states)
     return ApprovalStatus.unconfirmed;
+  }
+
+  DateTime get approvalDate {
+    if (isEmpty) return DateTime.now();
+
+    final dates = where((approver) => approver.updatedAt != null)
+        .map((approver) => approver.updatedAt!)
+        .toList();
+
+    if (dates.isEmpty) return DateTime.now();
+
+    dates.sort((a, b) => b.compareTo(a));
+    return dates.first;
   }
 }

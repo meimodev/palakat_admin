@@ -5,22 +5,22 @@ import 'package:palakat_admin/extensions.dart';
 import 'package:palakat_admin/models.dart' hide Column;
 import 'package:palakat_admin/utils.dart';
 import 'package:palakat_admin/widgets.dart';
-import 'package:palakat_admin/features/expenses/expenses.dart';
+import 'package:palakat_admin/features/revenue/revenue.dart';
 
-class ExpensesScreen extends ConsumerStatefulWidget {
-  const ExpensesScreen({super.key});
+class RevenueScreen extends ConsumerStatefulWidget {
+  const RevenueScreen({super.key});
 
   @override
-  ConsumerState<ExpensesScreen> createState() => _ExpensesScreenState();
+  ConsumerState<RevenueScreen> createState() => _RevenueScreenState();
 }
 
-class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
-  /// Shows expense drawer for viewing
-  void _showExpenseDrawer(int expenseId) {
+class _RevenueScreenState extends ConsumerState<RevenueScreen> {
+  /// Shows revenue drawer for viewing
+  void _showRevenueDrawer(int revenueId) {
     DrawerUtils.showDrawer(
       context: context,
-      drawer: ExpenseDetailDrawer(
-        expenseId: expenseId,
+      drawer: RevenueDetailDrawer(
+        revenueId: revenueId,
         onClose: () => DrawerUtils.closeDrawer(context),
       ),
     );
@@ -30,9 +30,9 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final ExpenseScreenState state = ref.watch(expenseControllerProvider);
-    final ExpenseController controller = ref.watch(
-      expenseControllerProvider.notifier,
+    final RevenueScreenState state = ref.watch(revenueControllerProvider);
+    final RevenueController controller = ref.watch(
+      revenueControllerProvider.notifier,
     );
 
     return Material(
@@ -40,38 +40,38 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Expenses', style: theme.textTheme.headlineMedium),
+            Text('Revenue', style: theme.textTheme.headlineMedium),
             const SizedBox(height: 8),
             Text(
-              'Track and manage all expense records.',
+              'Track and manage all revenue sources.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 16),
             SurfaceCard(
-              title: 'Expense Log',
-              subtitle: 'A record of all logged expenses.',
+              title: 'Revenue Log',
+              subtitle: 'A record of all logged revenue.',
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  AppTable<Expense>(
-                    loading: state.expenses.isLoading,
-                    data: state.expenses.value?.data ?? [],
-                    errorText: state.expenses.hasError
-                        ? state.expenses.error.toString()
+                  AppTable<Revenue>(
+                    loading: state.revenues.isLoading,
+                    data: state.revenues.value?.data ?? [],
+                    errorText: state.revenues.hasError
+                        ? state.revenues.error.toString()
                         : null,
                     onRetry: () => controller.refresh(),
                     pagination: () {
                       final pageSize =
-                          state.expenses.value?.pagination.pageSize ?? 10;
-                      final page = state.expenses.value?.pagination.page ?? 1;
-                      final total = state.expenses.value?.pagination.total ?? 0;
+                          state.revenues.value?.pagination.pageSize ?? 10;
+                      final page = state.revenues.value?.pagination.page ?? 1;
+                      final total = state.revenues.value?.pagination.total ?? 0;
 
                       final hasPrev =
-                          state.expenses.value?.pagination.hasPrev ?? false;
+                          state.revenues.value?.pagination.hasPrev ?? false;
                       final hasNext =
-                          state.expenses.value?.pagination.hasNext ?? false;
+                          state.revenues.value?.pagination.hasNext ?? false;
 
                       return AppTablePaginationConfig(
                         total: total,
@@ -83,7 +83,6 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                         onNext: hasNext ? controller.onPressedNextPage : null,
                       );
                     }.call(),
-
                     filtersConfig: AppTableFiltersConfig(
                       searchHint: 'Search by account number, activity title...',
                       onSearchChanged: controller.onChangedSearch,
@@ -94,9 +93,9 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                       onCustomDateRangeSelected:
                           controller.onCustomDateRangeSelected,
                     ),
-                    onRowTap: (expense) async {
-                      if (expense.id != null) {
-                        _showExpenseDrawer(expense.id!);
+                    onRowTap: (revenue) async {
+                      if (revenue.id != null) {
+                        _showRevenueDrawer(revenue.id!);
                       }
                     },
                     columns: _buildTableColumns(),
@@ -110,41 +109,41 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
     );
   }
 
-  /// Builds the table column configuration for the expense table
-  static List<AppTableColumn<Expense>> _buildTableColumns() {
+  /// Builds the table column configuration for the revenue table
+  static List<AppTableColumn<Revenue>> _buildTableColumns() {
     return [
-      AppTableColumn<Expense>(
+      AppTableColumn<Revenue>(
         title: 'Account Number',
         flex: 2,
-        cellBuilder: (ctx, expense) {
+        cellBuilder: (ctx, revenue) {
           final theme = Theme.of(ctx);
           return Text(
-            expense.accountNumber ?? '-',
+            revenue.accountNumber ?? '-',
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w500,
             ),
           );
         },
       ),
-      AppTableColumn<Expense>(
+      AppTableColumn<Revenue>(
         title: 'Activity',
         flex: 3,
-        cellBuilder: (ctx, expense) {
+        cellBuilder: (ctx, revenue) {
           final theme = Theme.of(ctx);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                expense.activity?.title ?? '-',
+                revenue.activity?.title ?? '-',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              if (expense.activity?.description != null) ...[
+              if (revenue.activity?.description != null) ...[
                 const SizedBox(height: 2),
                 Text(
-                  expense.activity?.description ?? "",
+                  revenue.activity?.description ?? "",
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -156,37 +155,42 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
           );
         },
       ),
-      AppTableColumn<Expense>(
+      AppTableColumn<Revenue>(
         title: 'Approval Date',
         flex: 2,
-        cellBuilder: (ctx, expense) {
+        cellBuilder: (ctx, revenue) {
           final theme = Theme.of(ctx);
-          if (expense.activity?.date == null) {
+          if (revenue.activity?.date == null) {
             return Text('-', style: theme.textTheme.bodyMedium);
           }
-          final approvalDate = expense.activity!.approvers.approvalDate;
+          final approvalDate = revenue.activity!.approvers.approvalDate;
           final date = approvalDate.toCustomFormat("EEEE, dd MMMM yyyy");
           final time = approvalDate.toCustomFormat("HH:mm");
           return Text("$date\n$time", style: theme.textTheme.bodyMedium);
         },
       ),
-      AppTableColumn<Expense>(
+      AppTableColumn<Revenue>(
         title: 'Amount',
         flex: 2,
-        cellBuilder: (ctx, expense) {
+        cellBuilder: (ctx, revenue) {
           final theme = Theme.of(ctx);
-          return Text("- ${expense.amount.toCurrency}", style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.error,
-            fontWeight: FontWeight.w600,
-          ));
+          return Text(
+            revenue.amount.toCurrency,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: revenue.amount > 0
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.error,
+            ),
+          );
         },
       ),
-      AppTableColumn<Expense>(
+      AppTableColumn<Revenue>(
         title: 'Payment Method',
         flex: 2,
-        cellBuilder: (ctx, expense) {
+        cellBuilder: (ctx, revenue) {
           return PaymentMethodChip(
-            method: expense.paymentMethod,
+            method: revenue.paymentMethod,
             iconSize: 16,
             fontSize: 13,
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

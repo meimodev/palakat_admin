@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:palakat_admin/core/constants/enums.dart';
 
@@ -83,17 +84,24 @@ extension BillingStatusExtension on BillingStatus {
 extension PaymentMethodExtension on PaymentMethod {
   String get displayName {
     switch (this) {
-      case PaymentMethod.creditCard:
-        return 'Credit Card';
-      case PaymentMethod.bankTransfer:
-        return 'Bank Transfer';
       case PaymentMethod.cash:
         return 'Cash';
-      case PaymentMethod.check:
-        return 'Check';
-      case PaymentMethod.digitalWallet:
-        return 'Digital Wallet';
+      case PaymentMethod.cashless:
+        return 'Cashless';
     }
   }
+
+  /// Returns the icon and color for this payment method
+  (IconData icon, Color color) get iconAndColor {
+    switch (this) {
+      case PaymentMethod.cash:
+        return (Icons.money, Colors.orange);
+      case PaymentMethod.cashless:
+        return (Icons.contactless, Colors.indigo);
+    }
+  }
+
+  IconData get icon => iconAndColor.$1;
+  Color get color => iconAndColor.$2;
 }
 

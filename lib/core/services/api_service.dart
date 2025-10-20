@@ -23,8 +23,8 @@ class ApiService {
       }
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to delete activity');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to delete activity', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to delete activity', e, st);
     }
   }
 
@@ -65,8 +65,8 @@ class ApiService {
       }
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to fetch approval rules');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to fetch approval rules', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to fetch approval rules', e, st);
     }
   }
 }

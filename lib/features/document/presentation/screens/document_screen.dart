@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:palakat_admin/models.dart' hide Column;
+import 'package:palakat_admin/utils.dart';
 import 'package:palakat_admin/widgets.dart';
 
 class DocumentScreen extends ConsumerStatefulWidget {
@@ -104,47 +105,16 @@ class _DocumentScreenState extends ConsumerState<DocumentScreen> {
   }
 
   void _openIdentityDrawer() {
-    showGeneralDialog(
+    DrawerUtils.showDrawer(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Close',
-      pageBuilder: (ctx, anim, secAnim) => const SizedBox.shrink(),
-      transitionBuilder: (ctx, anim, secAnim, child) {
-        final curved = CurvedAnimation(
-          parent: anim,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        );
-        return Stack(
-          children: [
-            Opacity(
-              opacity: 0.4 * curved.value,
-              child: const ModalBarrier(
-                dismissible: true,
-                color: Colors.black54,
-              ),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(1, 0),
-                  end: Offset.zero,
-                ).animate(curved),
-                child: _IdentityNumberEditDrawer(
-                  currentTemplate: _identityNumberTemplate,
-                  onSave: (val) {
-                    setState(() => _identityNumberTemplate = val);
-                    Navigator.of(ctx).pop();
-                  },
-                  onClose: () => Navigator.of(ctx).pop(),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-      transitionDuration: const Duration(milliseconds: 300),
+      drawer: _IdentityNumberEditDrawer(
+        currentTemplate: _identityNumberTemplate,
+        onSave: (val) {
+          setState(() => _identityNumberTemplate = val);
+          DrawerUtils.closeDrawer(context);
+        },
+        onClose: () => DrawerUtils.closeDrawer(context),
+      ),
     );
   }
 

@@ -50,6 +50,7 @@ abstract class AppError with _$AppError {
       message: message,
       details: details,
       timestamp: DateTime.now(),
+
     );
   }
 

@@ -17,35 +17,12 @@ class ActivitiesScreen extends ConsumerStatefulWidget {
 class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
   /// Shows activity drawer for viewing
   void _showActivityDrawer(int activityId) {
-    showGeneralDialog(
+    DrawerUtils.showDrawer(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      barrierColor: Colors.black54,
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return Align(
-          alignment: Alignment.centerRight,
-          child: Material(
-            child: ActivityDetailDrawer(
-              activityId: activityId,
-              onClose: () => Navigator.of(context).pop(),
-            ),
-          ),
-        );
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return SlideTransition(
-          position:
-              Tween<Offset>(
-                begin: const Offset(1.0, 0.0),
-                end: Offset.zero,
-              ).animate(
-                CurvedAnimation(parent: animation, curve: Curves.easeInOut),
-              ),
-          child: child,
-        );
-      },
+      drawer: ActivityDetailDrawer(
+        activityId: activityId,
+        onClose: () => DrawerUtils.closeDrawer(context),
+      ),
     );
   }
 
@@ -192,14 +169,8 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
         flex: 2,
         cellBuilder: (ctx, activity) {
           final theme = Theme.of(ctx);
-          final date = AppDateUtils.formatCustom(
-            activity.createdAt,
-            "EEEE, dd MMMM yyyy",
-          );
-          final time = AppDateUtils.formatCustom(
-            activity.createdAt,
-            "HH:mm ",
-          );
+          final date = activity.createdAt.toCustomFormat("EEEE, dd MMMM yyyy");
+          final time = activity.createdAt.toCustomFormat("HH:mm ");
           return Text(
             "$date\n$time",
             style: theme.textTheme.bodyMedium,

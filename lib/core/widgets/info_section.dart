@@ -4,12 +4,16 @@ class InfoSection extends StatelessWidget {
   final String title;
   final List<Widget> children;
   final double titleSpacing;
+  final Widget? trailing;
+  final Widget? action;
 
   const InfoSection({
     super.key,
     required this.title,
     required this.children,
     this.titleSpacing = 12,
+    this.trailing,
+    this.action,
   });
 
   @override
@@ -18,11 +22,25 @@ class InfoSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (action != null) ...[
+                  const SizedBox(width: 8),
+                  action!,
+                ],
+              ],
+            ),
+            if (trailing != null) trailing!,
+          ],
         ),
         SizedBox(height: titleSpacing),
         ...children,
@@ -64,6 +82,7 @@ class InfoRow extends StatelessWidget {
   final double labelWidth;
   final double spacing;
   final EdgeInsets? contentPadding;
+  final TextStyle? valueStyle;
 
   const InfoRow({
     super.key,
@@ -74,6 +93,7 @@ class InfoRow extends StatelessWidget {
     this.labelWidth = 120,
     this.spacing = 16,
     this.contentPadding,
+    this.valueStyle,
   });
 
   @override
@@ -100,7 +120,7 @@ class InfoRow extends StatelessWidget {
             child: valueWidget ??
                 Text(
                   value,
-                  style: theme.textTheme.bodyMedium,
+                  style: valueStyle ?? theme.textTheme.bodyMedium,
                 ),
           ),
         ],

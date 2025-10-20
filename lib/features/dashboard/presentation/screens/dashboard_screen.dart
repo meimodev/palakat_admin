@@ -33,7 +33,7 @@ class DashboardScreen extends StatelessWidget {
                 icon: Icons.groups_outlined,
               ),
               _StatCard(
-                title: 'Total Income',
+                title: 'Total Revenue',
                 value: '\$45,231.89',
                 icon: Icons.attach_money,
               ),
@@ -134,7 +134,7 @@ class _StatCard extends StatelessWidget {
           Text(
             title == 'Total Members'
                 ? '+20 from last month'
-                : title == 'Total Income'
+                : title == 'Total Revenue'
                 ? '+12.5% from last month'
                 : title == 'Total Expenses'
                 ? '+8.1% from last month'

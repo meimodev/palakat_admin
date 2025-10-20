@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:palakat_admin/models.dart' hide Column;
+import 'package:palakat_admin/utils.dart';
 import 'package:palakat_admin/widgets.dart';
 import 'package:palakat_admin/models.dart' as cm show Column;
 import 'package:palakat_admin/features/church/church.dart';
@@ -19,408 +20,270 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
   ChurchState get state => ref.watch(churchControllerProvider);
 
   void _openEditDrawer(Church church) {
-    showGeneralDialog(
+    DrawerUtils.showDrawer(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      barrierColor: Colors.black54,
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return Align(
-          alignment: Alignment.centerRight,
-          child: Material(
-            child: InfoEditDrawer(
-              church: church,
-              onSave: (updatedChurch) async {
-                try {
-                  await churchController.saveChurch(updatedChurch);
-                  if (!context.mounted) return;
-                  churchController.fetchChurch();
-                  AppSnackbars.showSuccess(
-                    context,
-                    title: 'Saved',
-                    message: 'Church updated successfully',
-                  );
-                } catch (e) {
-                  if (!context.mounted) return;
-                  final msg = e is AppError
-                      ? e.userMessage
-                      : 'Failed to update church';
-                  final code = e is AppError ? e.statusCode : null;
-                  AppSnackbars.showError(
-                    context,
-                    title: 'Update failed',
-                    message: msg,
-                    statusCode: code,
-                  );
-                }
-              },
-              onClose: () => Navigator.of(context).pop(),
-            ),
-          ),
-        );
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return SlideTransition(
-          position:
-              Tween<Offset>(
-                begin: const Offset(1.0, 0.0),
-                end: Offset.zero,
-              ).animate(
-                CurvedAnimation(parent: animation, curve: Curves.easeInOut),
-              ),
-          child: child,
-        );
-      },
+      drawer: InfoEditDrawer(
+        church: church,
+        onSave: (updatedChurch) async {
+          try {
+            await churchController.saveChurch(updatedChurch);
+            if (!context.mounted) return;
+            churchController.fetchChurch();
+            AppSnackbars.showSuccess(
+              context,
+              title: 'Saved',
+              message: 'Church updated successfully',
+            );
+          } catch (e) {
+            if (!context.mounted) return;
+            final msg = e is AppError
+                ? e.userMessage
+                : 'Failed to update church';
+            final code = e is AppError ? e.statusCode : null;
+            AppSnackbars.showError(
+              context,
+              title: 'Update failed',
+              message: msg,
+              statusCode: code,
+            );
+          }
+        },
+        onClose: () => DrawerUtils.closeDrawer(context),
+      ),
     );
   }
 
   void _openLocationEditDrawer(Church church) {
-    showGeneralDialog(
+    DrawerUtils.showDrawer(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      barrierColor: Colors.black54,
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return Align(
-          alignment: Alignment.centerRight,
-          child: Material(
-            child: LocationEditDrawer(
-              church: church,
-              onSave: (updatedChurch) async {
-                try {
-                  await churchController.saveLocation(updatedChurch.location!);
-                  if (!context.mounted) return;
-                  // Refresh the specific location card to reflect latest data
-                  final locationId = church.locationId;
-                  if (locationId != null) {
-                    churchController.fetchLocation(locationId);
-                  }
-                  AppSnackbars.showSuccess(
-                    context,
-                    title: 'Saved',
-                    message: 'Location updated successfully',
-                  );
-                } catch (e) {
-                  if (!context.mounted) return;
-                  final msg = e is AppError
-                      ? e.userMessage
-                      : 'Failed to update location';
-                  final code = e is AppError ? e.statusCode : null;
-                  AppSnackbars.showError(
-                    context,
-                    title: 'Update failed',
-                    message: msg,
-                    statusCode: code,
-                  );
-                }
-              },
-              onClose: () => Navigator.of(context).pop(),
-            ),
-          ),
-        );
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return SlideTransition(
-          position:
-              Tween<Offset>(
-                begin: const Offset(1.0, 0.0),
-                end: Offset.zero,
-              ).animate(
-                CurvedAnimation(parent: animation, curve: Curves.easeInOut),
-              ),
-          child: child,
-        );
-      },
+      drawer: LocationEditDrawer(
+        church: church,
+        onSave: (updatedChurch) async {
+          try {
+            await churchController.saveLocation(updatedChurch.location!);
+            if (!context.mounted) return;
+            // Refresh the specific location card to reflect latest data
+            final locationId = church.locationId;
+            if (locationId != null) {
+              churchController.fetchLocation(locationId);
+            }
+            AppSnackbars.showSuccess(
+              context,
+              title: 'Saved',
+              message: 'Location updated successfully',
+            );
+          } catch (e) {
+            if (!context.mounted) return;
+            final msg = e is AppError
+                ? e.userMessage
+                : 'Failed to update location';
+            final code = e is AppError ? e.statusCode : null;
+            AppSnackbars.showError(
+              context,
+              title: 'Update failed',
+              message: msg,
+              statusCode: code,
+            );
+          }
+        },
+        onClose: () => DrawerUtils.closeDrawer(context),
+      ),
     );
   }
 
   void _openColumnEditDrawer(cm.Column column) async {
-    showGeneralDialog(
+    DrawerUtils.showDrawer(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      barrierColor: Colors.black54,
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return Align(
-          alignment: Alignment.centerRight,
-          child: Material(
-            child: ColumnEditDrawer(
-              columnId: column.id,
-              churchId: column.churchId,
-              onSave: (updatedColumn) async {
-                try {
-                  await churchController.saveColumn(updatedColumn);
-                  if (!context.mounted) return;
-                  final churchId =
-                      state.church.value?.id ?? updatedColumn.churchId;
-                  churchController.fetchColumns(churchId);
-                  AppSnackbars.showSuccess(
-                    context,
-                    title: 'Saved',
-                    message: 'Column saved successfully',
-                  );
-                } catch (e) {
-                  if (!context.mounted) return;
-                  final msg = e is AppError
-                      ? e.userMessage
-                      : 'Failed to save column';
-                  final code = e is AppError ? e.statusCode : null;
-                  AppSnackbars.showError(
-                    context,
-                    title: 'Save failed',
-                    message: msg,
-                    statusCode: code,
-                  );
-                }
-              },
-              onDelete: () {
-                return churchController
-                    .deleteColumn(column.id!)
-                    .then((_) async {
-                      if (!context.mounted) return;
-                      final churchId =
-                          state.church.value?.id ?? column.churchId;
-                      churchController.fetchColumns(churchId);
-                      AppSnackbars.showSuccess(
-                        context,
-                        title: 'Deleted',
-                        message: 'Column deleted successfully',
-                      );
-                    })
-                    .catchError((e) {
-                      if (!context.mounted) return;
-                      final msg = e is AppError
-                          ? e.userMessage
-                          : 'Failed to delete column';
-                      final code = e is AppError ? e.statusCode : null;
-                      AppSnackbars.showError(
-                        context,
-                        title: 'Delete failed',
-                        message: msg,
-                        statusCode: code,
-                      );
-                    });
-              },
-              onClose: () => Navigator.of(context).pop(),
-            ),
-          ),
-        );
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return SlideTransition(
-          position:
-              Tween<Offset>(
-                begin: const Offset(1.0, 0.0),
-                end: Offset.zero,
-              ).animate(
-                CurvedAnimation(parent: animation, curve: Curves.easeInOut),
-              ),
-          child: child,
-        );
-      },
+      drawer: ColumnEditDrawer(
+        columnId: column.id,
+        churchId: column.churchId,
+        onSave: (updatedColumn) async {
+          try {
+            await churchController.saveColumn(updatedColumn);
+            if (!context.mounted) return;
+            final churchId =
+                state.church.value?.id ?? updatedColumn.churchId;
+            churchController.fetchColumns(churchId);
+            AppSnackbars.showSuccess(
+              context,
+              title: 'Saved',
+              message: 'Column saved successfully',
+            );
+          } catch (e) {
+            if (!context.mounted) return;
+            final msg = e is AppError
+                ? e.userMessage
+                : 'Failed to save column';
+            final code = e is AppError ? e.statusCode : null;
+            AppSnackbars.showError(
+              context,
+              title: 'Save failed',
+              message: msg,
+              statusCode: code,
+            );
+          }
+        },
+        onDelete: () {
+          return churchController
+              .deleteColumn(column.id!)
+              .then((_) async {
+                if (!context.mounted) return;
+                final churchId =
+                    state.church.value?.id ?? column.churchId;
+                churchController.fetchColumns(churchId);
+                AppSnackbars.showSuccess(
+                  context,
+                  title: 'Deleted',
+                  message: 'Column deleted successfully',
+                );
+              })
+              .catchError((e) {
+                if (!context.mounted) return;
+                final msg = e is AppError
+                    ? e.userMessage
+                    : 'Failed to delete column';
+                final code = e is AppError ? e.statusCode : null;
+                AppSnackbars.showError(
+                  context,
+                  title: 'Delete failed',
+                  message: msg,
+                  statusCode: code,
+                );
+              });
+        },
+        onClose: () => DrawerUtils.closeDrawer(context),
+      ),
     );
   }
 
   void _openAddColumnDrawer(int churchId) {
-    showGeneralDialog(
+    DrawerUtils.showDrawer(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      barrierColor: Colors.black54,
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return Align(
-          alignment: Alignment.centerRight,
-          child: Material(
-            child: ColumnEditDrawer(
-              churchId: churchId,
-              onSave: (newColumn) async {
-                try {
-                  await churchController.createColumn(newColumn);
-                  if (!context.mounted) return;
-                  churchController.fetchColumns(newColumn.churchId);
-                  AppSnackbars.showSuccess(
-                    context,
-                    title: 'Saved',
-                    message: 'Column created successfully',
-                  );
-                } catch (e) {
-                  if (!context.mounted) return;
-                  final msg = e is AppError
-                      ? e.userMessage
-                      : 'Failed to create column';
-                  final code = e is AppError ? e.statusCode : null;
-                  AppSnackbars.showError(
-                    context,
-                    title: 'Create failed',
-                    message: msg,
-                    statusCode: code,
-                  );
-                }
-              },
-              onClose: () => Navigator.of(context).pop(),
-            ),
-          ),
-        );
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return SlideTransition(
-          position:
-              Tween<Offset>(
-                begin: const Offset(1.0, 0.0),
-                end: Offset.zero,
-              ).animate(
-                CurvedAnimation(parent: animation, curve: Curves.easeInOut),
-              ),
-          child: child,
-        );
-      },
+      drawer: ColumnEditDrawer(
+        churchId: churchId,
+        onSave: (newColumn) async {
+          try {
+            await churchController.createColumn(newColumn);
+            if (!context.mounted) return;
+            churchController.fetchColumns(newColumn.churchId);
+            AppSnackbars.showSuccess(
+              context,
+              title: 'Saved',
+              message: 'Column created successfully',
+            );
+          } catch (e) {
+            if (!context.mounted) return;
+            final msg = e is AppError
+                ? e.userMessage
+                : 'Failed to create column';
+            final code = e is AppError ? e.statusCode : null;
+            AppSnackbars.showError(
+              context,
+              title: 'Create failed',
+              message: msg,
+              statusCode: code,
+            );
+          }
+        },
+        onClose: () => DrawerUtils.closeDrawer(context),
+      ),
     );
   }
 
   void _openPositionEditDrawer(MemberPosition position) {
-    showGeneralDialog(
+    DrawerUtils.showDrawer(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      barrierColor: Colors.black54,
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return Align(
-          alignment: Alignment.centerRight,
-          child: Material(
-            child: PositionEditDrawer(
-              churchId: state.church.value!.id!,
-              positionId: position.id!,
-              onSave: (updatedPosition) async {
-                try {
-                  await churchController.savePosition(updatedPosition);
-                  if (!context.mounted) return;
-                  churchController.fetchPositions(updatedPosition.churchId);
-                  AppSnackbars.showSuccess(
-                    context,
-                    title: 'Saved',
-                    message: 'Position saved successfully',
-                  );
-                } catch (e) {
-                  if (!context.mounted) return;
-                  final msg = e is AppError
-                      ? e.userMessage
-                      : 'Failed to save position';
-                  final code = e is AppError ? e.statusCode : null;
-                  AppSnackbars.showError(
-                    context,
-                    title: 'Save failed',
-                    message: msg,
-                    statusCode: code,
-                  );
-                }
-              },
-              onDelete: () {
-                final churchId = state.church.value?.id;
-                if (churchId == null) return Future.value();
-                return () async {
-                  try {
-                    await churchController.deletePosition(position.id!);
-                    if (!context.mounted) return;
-                    churchController.fetchPositions(churchId);
-                    AppSnackbars.showSuccess(
-                      context,
-                      title: 'Deleted',
-                      message: 'Position deleted successfully',
-                    );
-                  } catch (e) {
-                    if (!context.mounted) return;
-                    final msg = e is AppError
-                        ? e.userMessage
-                        : 'Failed to delete position';
-                    final code = e is AppError ? e.statusCode : null;
-                    AppSnackbars.showError(
-                      context,
-                      title: 'Delete failed',
-                      message: msg,
-                      statusCode: code,
-                    );
-                  }
-                }();
-              },
-              onClose: () => Navigator.of(context).pop(),
-            ),
-          ),
-        );
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return SlideTransition(
-          position:
-              Tween<Offset>(
-                begin: const Offset(1.0, 0.0),
-                end: Offset.zero,
-              ).animate(
-                CurvedAnimation(parent: animation, curve: Curves.easeInOut),
-              ),
-          child: child,
-        );
-      },
+      drawer: PositionEditDrawer(
+        churchId: state.church.value!.id!,
+        positionId: position.id!,
+        onSave: (updatedPosition) async {
+          try {
+            await churchController.savePosition(updatedPosition);
+            if (!context.mounted) return;
+            churchController.fetchPositions(updatedPosition.churchId);
+            AppSnackbars.showSuccess(
+              context,
+              title: 'Saved',
+              message: 'Position saved successfully',
+            );
+          } catch (e) {
+            if (!context.mounted) return;
+            final msg = e is AppError
+                ? e.userMessage
+                : 'Failed to save position';
+            final code = e is AppError ? e.statusCode : null;
+            AppSnackbars.showError(
+              context,
+              title: 'Save failed',
+              message: msg,
+              statusCode: code,
+            );
+          }
+        },
+        onDelete: () {
+          final churchId = state.church.value?.id;
+          if (churchId == null) return Future.value();
+          return () async {
+            try {
+              await churchController.deletePosition(position.id!);
+              if (!context.mounted) return;
+              churchController.fetchPositions(churchId);
+              AppSnackbars.showSuccess(
+                context,
+                title: 'Deleted',
+                message: 'Position deleted successfully',
+              );
+            } catch (e) {
+              if (!context.mounted) return;
+              final msg = e is AppError
+                  ? e.userMessage
+                  : 'Failed to delete position';
+              final code = e is AppError ? e.statusCode : null;
+              AppSnackbars.showError(
+                context,
+                title: 'Delete failed',
+                message: msg,
+                statusCode: code,
+              );
+            }
+          }();
+        },
+        onClose: () => DrawerUtils.closeDrawer(context),
+      ),
     );
   }
 
   void _openAddPositionDrawer() {
-    showGeneralDialog(
+    DrawerUtils.showDrawer(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      barrierColor: Colors.black54,
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return Align(
-          alignment: Alignment.centerRight,
-          child: Material(
-            child: PositionEditDrawer(
-              churchId: state.church.value!.id!,
-              onSave: (newPosition) async {
-                try {
-                  await churchController.createPosition(newPosition);
-                  if (!context.mounted) return;
-                  churchController.fetchPositions(newPosition.churchId);
-                  AppSnackbars.showSuccess(
-                    context,
-                    title: 'Saved',
-                    message: 'Position created successfully',
-                  );
-                } catch (e) {
-                  if (!context.mounted) return;
-                  final msg = e is AppError
-                      ? e.userMessage
-                      : 'Failed to create position';
-                  final code = e is AppError ? e.statusCode : null;
-                  AppSnackbars.showError(
-                    context,
-                    title: 'Create failed',
-                    message: msg,
-                    statusCode: code,
-                  );
-                }
-              },
-              onClose: () => Navigator.of(context).pop(),
-            ),
-          ),
-        );
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return SlideTransition(
-          position:
-              Tween<Offset>(
-                begin: const Offset(1.0, 0.0),
-                end: Offset.zero,
-              ).animate(
-                CurvedAnimation(parent: animation, curve: Curves.easeInOut),
-              ),
-          child: child,
-        );
-      },
+      drawer: PositionEditDrawer(
+        churchId: state.church.value!.id!,
+        onSave: (newPosition) async {
+          try {
+            await churchController.createPosition(newPosition);
+            if (!context.mounted) return;
+            churchController.fetchPositions(newPosition.churchId);
+            AppSnackbars.showSuccess(
+              context,
+              title: 'Saved',
+              message: 'Position created successfully',
+            );
+          } catch (e) {
+            if (!context.mounted) return;
+            final msg = e is AppError
+                ? e.userMessage
+                : 'Failed to create position';
+            final code = e is AppError ? e.statusCode : null;
+            AppSnackbars.showError(
+              context,
+              title: 'Create failed',
+              message: msg,
+              statusCode: code,
+            );
+          }
+        },
+        onClose: () => DrawerUtils.closeDrawer(context),
+      ),
     );
   }
 

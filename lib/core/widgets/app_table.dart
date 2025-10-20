@@ -580,9 +580,7 @@ class _BuiltInFiltersBarState extends State<_BuiltInFiltersBar> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final children = <Widget>[];
-
     // Search field
     if (widget.config.searchHint != null) {
       children.add(

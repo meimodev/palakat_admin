@@ -16,7 +16,7 @@ import 'features/approval/presentation/screens/approval_screen.dart';
 import 'features/billing/presentation/screens/billing_screen.dart';
 import 'features/church/presentation/screens/church_screen.dart';
 import 'features/document/presentation/screens/document_screen.dart';
-import 'features/income/presentation/screens/income_screen.dart';
+import 'features/revenue/presentation/screens/revenue_screen.dart';
 import 'features/expenses/presentation/screens/expenses_screen.dart';
 import 'features/inventory/presentation/screens/inventory_screen.dart';
 import 'features/account/presentation/screens/account_screen.dart';
@@ -143,12 +143,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(
-            path: '/income',
-            name: 'income',
+            path: '/revenue',
+            name: 'revenue',
             pageBuilder: (context, state) => SmoothPageTransition<void>(
               key: state.pageKey,
-              name: 'income',
-              child: const IncomeScreen(),
+              name: 'revenue',
+              child: const RevenueScreen(),
             ),
           ),
           GoRoute(

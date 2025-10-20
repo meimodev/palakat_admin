@@ -17,6 +17,7 @@ export 'loading_shimmer.dart';
 export 'loading_widget.dart';
 export 'marital_status_dropdown.dart';
 export 'pagination_bar.dart';
+export 'payment_method_chip.dart';
 export 'position_chip.dart';
 export 'position_selector.dart';
 export 'positions_cell.dart';

@@ -94,9 +94,9 @@ class AppSidebar extends ConsumerWidget {
                     ),
                     _NavItem(
                       icon: Icons.attach_money,
-                      label: 'Income',
-                      selected: route.startsWith('/income'),
-                      onTap: () => context.go('/income'),
+                      label: 'Revenue',
+                      selected: route.startsWith('/revenue'),
+                      onTap: () => context.go('/revenue'),
                       color: Colors.green,
                     ),
                     _NavItem(

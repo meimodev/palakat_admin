@@ -1,50 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:palakat_admin/constants.dart';
-import 'package:palakat_admin/extensions.dart';
+import 'package:palakat_admin/core/extension/extension.dart';
 import 'package:palakat_admin/models.dart' hide Column;
 import 'package:palakat_admin/utils.dart';
 import 'package:palakat_admin/widgets.dart';
+import 'package:palakat_admin/features/revenue/revenue.dart';
 import 'package:palakat_admin/features/activities/activities.dart';
 
-class ActivityDetailDrawer extends ConsumerStatefulWidget {
-  final int activityId;
+class RevenueDetailDrawer extends ConsumerStatefulWidget {
+  final int revenueId;
   final VoidCallback onClose;
 
-  const ActivityDetailDrawer({
+  const RevenueDetailDrawer({
     super.key,
-    required this.activityId,
+    required this.revenueId,
     required this.onClose,
   });
 
   @override
-  ConsumerState<ActivityDetailDrawer> createState() =>
-      _ActivityDetailDrawerState();
+  ConsumerState<RevenueDetailDrawer> createState() =>
+      _RevenueDetailDrawerState();
 }
 
-class _ActivityDetailDrawerState extends ConsumerState<ActivityDetailDrawer> {
+class _RevenueDetailDrawerState extends ConsumerState<RevenueDetailDrawer> {
   bool _isLoading = true;
   String? _errorMessage;
-  Activity? _activity;
+  Revenue? _revenue;
 
   @override
   void initState() {
     super.initState();
-    _fetchActivity();
+    _fetchRevenue();
   }
 
-  Future<void> _fetchActivity() async {
+  Future<void> _fetchRevenue() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      final controller = ref.read(activitiesControllerProvider.notifier);
-      final activity = await controller.fetchActivity(widget.activityId);
+      final controller = ref.read(revenueControllerProvider.notifier);
+      final revenue = await controller.fetchRevenue(widget.revenueId);
       if (mounted) {
         setState(() {
-          _activity = activity;
+          _revenue = revenue;
           _isLoading = false;
         });
       }
@@ -58,17 +58,29 @@ class _ActivityDetailDrawerState extends ConsumerState<ActivityDetailDrawer> {
     }
   }
 
+  void _showActivityDetail() {
+    if (_revenue?.activity == null) return;
+    DrawerUtils.showDrawer(
+      context: context,
+      drawer: ActivityDetailDrawer(
+        activityId: _revenue!.activity!.id!,
+        onClose: () => DrawerUtils.closeDrawer(context),
+      ),
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return SideDrawer(
-      title: 'Activity Details',
-      subtitle: 'View detailed information about this activity',
+      title: 'Revenue Details',
+      subtitle: 'View detailed information about this revenue entry',
       onClose: widget.onClose,
       isLoading: _isLoading,
-      loadingMessage: 'Fetching activity details...',
+      loadingMessage: 'Fetching revenue details...',
       errorMessage: _errorMessage,
-      onRetry: _fetchActivity,
-      content: _activity == null
+      onRetry: _fetchRevenue,
+      content: _revenue == null
           ? const SizedBox.shrink()
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,52 +90,69 @@ class _ActivityDetailDrawerState extends ConsumerState<ActivityDetailDrawer> {
                   title: 'Basic Information',
                   children: [
                     InfoRow(
-                      label: 'ID',
-                      value: "# ${_activity!.id?.toString() ?? '-'}",
-                    ),
-                    InfoRow(label: 'Title', value: _activity!.title),
-                    InfoRow(
-                      label: 'Designated Date & Time',
-                      value: _activity!.date.toDateTimeString(),
+                      label: 'Revenue ID',
+                      value: "# ${_revenue!.id?.toString() ?? '-'}",
                     ),
                     InfoRow(
-                      label: 'Type',
-                      value: _activity!.activityType.displayName,
-                      valueWidget: ActivityTypeChip(
-                        type: _activity!.activityType,
+                      label: 'Account Number',
+                      value: _revenue!.accountNumber ?? '-',
+                    ),
+                    InfoRow(
+                      label: 'Amount',
+                      value: _revenue!.amount.toCurrency,
+                      valueStyle: Theme.of(context).textTheme.bodyMedium
+                          ?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                    ),
+                    InfoRow(
+                      label: 'Payment Method',
+                      value: _revenue!.paymentMethod.displayName,
+                      valueWidget: Align(
+                        alignment: Alignment.centerLeft,
+                        child: PaymentMethodChip(method: _revenue!.paymentMethod),
                       ),
                     ),
-                    InfoRow(
-                      label: 'Description',
-                      value: _activity!.description ?? '-',
-                    ),
-                    if (_activity!.note != null)
-                      InfoRow(label: ' Notes', value: _activity!.note!),
                   ],
                 ),
 
                 const SizedBox(height: 24),
+
+                // Activity Information
                 InfoSection(
-                  title: 'Approval Status',
-                  children: [
-                    Builder(
-                      builder: (context) {
-                        final status = _activity!.approvers.approvalStatus;
-                        return StatusChip(
-                          label: status.displayLabel.toUpperCase(),
-                          background: status.backgroundColor,
-                          foreground: status.foregroundColor,
-                          icon: status.icon,
-                          elevated: true,
-                          fontSize: 13.5,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 9,
-                          ),
-                          fullWidth: true,
-                        );
-                      },
+                  title: 'Activity Information',
+                  action: IconButton(
+                    icon: const Icon(Icons.open_in_new, size: 18),
+                    onPressed: _showActivityDetail,
+                    tooltip: 'View Activity Details',
+                    style: IconButton.styleFrom(
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
+                      foregroundColor: Theme.of(context).colorScheme.primary,
+                      padding: const EdgeInsets.all(8),
+                      minimumSize: const Size(32, 32),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
+                  ),
+                  children: [
+                    InfoRow(
+                      label: 'Activity ID',
+                      value: "# ${_revenue!.activity!.id}",
+                    ),
+                    InfoRow(label: 'Title', value: _revenue!.activity!.title),
+                    if (_revenue!.activity!.description != null)
+                      InfoRow(
+                        label: 'Description',
+                        value: _revenue!.activity!.description!,
+                      ),
+                    InfoRow(
+                      label: 'Activity Date & Time',
+                      value: _revenue!.activity!.date.toDateTimeString(),
+                    ),
+                    if (_revenue!.activity!.note != null)
+                      InfoRow(label: 'Note', value: _revenue!.activity!.note!),
                   ],
                 ),
 
@@ -157,11 +186,12 @@ class _ActivityDetailDrawerState extends ConsumerState<ActivityDetailDrawer> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _activity!.supervisor.account?.name ?? '-',
+                            _revenue!.activity!.supervisor.account?.name ?? '-',
                             style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(fontWeight: FontWeight.w600),
                           ),
-                          if (_activity!
+                          if (_revenue!
+                              .activity!
                               .supervisor
                               .membershipPositions
                               .isNotEmpty) ...[
@@ -169,7 +199,8 @@ class _ActivityDetailDrawerState extends ConsumerState<ActivityDetailDrawer> {
                             Wrap(
                               spacing: 6,
                               runSpacing: 6,
-                              children: _activity!
+                              children: _revenue!
+                                  .activity!
                                   .supervisor
                                   .membershipPositions
                                   .map((position) {
@@ -215,92 +246,55 @@ class _ActivityDetailDrawerState extends ConsumerState<ActivityDetailDrawer> {
 
                 const SizedBox(height: 24),
 
-                // Approvers
-                if (_activity!.approvers.isNotEmpty)
-                  InfoSection(
-                    title: 'Approvers',
-                    children: [
-                      ApproversStackDisplay(
-                        approvers: _activity!.approvers,
-                        fallbackDate:
-                            _activity!.updatedAt ?? _activity!.createdAt,
-                      ),
-                    ],
-                  )
-                else
-                  InfoSection(
-                    title: 'Approvers',
-                    children: [
-                      InfoRow(
-                        label: 'Approvers',
-                        value: 'No approvers assigned',
-                      ),
-                    ],
-                  ),
-
-                if (_activity!.location != null) ...[
-                  const SizedBox(height: 24),
-                  InfoSection(
-                    title: 'Location',
-                    children: [
-                      InfoRow(
-                        label: 'Location Name',
-                        value: _activity!.location?.name ?? 'Not specified',
-                      ),
-                      InfoRow(
-                        label: 'Position',
-                        value:
-                            "${_activity!.location?.latitude.toString()} - ${_activity!.location?.longitude.toString()}",
-                      ),
-                    ],
-                  ),
-                ],
-
-                const SizedBox(height: 24),
-              ],
-            ),
-      footer: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.primaryContainer.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.3),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: Theme.of(context).colorScheme.primary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Published activities can only be managed on mobile app by the corresponding supervisor.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
+                // Approval
+                InfoSection(
+                  title: 'Approval',
+                  trailing: Builder(
+                    builder: (context) {
+                      final status =
+                          _revenue!.activity!.approvers.approvalStatus;
+                      final (bg, fg, label, icon) = status.displayProperties;
+                      return StatusChip(
+                        label: label,
+                        background: bg,
+                        foreground: fg,
+                        icon: icon,
+                        fontSize: 12,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
                         ),
+                      );
+                    },
+                  ),
+                  children: [
+                    if (_revenue!.createdAt != null)
+                      InfoRow(
+                        label: 'Approve On',
+                        value:
+                            "${_revenue!.activity!.approvers.approvalDate.toDateTimeString()}"
+                                "\n"
+                                "${_revenue!.activity!.approvers.approvalDate.toRelativeTime()}",
                       ),
-                    ),
+                    if (_revenue!.updatedAt != null)
+                      InfoRow(
+                        label: 'Requested At',
+                        value: "${_revenue!.createdAt!.toDateTimeString()}"
+                            "\n"
+                            "${_revenue!.createdAt!.toRelativeTime()}",
+                      ),
                   ],
                 ),
               ],
             ),
-          ),
-        ],
+      footer: Center(
+        child: FilledButton.icon(
+          onPressed: () {
+            // Placeholder for future actions (e.g., edit, export)
+          },
+          icon: const Icon(Icons.print),
+          label: const Text('Export Receipt'),
+        ),
       ),
     );
   }

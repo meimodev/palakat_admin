@@ -34,8 +34,8 @@ class AuthRepository {
       return auth;
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to sign in');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to sign in', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to sign in', e, st);
     }
   }
 
@@ -58,8 +58,8 @@ class AuthRepository {
       return tokens;
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to refresh tokens');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to refresh tokens', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to refresh tokens', e, st);
     }
   }
 

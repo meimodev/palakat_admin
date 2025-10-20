@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:palakat_admin/core/models/request/get_fetch_member_position_request.dart';
 import 'package:palakat_admin/core/models/request/request.dart';
 import 'package:palakat_admin/features/members/presentation/state/members_screen_state.dart';
 import 'package:palakat_admin/core/models/member_position.dart';
@@ -42,8 +41,8 @@ class MembersRepository {
       );
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to fetch accounts');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to fetch accounts', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to fetch accounts', e, st);
     }
   }
 
@@ -62,8 +61,8 @@ class MembersRepository {
       return Account.fromJson(json);
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to fetch account');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to fetch account', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to fetch account', e, st);
     }
   }
 
@@ -88,8 +87,8 @@ class MembersRepository {
       return Account.fromJson(json);
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to update account');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to update account', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to update account', e, st);
     }
   }
 
@@ -120,8 +119,8 @@ class MembersRepository {
       await http.delete<void>(Endpoints.account(accountId));
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to delete account');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to delete account', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to delete account', e, st);
     }
   }
 
@@ -144,7 +143,7 @@ class MembersRepository {
     } on DioException catch (e, st) {
       throw ErrorMapper.fromDio(e, 'Failed to fetch account counts',st);
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed tofetch account counts', e, st: st);
+      throw ErrorMapper.unknown('Failed tofetch account counts', e, st);
     }
   }
 
@@ -165,7 +164,7 @@ class MembersRepository {
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to create account');
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to create account', e, st: st);
+      throw ErrorMapper.unknown('Failed to create account', e, st);
     }
   }
 
@@ -190,8 +189,8 @@ class MembersRepository {
       );
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to fetch member positions');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to fetch member positions', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to fetch member positions', e, st);
     }
   }
 }

@@ -38,8 +38,8 @@ class ChurchRepository {
       return Church.fromJson(json);
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to fetch church profile');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to fetch church profile', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to fetch church profile', e, st);
     }
   }
 
@@ -62,8 +62,8 @@ class ChurchRepository {
       return Church.fromJson(json);
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to update church profile');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to update church profile', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to update church profile', e, st);
     }
   }
 
@@ -83,8 +83,8 @@ class ChurchRepository {
       return Location.fromJson(json);
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to fetch church profile');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to fetch church profile', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to fetch church profile', e, st);
     }
   }
 
@@ -109,8 +109,8 @@ class ChurchRepository {
       return Location.fromJson(json);
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to update location');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to update location', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to update location', e, st);
     }
   }
 
@@ -135,8 +135,8 @@ class ChurchRepository {
       return cm.Column.fromJson(json);
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to update column');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to update column', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to update column', e, st);
     }
   }
 
@@ -155,8 +155,8 @@ class ChurchRepository {
       return ColumnDetail.fromJson(json);
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to fetch column');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to fetch column', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to fetch column', e, st);
     }
   }
 
@@ -176,8 +176,8 @@ class ChurchRepository {
       return cm.Column.fromJson(json);
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to create column');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to create column', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to create column', e, st);
     }
   }
 
@@ -187,8 +187,8 @@ class ChurchRepository {
       await http.delete<void>(Endpoints.column(columnId: columnId));
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to delete column');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to delete column', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to delete column', e, st);
     }
   }
 
@@ -207,8 +207,8 @@ class ChurchRepository {
           .toList();
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to fetch columns');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to fetch columns', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to fetch columns', e, st);
     }
   }
 
@@ -227,8 +227,8 @@ class ChurchRepository {
           .toList();
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to fetch positions');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to fetch positions', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to fetch positions', e, st);
     }
   }
 
@@ -247,8 +247,8 @@ class ChurchRepository {
       return MemberPositionDetail.fromJson(json);
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to fetch position');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to fetch position', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to fetch position', e, st);
     }
   }
 
@@ -260,8 +260,8 @@ class ChurchRepository {
       );
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to delete position');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to delete position', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to delete position', e, st);
     }
   }
 
@@ -287,8 +287,8 @@ class ChurchRepository {
       return MemberPosition.fromJson(json);
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to update position');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to update position', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to update position', e, st);
     }
 
   }
@@ -309,8 +309,8 @@ class ChurchRepository {
       return MemberPosition.fromJson(json);
     } on DioException catch (e) {
       throw ErrorMapper.fromDio(e, 'Failed to create position');
-    } catch (e) {
-      throw ErrorMapper.unknown('Failed to create position', e);
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to create position', e, st);
     }
   }
 }

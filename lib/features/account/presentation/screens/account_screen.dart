@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:palakat_admin/models.dart' hide Column;
+import 'package:palakat_admin/utils.dart';
 import 'package:palakat_admin/widgets.dart';
 
 class AccountScreen extends StatefulWidget {
@@ -45,34 +46,16 @@ class _AccountScreenState extends State<AccountScreen> {
     Widget? footer,
     double width = 420,
   }) async {
-    await showGeneralDialog(
+    DrawerUtils.showDrawer(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Close',
-      barrierColor: Colors.black38,
-      transitionDuration: const Duration(milliseconds: 250),
-      pageBuilder: (context, anim1, anim2) {
-        return Align(
-          alignment: Alignment.centerRight,
-          child: SideDrawer(
-            title: title,
-            subtitle: subtitle,
-            width: width,
-            onClose: () => Navigator.of(context).pop(),
-            content: content,
-            footer: footer,
-          ),
-        );
-      },
-      transitionBuilder: (context, anim, secondaryAnim, child) {
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(1, 0),
-            end: Offset.zero,
-          ).animate(anim),
-          child: child,
-        );
-      },
+      drawer: SideDrawer(
+        title: title,
+        subtitle: subtitle,
+        width: width,
+        onClose: () => DrawerUtils.closeDrawer(context),
+        content: content,
+        footer: footer,
+      ),
     );
   }
 

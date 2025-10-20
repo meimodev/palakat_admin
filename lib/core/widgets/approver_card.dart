@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:palakat_admin/core/constants/enums.dart';
+import 'package:palakat_admin/core/extension/extension.dart';
 import 'package:palakat_admin/core/models/approver.dart';
 import 'package:palakat_admin/core/services/approver_service.dart';
 import 'package:palakat_admin/core/utils/date_utils.dart';
@@ -26,12 +27,7 @@ class ApproverCardCompact extends ConsumerWidget {
     final statusDisplay = approverService.getStatusDisplay(status);
     final statusColor = Color(statusDisplay.colorValue);
     final lastUpdate = approver.updatedAt ?? approver.createdAt ?? fallbackDate;
-
-    final statusIcon = switch (status) {
-      ApprovalStatus.approved => Icons.check_circle,
-      ApprovalStatus.rejected => Icons.cancel,
-      ApprovalStatus.unconfirmed => Icons.pending,
-    };
+    final statusIcon = status.icon;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -64,7 +60,7 @@ class ApproverCardCompact extends ConsumerWidget {
               if (lastUpdate != null) ...[
                 const SizedBox(height: 1),
                 Text(
-                  AppDateUtils.formatCustom(lastUpdate, "MMM dd, yyyy"),
+                  lastUpdate.toCustomFormat("MMM dd, yyyy"),
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -100,12 +96,7 @@ class ApproverCardFull extends ConsumerWidget {
     final statusColor = Color(statusDisplay.colorValue);
     final lastUpdate = approver.updatedAt ?? approver.createdAt ?? fallbackDate;
     final positions = approver.membership?.membershipPositions ?? [];
-
-    final statusIcon = switch (status) {
-      ApprovalStatus.approved => Icons.check_circle,
-      ApprovalStatus.rejected => Icons.cancel,
-      ApprovalStatus.unconfirmed => Icons.pending,
-    };
+    final statusIcon = status.icon;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -165,7 +156,7 @@ class ApproverCardFull extends ConsumerWidget {
                 if (lastUpdate != null) ...[
                   const SizedBox(height: 6),
                   Text(
-                    AppDateUtils.formatCustom(lastUpdate, "MMM dd, yyyy"),
+                    lastUpdate.toCustomFormat("MMM dd, yyyy"),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -208,6 +199,7 @@ class ApproversWrapDisplay extends StatelessWidget {
     return Wrap(
       spacing: 6,
       runSpacing: 6,
+      direction: Axis.vertical,
       children: approvers
           .map((approver) => ApproverCardCompact(
                 approver: approver,

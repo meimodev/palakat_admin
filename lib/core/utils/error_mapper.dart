@@ -33,7 +33,7 @@ class ErrorMapper {
   }
 
   /// Wrap an unknown error with AppError.unknown and context message
-  static AppError unknown(String message, Object error, {StackTrace? st}) {
+  static AppError unknown(String message, Object error, StackTrace st) {
     // Comprehensive logging with full error details
     _logUnknownError(message, error, st);
     return AppError.unknown('$message: $error', details: error.toString());

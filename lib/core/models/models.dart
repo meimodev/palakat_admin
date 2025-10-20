@@ -21,6 +21,8 @@ export 'church.dart';
 export 'column.dart';
 export 'column_detail.dart';
 export 'document.dart';
+export 'revenue.dart';
+export 'expense.dart';
 export 'location.dart';
 export 'member_position.dart';
 export 'member_position_detail.dart';

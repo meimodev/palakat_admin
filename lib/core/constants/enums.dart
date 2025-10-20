@@ -169,16 +169,10 @@ enum BillingStatus {
 }
 
 enum PaymentMethod {
-  @JsonValue('creditCard')
-  creditCard,
-  @JsonValue('bankTransfer')
-  bankTransfer,
-  @JsonValue('cash')
+  @JsonValue('CASH')
   cash,
-  @JsonValue('check')
-  check,
-  @JsonValue('digitalWallet')
-  digitalWallet,
+  @JsonValue('CASHLESS')
+  cashless,
 }
 
 

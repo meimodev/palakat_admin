@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:palakat_admin/constants.dart';
+import 'package:palakat_admin/utils.dart';
 import 'package:palakat_admin/widgets.dart';
 import 'package:palakat_admin/features/inventory/inventory.dart';
 
@@ -86,128 +87,55 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final theme = Theme.of(context);
 
     return Material(
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Section
-            Text('Inventory', style: theme.textTheme.headlineMedium),
-            const SizedBox(height: 8),
-            Text(
-              'Track church assets and supplies.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 16),
+      child: Center(
+        child: Card(
+          elevation: 8,
+          margin: const EdgeInsets.all(32),
+          child: Container(
+            padding: const EdgeInsets.all(48),
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.construction_rounded,
+                  size: 64,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(height: 24),
 
-            // Main Content Card
-            SurfaceCard(
-              title: 'Inventory List',
-              subtitle: 'All physical assets and supplies.',
-              child: Column(
-                children: [
-                  // Search Bar
-                  TextField(
-                    controller: _searchController,
-                    decoration: const InputDecoration(
-                      hintText: 'Search inventory...',
-                      prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value;
-                        _currentPage = 1;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Table Header
-                  const _InventoryHeader(),
-                  const Divider(height: 1),
-
-                  // Table Rows
-                  ...[
-                    for (final item in _paginatedItems)
-                      _InventoryRow(
-                        item: item,
-                        onTap: () => _showInventoryDetail(item),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Soon you will be able to:',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w800,
                       ),
+                    ),
+                    const SizedBox(height: 6),
+                    _BulletPoint('Manage inventory across congregation'),
+                    _BulletPoint('Centralize data and tracking'),
+                    _BulletPoint('Monitor item location'),
+                    _BulletPoint('Assign responsibility for items'),
                   ],
-
-                  const SizedBox(height: 8),
-
-                  // Pagination
-                  PaginationBar(
-                    total: _filteredItems.length,
-                    pageSize: _rowsPerPage,
-                    page: _currentPage - 1, // PaginationBar expects zero-based
-                    onPageSizeChanged: (value) {
-                      setState(() {
-                        _rowsPerPage = value;
-                        _currentPage = 1;
-                      });
-                    },
-                    onPrev: () {
-                      setState(() {
-                        if (_currentPage > 1) _currentPage--;
-                      });
-                    },
-                    onNext: () {
-                      setState(() {
-                        if (_currentPage < _totalPages) _currentPage++;
-                      });
-                    }, onPageChanged: (int value) {  },
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   void _showInventoryDetail(InventoryItem item) {
-    showGeneralDialog(
+    DrawerUtils.showDrawer(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Close',
-      pageBuilder: (ctx, anim, secAnim) => const SizedBox.shrink(),
-      transitionBuilder: (ctx, anim, secAnim, child) {
-        final curved = CurvedAnimation(
-          parent: anim,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        );
-        return Stack(
-          children: [
-            Opacity(
-              opacity: 0.4 * curved.value,
-              child: const ModalBarrier(
-                dismissible: true,
-                color: Colors.black54,
-              ),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(1, 0),
-                  end: Offset.zero,
-                ).animate(curved),
-                child: InventoryDetailDrawer(
-                  item: item,
-                  onClose: () => Navigator.of(ctx).pop(),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-      transitionDuration: const Duration(milliseconds: 300),
+      drawer: InventoryDetailDrawer(
+        item: item,
+        onClose: () => DrawerUtils.closeDrawer(context),
+      ),
     );
   }
 }
@@ -390,6 +318,41 @@ class _ConditionBadge extends StatelessWidget {
           fontSize: 12,
           fontWeight: FontWeight.w500,
         ),
+      ),
+    );
+  }
+}
+
+class _BulletPoint extends StatelessWidget {
+  final String text;
+
+  const _BulletPoint(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '• ',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              text,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
