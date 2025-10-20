@@ -38,7 +38,7 @@ class DashboardScreen extends StatelessWidget {
                 icon: Icons.attach_money,
               ),
               _StatCard(
-                title: 'Total Expenses',
+                title: 'Total Expense',
                 value: '\$12,789.45',
                 icon: Icons.credit_card,
               ),
@@ -136,7 +136,7 @@ class _StatCard extends StatelessWidget {
                 ? '+20 from last month'
                 : title == 'Total Revenue'
                 ? '+12.5% from last month'
-                : title == 'Total Expenses'
+                : title == 'Total Expense'
                 ? '+8.1% from last month'
                 : 'Check stock levels',
             style: theme.textTheme.bodySmall?.copyWith(

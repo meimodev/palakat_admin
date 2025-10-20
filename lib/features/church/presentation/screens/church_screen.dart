@@ -27,15 +27,16 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
         onSave: (updatedChurch) async {
           try {
             await churchController.saveChurch(updatedChurch);
-            if (!context.mounted) return;
+            if (!mounted) return;
             churchController.fetchChurch();
+            if (!mounted) return;
             AppSnackbars.showSuccess(
               context,
               title: 'Saved',
               message: 'Church updated successfully',
             );
           } catch (e) {
-            if (!context.mounted) return;
+            if (!mounted) return;
             final msg = e is AppError
                 ? e.userMessage
                 : 'Failed to update church';
@@ -61,19 +62,20 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
         onSave: (updatedChurch) async {
           try {
             await churchController.saveLocation(updatedChurch.location!);
-            if (!context.mounted) return;
+            if (!mounted) return;
             // Refresh the specific location card to reflect latest data
             final locationId = church.locationId;
             if (locationId != null) {
               churchController.fetchLocation(locationId);
             }
+            if (!mounted) return;
             AppSnackbars.showSuccess(
               context,
               title: 'Saved',
               message: 'Location updated successfully',
             );
           } catch (e) {
-            if (!context.mounted) return;
+            if (!mounted) return;
             final msg = e is AppError
                 ? e.userMessage
                 : 'Failed to update location';
@@ -100,17 +102,18 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
         onSave: (updatedColumn) async {
           try {
             await churchController.saveColumn(updatedColumn);
-            if (!context.mounted) return;
+            if (!mounted) return;
             final churchId =
                 state.church.value?.id ?? updatedColumn.churchId;
             churchController.fetchColumns(churchId);
+            if (!mounted) return;
             AppSnackbars.showSuccess(
               context,
               title: 'Saved',
               message: 'Column saved successfully',
             );
           } catch (e) {
-            if (!context.mounted) return;
+            if (!mounted) return;
             final msg = e is AppError
                 ? e.userMessage
                 : 'Failed to save column';
@@ -127,10 +130,11 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
           return churchController
               .deleteColumn(column.id!)
               .then((_) async {
-                if (!context.mounted) return;
+                if (!mounted) return;
                 final churchId =
                     state.church.value?.id ?? column.churchId;
                 churchController.fetchColumns(churchId);
+                if (!mounted) return;
                 AppSnackbars.showSuccess(
                   context,
                   title: 'Deleted',
@@ -138,7 +142,7 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
                 );
               })
               .catchError((e) {
-                if (!context.mounted) return;
+                if (!mounted) return;
                 final msg = e is AppError
                     ? e.userMessage
                     : 'Failed to delete column';
@@ -164,15 +168,16 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
         onSave: (newColumn) async {
           try {
             await churchController.createColumn(newColumn);
-            if (!context.mounted) return;
+            if (!mounted) return;
             churchController.fetchColumns(newColumn.churchId);
+            if (!mounted) return;
             AppSnackbars.showSuccess(
               context,
               title: 'Saved',
               message: 'Column created successfully',
             );
           } catch (e) {
-            if (!context.mounted) return;
+            if (!mounted) return;
             final msg = e is AppError
                 ? e.userMessage
                 : 'Failed to create column';
@@ -199,15 +204,16 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
         onSave: (updatedPosition) async {
           try {
             await churchController.savePosition(updatedPosition);
-            if (!context.mounted) return;
+            if (!mounted) return;
             churchController.fetchPositions(updatedPosition.churchId);
+            if (!mounted) return;
             AppSnackbars.showSuccess(
               context,
               title: 'Saved',
               message: 'Position saved successfully',
             );
           } catch (e) {
-            if (!context.mounted) return;
+            if (!mounted) return;
             final msg = e is AppError
                 ? e.userMessage
                 : 'Failed to save position';
@@ -226,15 +232,16 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
           return () async {
             try {
               await churchController.deletePosition(position.id!);
-              if (!context.mounted) return;
+              if (!mounted) return;
               churchController.fetchPositions(churchId);
+              if (!mounted) return;
               AppSnackbars.showSuccess(
                 context,
                 title: 'Deleted',
                 message: 'Position deleted successfully',
               );
             } catch (e) {
-              if (!context.mounted) return;
+              if (!mounted) return;
               final msg = e is AppError
                   ? e.userMessage
                   : 'Failed to delete position';
@@ -261,15 +268,16 @@ class _ChurchScreenState extends ConsumerState<ChurchScreen> {
         onSave: (newPosition) async {
           try {
             await churchController.createPosition(newPosition);
-            if (!context.mounted) return;
+            if (!mounted) return;
             churchController.fetchPositions(newPosition.churchId);
+            if (!mounted) return;
             AppSnackbars.showSuccess(
               context,
               title: 'Saved',
               message: 'Position created successfully',
             );
           } catch (e) {
-            if (!context.mounted) return;
+            if (!mounted) return;
             final msg = e is AppError
                 ? e.userMessage
                 : 'Failed to create position';

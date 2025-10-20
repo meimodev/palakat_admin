@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:palakat_admin/core/constants/enums.dart';
+import 'package:palakat_admin/core/extension/extension.dart';
 
 /// Extension for ApprovalStatus enum providing display properties
 extension ApprovalStatusExtension on ApprovalStatus {
@@ -7,11 +8,11 @@ extension ApprovalStatusExtension on ApprovalStatus {
   String get displayLabel {
     switch (this) {
       case ApprovalStatus.unconfirmed:
-        return 'Pending';
+        return ApprovalStatus.unconfirmed.name.toCamelCase;
       case ApprovalStatus.approved:
-        return 'Approved';
+        return ApprovalStatus.approved.name.toCamelCase;
       case ApprovalStatus.rejected:
-        return 'Rejected';
+        return ApprovalStatus.rejected.name.toCamelCase;
     }
   }
 

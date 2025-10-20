@@ -9,18 +9,18 @@ import 'package:palakat_admin/core/services/local_storage_service.dart';
 import 'core/theme/theme.dart';
 import 'core/layout/app_scaffold.dart';
 import 'core/navigation/page_transitions.dart';
-import 'features/members/presentation/screens/members_screen.dart';
+import 'features/member/presentation/screens/member_screen.dart';
 import 'features/dashboard/presentation/screens/dashboard_screen.dart';
-import 'features/reports/presentation/screens/reports_screen.dart';
+import 'features/report/presentation/screens/report_screen.dart';
 import 'features/approval/presentation/screens/approval_screen.dart';
 import 'features/billing/presentation/screens/billing_screen.dart';
 import 'features/church/presentation/screens/church_screen.dart';
 import 'features/document/presentation/screens/document_screen.dart';
 import 'features/revenue/presentation/screens/revenue_screen.dart';
-import 'features/expenses/presentation/screens/expenses_screen.dart';
+import 'features/expense/presentation/screens/expense_screen.dart';
 import 'features/inventory/presentation/screens/inventory_screen.dart';
 import 'features/account/presentation/screens/account_screen.dart';
-import 'features/activities/presentation/screens/activities_screen.dart';
+import 'features/activity/presentation/screens/activity_screen.dart';
 import 'features/auth/presentation/screens/signin_screen.dart';
 import 'features/auth/application/auth_controller.dart';
 
@@ -94,7 +94,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => SmoothPageTransition<void>(
               key: state.pageKey,
               name: 'members',
-              child: const MembersScreen(),
+              child: const MemberScreen(),
             ),
           ),
           GoRoute(
@@ -112,7 +112,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => SmoothPageTransition<void>(
               key: state.pageKey,
               name: 'activities',
-              child: const ActivitiesScreen(),
+              child: const ActivityScreen(),
             ),
           ),
           GoRoute(
@@ -157,7 +157,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => SmoothPageTransition<void>(
               key: state.pageKey,
               name: 'expenses',
-              child: const ExpensesScreen(),
+              child: const ExpenseScreen(),
             ),
           ),
           GoRoute(
@@ -175,7 +175,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => SmoothPageTransition<void>(
               key: state.pageKey,
               name: 'reports',
-              child: const ReportsScreen(),
+              child: const ReportScreen(),
             ),
           ),
           GoRoute(

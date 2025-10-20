@@ -4,17 +4,17 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:palakat_admin/constants.dart';
 import 'package:palakat_admin/models.dart';
 
-part 'revenue_screen_state.freezed.dart';
+part 'expense_screen_state.freezed.dart';
 
 @freezed
-abstract class RevenueScreenState with _$RevenueScreenState {
-  const factory RevenueScreenState({
-    @Default(AsyncValue.loading()) AsyncValue<PaginationResponseWrapper<Revenue>> revenues,
+abstract class ExpenseScreenState with _$ExpenseScreenState {
+  const factory ExpenseScreenState({
+    @Default(AsyncValue.loading()) AsyncValue<PaginationResponseWrapper<Expense>> expenses,
     @Default('') String searchQuery,
     @Default(DateRangePreset.allTime) DateRangePreset dateRangePreset,
     DateTimeRange? customDateRange,
     PaymentMethod? paymentMethodFilter,
     @Default(10) int pageSize,
     @Default(1) int currentPage,
-  }) = _RevenueScreenState;
+  }) = _ExpenseScreenState;
 }

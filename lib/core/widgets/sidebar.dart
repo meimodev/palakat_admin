@@ -69,14 +69,14 @@ class AppSidebar extends ConsumerWidget {
                     ),
                     _NavItem(
                       icon: Icons.group_outlined,
-                      label: 'Members',
+                      label: 'Member',
                       selected: route.startsWith('/members'),
                       onTap: () => context.go('/members'),
                       color: Colors.teal,
                     ),
                     _NavItem(
                       icon: Icons.event_note,
-                      label: 'Activities',
+                      label: 'Activity',
                       selected: route.startsWith('/activities'),
                       onTap: () => context.go('/activities'),
                       color: Colors.deepOrange,
@@ -84,7 +84,7 @@ class AppSidebar extends ConsumerWidget {
                     const Padding(
                       padding: EdgeInsets.fromLTRB(12, 16, 12, 8),
                       child: Text(
-                        'Reports',
+                        'Report',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -101,7 +101,7 @@ class AppSidebar extends ConsumerWidget {
                     ),
                     _NavItem(
                       icon: Icons.credit_card,
-                      label: 'Expenses',
+                      label: 'Expense',
                       selected: route.startsWith('/expenses'),
                       onTap: () => context.go('/expenses'),
                       color: Colors.purple,
@@ -115,7 +115,7 @@ class AppSidebar extends ConsumerWidget {
                     ),
                     _NavItem(
                       icon: Icons.insert_drive_file_outlined,
-                      label: 'Reports',
+                      label: 'Report',
                       selected: route.startsWith('/reports'),
                       onTap: () => context.go('/reports'),
                       color: Colors.orange,
@@ -147,7 +147,7 @@ class AppSidebar extends ConsumerWidget {
                     ),
                     _NavItem(
                       icon: Icons.check_box_outlined,
-                      label: 'Approvals',
+                      label: 'Approval',
                       selected: route.startsWith('/approval'),
                       onTap: () => context.go('/approval'),
                       color: Colors.cyan,
