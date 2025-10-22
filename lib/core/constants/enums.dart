@@ -175,6 +175,13 @@ enum PaymentMethod {
   cashless,
 }
 
+enum GeneratedBy {
+  @JsonValue('MANUAL')
+  manual,
+  @JsonValue('SYSTEM')
+  system,
+}
+
 
 extension ActivityTypeExtension on ActivityType {
   String get displayName {

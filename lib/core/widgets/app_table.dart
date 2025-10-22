@@ -336,11 +336,12 @@ class _Row<T> extends StatelessWidget {
               ),
             ),
           ],
-          Icon(
-            Icons.chevron_right,
-            size: 20,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+          if (onTap != null)
+            Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
         ],
       ),
     );
@@ -629,7 +630,7 @@ class _BuiltInFiltersBarState extends State<_BuiltInFiltersBar> {
             decoration: const InputDecoration(
               border: OutlineInputBorder(),
               contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              labelText: 'Request Date',
+              labelText: 'Generated Date',
               prefixIcon: Icon(Icons.date_range, size: 18),
             ),
             items: DateRangePreset.values.map(

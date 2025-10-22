@@ -50,10 +50,10 @@ class InfoSection extends StatelessWidget {
 }
 
 class LabeledField extends StatelessWidget {
-  final String label;
+  final String? label;
   final Widget child;
 
-  const LabeledField({super.key, required this.label, required this.child});
+  const LabeledField({super.key,  this.label, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -61,12 +61,16 @@ class LabeledField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: theme.textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.w500,
+        if (label != null) ...[
+          Text(
+            label!,
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
+          const SizedBox(height: 8),
+        ],
+
         const SizedBox(height: 8),
         child,
       ],

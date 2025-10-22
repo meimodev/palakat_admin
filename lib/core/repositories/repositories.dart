@@ -8,3 +8,4 @@ export 'church_repository.dart';
 export 'revenue_repository.dart';
 export 'expense_repository.dart';
 export 'member_repository.dart';
+export 'report_repository.dart';

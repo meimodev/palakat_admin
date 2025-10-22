@@ -33,6 +33,10 @@ class Endpoints {
   static const String expenses = '/expense';
  static String expense(String expenseId) => '/expense/$expenseId';
 
+  // Report
+  static const String reports = '/report';
+  static String report(String reportId) => '/report/$reportId';
+
   // Approvals (rules, requests, etc.)
   static const String approvals = '/approvals';
   static String approval(String approvalId) => '/approvals/$approvalId';

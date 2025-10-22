@@ -1,45 +1,59 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:palakat_admin/constants.dart';
+import 'package:palakat_admin/models.dart' hide Column;
 import 'package:palakat_admin/utils.dart';
 import 'package:palakat_admin/widgets.dart';
 import 'package:palakat_admin/features/report/report.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class ReportScreen extends StatefulWidget {
+class ReportScreen extends ConsumerStatefulWidget {
   const ReportScreen({super.key});
 
   @override
-  State<ReportScreen> createState() => _ReportScreenState();
+  ConsumerState<ReportScreen> createState() => _ReportScreenState();
 }
 
-class _ReportScreenState extends State<ReportScreen> {
-  final TextEditingController _historySearchController =
-      TextEditingController();
-  String? _selectedGenerator;
-
-  int _historyRowsPerPage = 10;
-  int _historyPage = 0;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _historySearchController.dispose();
-    super.dispose();
+class _ReportScreenState extends ConsumerState<ReportScreen> {
+  /// Shows report generation drawer
+  void _showGenerateDrawer(String reportTitle, String description) {
+    DrawerUtils.showDrawer(
+      context: context,
+      drawer: ReportGenerateDrawer(
+        reportTitle: reportTitle,
+        description: description,
+        onClose: () => DrawerUtils.closeDrawer(context),
+        onGenerate: (range) async{
+          if (context.mounted) {
+            // DrawerUtils.closeDrawer(context);
+            // TODO: Call controller.generateReport() with proper data
+            // AppSnackbars.showSuccess(
+            //   context,
+            //   title: 'Report Generated',
+            //   message: 'Your report is being generated.',
+            // );
+            // ref.read(reportControllerProvider.notifier).refresh();
+          }
+        },
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    final ReportScreenState state = ref.watch(reportControllerProvider);
+    final ReportController controller = ref.watch(
+      reportControllerProvider.notifier,
+    );
+
     return Material(
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Report', style: theme.textTheme.headlineMedium),
+            Text('Reports', style: theme.textTheme.headlineMedium),
             const SizedBox(height: 8),
             Text(
               'Generate and view comprehensive report data across all modules.',
@@ -49,49 +63,55 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
             const SizedBox(height: 16),
 
+            // Generate Report Cards
             SurfaceCard(
               title: 'Generate Report',
-              subtitle: 'Create custom report for different modules.',
+              // subtitle: 'Create custom report for different modules.',
               child: Wrap(
                 spacing: 16,
                 runSpacing: 16,
                 children: [
                   _GenerateCard(
-                    title: 'Incoming Document Report',
-                    description: 'Generate a report for documents received.',
-                    onGenerate: () => _openGenerateDrawer(
+                    title: 'Incoming Document',
+                    icon: Icons.mail_outline,
+                    color: Colors.blue,
+                    onGenerate: () => _showGenerateDrawer(
                       'Incoming Document Report',
                       'Generate a report for documents received.',
                     ),
                   ),
                   _GenerateCard(
-                    title: 'Congregation Report',
-                    description: 'Generate a report on the congregation.',
-                    onGenerate: () => _openGenerateDrawer(
+                    title: 'Congregation',
+                    icon: Icons.groups_outlined,
+                    color: Colors.purple,
+                    onGenerate: () => _showGenerateDrawer(
                       'Congregation Report',
                       'Generate a report on the congregation.',
                     ),
                   ),
                   _GenerateCard(
-                    title: 'Services Report',
-                    description: 'Generate a report of all services.',
-                    onGenerate: () => _openGenerateDrawer(
+                    title: 'Services',
+                    icon: Icons.church_outlined,
+                    color: Colors.green,
+                    onGenerate: () => _showGenerateDrawer(
                       'Services Report',
                       'Generate a report of all services.',
                     ),
                   ),
                   _GenerateCard(
-                    title: 'Activity Report',
-                    description: 'Generate a report of all activities.',
-                    onGenerate: () => _openGenerateDrawer(
+                    title: 'Activity',
+                    icon: Icons.local_activity_outlined,
+                    color: Colors.orange,
+                    onGenerate: () => _showGenerateDrawer(
                       'Activity Report',
                       'Generate a report of all activities.',
                     ),
                   ),
                   _GenerateCard(
-                    title: 'Inventory Report',
-                    description: 'Generate a report of all inventory.',
-                    onGenerate: () => _openGenerateDrawer(
+                    title: 'Inventory',
+                    icon: Icons.inventory_2_outlined,
+                    color: Colors.teal,
+                    onGenerate: () => _showGenerateDrawer(
                       'Inventory Report',
                       'Generate a report of all inventory.',
                     ),
@@ -102,55 +122,67 @@ class _ReportScreenState extends State<ReportScreen> {
 
             const SizedBox(height: 24),
 
+            // Report History
             SurfaceCard(
-              title: 'Generated Report History',
-              subtitle: 'View and manage previously generated report data.',
+              title: 'Report History',
+              // subtitle: 'View and manage previously generated reports.',
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _historySearchController,
-                          decoration: const InputDecoration(
-                            hintText: 'Search by report name...',
-                            prefixIcon: Icon(Icons.search),
-                          ),
-                          onChanged: (_) => setState(() => _historyPage = 0),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      DropdownButton<String>(
-                        value: _selectedGenerator,
-                        hint: const Text('All Generators'),
-                        items: ['Manual', 'System']
-                            .map(
-                              (g) => DropdownMenuItem(value: g, child: Text(g)),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedGenerator = value;
-                            _historyPage = 0;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
+                  AppTable<Report>(
+                    loading: state.reports.isLoading,
+                    data: state.reports.value?.data ?? [],
+                    errorText: state.reports.hasError
+                        ? state.reports.error.toString()
+                        : null,
+                    onRetry: () => controller.refresh(),
+                    pagination: () {
+                      final pageSize =
+                          state.reports.value?.pagination.pageSize ?? 10;
+                      final page = state.reports.value?.pagination.page ?? 1;
+                      final total = state.reports.value?.pagination.total ?? 0;
 
-                  const _ReportHistoryHeader(),
-                  const Divider(height: 1),
+                      final hasPrev =
+                          state.reports.value?.pagination.hasPrev ?? false;
+                      final hasNext =
+                          state.reports.value?.pagination.hasNext ?? false;
 
-                  ..._getFilteredHistoryRows().map(
-                    (report) => _ReportHistoryRow(
-                      report: report,
-                      onDownload: () => _downloadReport(context, report.name),
+                      return AppTablePaginationConfig(
+                        total: total,
+                        pageSize: pageSize,
+                        page: page,
+                        onPageSizeChanged: controller.onChangedPageSize,
+                        onPageChanged: controller.onChangedPage,
+                        onPrev: hasPrev ? controller.onPressedPrevPage : null,
+                        onNext: hasNext ? controller.onPressedNextPage : null,
+                      );
+                    }.call(),
+                    filtersConfig: AppTableFiltersConfig(
+                      searchHint: 'Search by report name...',
+                      onSearchChanged: controller.onChangedSearch,
+                      dateRangePreset: state.dateRangePreset,
+                      customDateRange: state.customDateRange,
+                      onDateRangePresetChanged:
+                          controller.onChangedDateRangePreset,
+                      onCustomDateRangeSelected:
+                          controller.onCustomDateRangeSelected,
+                      dropdownLabel: 'By',
+                      dropdownOptions: {
+                        'manual': 'Manual',
+                        'system': 'System',
+                      },
+                      dropdownValue: state.generatedByFilter?.name,
+                      onDropdownChanged: (value) {
+                        final generatedBy = value == null
+                            ? null
+                            : GeneratedBy.values.firstWhere(
+                                (e) => e.name == value,
+                              );
+                        controller.onChangedGeneratedBy(generatedBy);
+                      },
                     ),
+                    columns: _buildTableColumns(context),
                   ),
-
-                  const SizedBox(height: 8),
-                  _buildHistoryPagination(),
                 ],
               ),
             ),
@@ -160,287 +192,199 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  void _openGenerateDrawer(String reportTitle, String description) {
-    DrawerUtils.showDrawer(
-      context: context,
-      drawer: ReportGenerateDrawer(
-        reportTitle: reportTitle,
-        description: description,
-        onClose: () => DrawerUtils.closeDrawer(context),
-        onGenerate: (range) {
-          DrawerUtils.closeDrawer(context);
-          final suffix = range == null
-              ? ''
-              : ' for ${DateFormat('y-MM-dd').format(range.start)} - ${DateFormat('y-MM-dd').format(range.end)}';
-          AppSnackbars.showSuccess(
-            context,
-            title: 'Generating',
-            message: '$reportTitle$suffix',
+  /// Builds the table column configuration for the report table
+  List<AppTableColumn<Report>> _buildTableColumns(BuildContext context) {
+    return [
+      AppTableColumn<Report>(
+        title: 'Report Name',
+        flex: 3,
+        cellBuilder: (ctx, report) {
+          final theme = Theme.of(ctx);
+          return Text(
+            report.name,
+            style: theme.textTheme.bodySmall,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
           );
         },
       ),
-    );
-  }
-
-  List<_GeneratedReport> _getFilteredHistoryRows() {
-    final allReports = _mockGeneratedReports();
-    final query = _historySearchController.text.toLowerCase();
-
-    final filtered = allReports.where((report) {
-      final nameMatches = report.name.toLowerCase().contains(query);
-      final generatorMatches =
-          _selectedGenerator == null || report.generator == _selectedGenerator;
-      return nameMatches && generatorMatches;
-    }).toList();
-
-    final total = filtered.length;
-    final start = (_historyPage * _historyRowsPerPage).clamp(0, total);
-    final end = (start + _historyRowsPerPage).clamp(0, total);
-    return start < end ? filtered.sublist(start, end) : [];
-  }
-
-  Widget _buildHistoryPagination() {
-    final allReports = _mockGeneratedReports();
-    final query = _historySearchController.text.toLowerCase();
-
-    final filtered = allReports.where((report) {
-      final nameMatches = report.name.toLowerCase().contains(query);
-      final generatorMatches =
-          _selectedGenerator == null || report.generator == _selectedGenerator;
-      return nameMatches && generatorMatches;
-    }).toList();
-
-    final total = filtered.length;
-
-    return PaginationBar(
-      total: total,
-      pageSize: _historyRowsPerPage,
-      page: _historyPage,
-      onPageSizeChanged: (v) => setState(() {
-        _historyRowsPerPage = v;
-        _historyPage = 0;
-      }),
-      onPrev: () => setState(() {
-        if (_historyPage > 0) _historyPage -= 1;
-      }),
-      onNext: () => setState(() {
-        final maxPage = (total / _historyRowsPerPage).ceil() - 1;
-        if (_historyPage < maxPage) _historyPage += 1;
-      }), onPageChanged: (int value) {  },
-    );
-  }
-
-  List<_GeneratedReport> _mockGeneratedReports() {
-    return [
-      _GeneratedReport(
-        name: 'Congregation Report - December 2024',
-        generator: 'Manual',
-        generatedAt: DateTime.now().subtract(const Duration(days: 1)),
-        status: 'Ready',
-        fileSize: '2.3 MB',
+      AppTableColumn<Report>(
+        title: 'By',
+        flex: 1,
+        cellBuilder: (ctx, report) {
+          final theme = Theme.of(ctx);
+          final isManual = report.generatedBy == GeneratedBy.manual;
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: isManual
+                  ? theme.colorScheme.primaryContainer
+                  : theme.colorScheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              isManual ? 'Manual' : 'System',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: isManual
+                    ? theme.colorScheme.onPrimaryContainer
+                    : theme.colorScheme.onSecondaryContainer,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          );
+        },
       ),
-      _GeneratedReport(
-        name: 'Services Report - November 2024',
-        generator: 'System',
-        generatedAt: DateTime.now().subtract(const Duration(days: 3)),
-        status: 'Ready',
-        fileSize: '1.8 MB',
+      AppTableColumn<Report>(
+        title: 'On',
+        flex: 2,
+        cellBuilder: (ctx, report) {
+          final theme = Theme.of(ctx);
+          if (report.createdAt == null) {
+            return Text('-', style: theme.textTheme.bodyMedium);
+          }
+          final date = report.createdAt!.toCustomFormat("EEEE, dd MMMM yyyy");
+          return Text(date, style: theme.textTheme.bodyMedium);
+        },
       ),
-      _GeneratedReport(
-        name: 'Activity Report - October 2024',
-        generator: 'Manual',
-        generatedAt: DateTime.now().subtract(const Duration(days: 7)),
-        status: 'Ready',
-        fileSize: '3.1 MB',
+      AppTableColumn<Report>(
+        title: 'File',
+        flex: 2,
+        cellBuilder: (ctx, report) {
+          final theme = Theme.of(ctx);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                report.file.url.split('/').last,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (report.file.sizeInKB > 0) ...[
+                const SizedBox(height: 2),
+                Text(
+                  '${(report.file.sizeInKB / 1024).toStringAsFixed(2)} MB',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
       ),
-      _GeneratedReport(
-        name: 'Inventory Report - September 2024',
-        generator: 'System',
-        generatedAt: DateTime.now().subtract(const Duration(days: 14)),
-        status: 'Ready',
-        fileSize: '1.2 MB',
-      ),
-      _GeneratedReport(
-        name: 'Incoming Document Report - August 2024',
-        generator: 'Manual',
-        generatedAt: DateTime.now().subtract(const Duration(days: 21)),
-        status: 'Ready',
-        fileSize: '4.7 MB',
+      AppTableColumn<Report>(
+        title: '',
+        flex: 1,
+        cellBuilder: (ctx, report) {
+          final theme = Theme.of(ctx);
+          return IconButton(
+            onPressed: () async {
+              if (report.id != null) {
+                final url = Uri.tryParse(report.file.url);
+                if (url == null) {
+                  // ignore: use_build_context_synchronously
+                  AppSnackbars.showError(
+                    ctx,
+                    title: 'Invalid URL',
+                    message: 'Cannot open the report file.',
+                  );
+                  return;
+                }
+                // ignore: use_build_context_synchronously
+                AppSnackbars.showSuccess(
+                  ctx,
+                  title: 'Opening',
+                  message: 'Opening ${report.name}...',
+                );
+                try {
+                  await launchUrl(url);
+                } catch (_) {
+                  // Swallow errors; optionally log if a logger is available
+                }
+              }
+            },
+            icon: const Icon(Icons.download),
+            color: theme.colorScheme.primary,
+            tooltip: 'Download Report',
+          );
+        },
       ),
     ];
   }
 }
 
-void _downloadReport(BuildContext context, String reportName) {
-  ScaffoldMessenger.of(
-    context,
-  ).showSnackBar(SnackBar(content: Text('Downloading $reportName...')));
-}
-
 class _GenerateCard extends StatelessWidget {
   const _GenerateCard({
     required this.title,
-    required this.description,
+    required this.icon,
+    required this.color,
     required this.onGenerate,
   });
+
   final String title;
-  final String description;
+  final IconData icon;
+  final Color color;
   final VoidCallback onGenerate;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      width: 360,
+      width: 240,
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: theme.textTheme.titleLarge),
-            const SizedBox(height: 6),
-            Text(
-              description,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onGenerate,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        icon,
+                        color: color,
+                        size: 24,
+                      ),
+                    ),
+                    const Spacer(),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                  ),
+                ),
+
+              ],
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: onGenerate,
-                child: const Text('Generate'),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
-  }
-}
-
-class _GeneratedReport {
-  final String name;
-  final String generator;
-  final DateTime generatedAt;
-  final String status;
-  final String fileSize;
-
-  const _GeneratedReport({
-    required this.name,
-    required this.generator,
-    required this.generatedAt,
-    required this.status,
-    required this.fileSize,
-  });
-}
-
-class _ReportHistoryHeader extends StatelessWidget {
-  const _ReportHistoryHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    final style = Theme.of(context).textTheme.labelLarge;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-      child: Row(
-        children: [
-          _cell(const Text('Report Name'), flex: 4, style: style),
-          _cell(const Text('Generator'), flex: 2, style: style),
-          _cell(const Text('Generated'), flex: 2, style: style),
-          _cell(const Text('Size'), flex: 1, style: style),
-          _cell(const Text('Actions'), flex: 2, style: style),
-        ],
-      ),
-    );
-  }
-
-  Widget _cell(Widget child, {int flex = 1, TextStyle? style}) {
-    return Expanded(
-      flex: flex,
-      child: DefaultTextStyle(style: style ?? const TextStyle(), child: child),
-    );
-  }
-}
-
-class _ReportHistoryRow extends StatelessWidget {
-  final _GeneratedReport report;
-  final VoidCallback onDownload;
-
-  const _ReportHistoryRow({required this.report, required this.onDownload});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      child: Row(
-        children: [
-          _cell(
-            Text(
-              report.name,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            flex: 4,
-          ),
-          _cell(
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  report.generator,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onPrimaryContainer,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
-            flex: 2,
-          ),
-          _cell(
-            Text(
-              DateFormat('MMM d, y, h:mm a').format(report.generatedAt),
-              style: theme.textTheme.bodyMedium,
-            ),
-            flex: 2,
-          ),
-          _cell(
-            Text(report.fileSize, style: theme.textTheme.bodyMedium),
-            flex: 1,
-          ),
-          _cell(
-            Align(
-              alignment: Alignment.centerLeft,
-              child: IconButton(
-                onPressed: onDownload,
-                icon: const Icon(Icons.download),
-                color: theme.colorScheme.primary,
-                tooltip: 'Download',
-              ),
-            ),
-            flex: 2,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _cell(Widget child, {int flex = 1}) {
-    return Expanded(flex: flex, child: child);
   }
 }
