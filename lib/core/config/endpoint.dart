@@ -37,6 +37,10 @@ class Endpoints {
   static const String reports = '/report';
   static String report(String reportId) => '/report/$reportId';
 
+  // Document
+  static const String documents = '/document';
+  static String document(String documentId) => '/document/$documentId';
+
   // Approvals (rules, requests, etc.)
   static const String approvals = '/approvals';
   static String approval(String approvalId) => '/approvals/$approvalId';

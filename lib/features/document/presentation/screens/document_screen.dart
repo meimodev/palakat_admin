@@ -1,37 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:palakat_admin/models.dart' hide Column;
 import 'package:palakat_admin/utils.dart';
 import 'package:palakat_admin/widgets.dart';
+import 'package:palakat_admin/core/repositories/document_repository.dart';
+import 'package:palakat_admin/features/document/presentation/state/document_controller.dart';
+import 'package:palakat_admin/features/document/presentation/state/document_screen_state.dart';
 
-class DocumentScreen extends ConsumerStatefulWidget {
+class DocumentScreen extends ConsumerWidget {
   const DocumentScreen({super.key});
 
   @override
-  ConsumerState<DocumentScreen> createState() => _DocumentScreenState();
-}
-
-class _DocumentScreenState extends ConsumerState<DocumentScreen> {
-  late final List<Document> _allDocuments;
-  String _identityNumberTemplate = 'DOC-2024-001';
-
-  @override
-  void initState() {
-    super.initState();
-    _allDocuments = _mockDocuments();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-
-    final pageRows = _allDocuments;
+    final DocumentScreenState state = ref.watch(documentControllerProvider);
+    final DocumentController controller = ref.watch(
+      documentControllerProvider.notifier,
+    );
+    final settingsAsync = ref.watch(documentSettingsProvider);
 
     return Material(
       child: SingleChildScrollView(
@@ -49,52 +35,80 @@ class _DocumentScreenState extends ConsumerState<DocumentScreen> {
             const SizedBox(height: 16),
 
             // Document Identity Number card
-            SurfaceCard(
-              title: 'Document Identity Number',
-              subtitle: 'Current template used for new documents.',
-              trailing: FilledButton.icon(
-                onPressed: _openIdentityDrawer,
-                icon: const Icon(Icons.edit),
-                label: const Text('Edit'),
+            settingsAsync.when(
+              data: (settings) => SurfaceCard(
+                title: 'Document Identity Number',
+                subtitle: 'Current template used for new documents.',
+                trailing: FilledButton.icon(
+                  onPressed: () => _openIdentityDrawer(context, ref, settings.identityNumberTemplate),
+                  icon: const Icon(Icons.edit),
+                  label: const Text('Edit'),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Template:',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          settings.identityNumberTemplate,
+                          style: theme.textTheme.titleMedium,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                child: Row(
-                  children: [
-                    Text(
-                      'Template:',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
-                      ),
+              loading: () => SurfaceCard(
+                title: 'Document Identity Number',
+                subtitle: 'Loading...',
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                  child: LoadingShimmer(
+                    child: ShimmerPlaceholders.text(
+                      width: double.infinity,
+                      height: 40,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        _identityNumberTemplate,
-                        style: theme.textTheme.titleMedium,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+                  ),
+                ),
+              ),
+              error: (error, stack) => SurfaceCard(
+                title: 'Document Identity Number',
+                subtitle: 'Failed to load settings',
+                child: _buildErrorWidget(
+                  theme: theme,
+                  error: error,
+                  onRetry: () => ref.invalidate(documentSettingsProvider),
                 ),
               ),
             ),
 
             const SizedBox(height: 16),
 
-            // Recently Approved Documents Section
+            // Document Directory Section
             SurfaceCard(
-              title: 'Recently Approved Documents',
-              subtitle: 'A list of the most recently approved documents.',
+              title: 'Document Directory',
+              subtitle: 'A record of all approved church documents.',
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Header
-                  const _DocumentHeader(),
-                  const Divider(height: 1),
-
-                  // Rows
-                  ...[for (final doc in pageRows) _DocumentRow(document: doc)],
+                  AppTable<Document>(
+                    loading: state.documents.isLoading,
+                    data: state.documents.value?.data ?? [],
+                    errorText: state.documents.hasError
+                        ? state.documents.error.toString()
+                        : null,
+                    onRetry: () => controller.refresh(),
+                    columns: _buildTableColumns(),
+                  ),
                 ],
               ),
             ),
@@ -104,168 +118,98 @@ class _DocumentScreenState extends ConsumerState<DocumentScreen> {
     );
   }
 
-  void _openIdentityDrawer() {
-    DrawerUtils.showDrawer(
-      context: context,
-      drawer: _IdentityNumberEditDrawer(
-        currentTemplate: _identityNumberTemplate,
-        onSave: (val) {
-          setState(() => _identityNumberTemplate = val);
-          DrawerUtils.closeDrawer(context);
-        },
-        onClose: () => DrawerUtils.closeDrawer(context),
-      ),
-    );
-  }
-
-  List<Document> _mockDocuments() {
+  /// Builds the table column configuration for the documents table
+  static List<AppTableColumn<Document>> _buildTableColumns() {
     return [
-      Document(
-        id: '1',
-        name: 'Financial Report Q1 2024',
-        identityNumber: 'FR-2024-Q1-001',
-        approvedDate: DateTime(2024, 3, 15),
-        type: 'Financial Report',
-        status: 'Approved',
+      AppTableColumn<Document>(
+        title: 'Document Name',
+        flex: 3,
+        cellBuilder: (ctx, document) {
+          final theme = Theme.of(ctx);
+          return Text(
+            document.name,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+            overflow: TextOverflow.ellipsis,
+          );
+        },
       ),
-      Document(
-        id: '2',
-        name: 'Budget Proposal 2024',
-        identityNumber: 'BP-2024-002',
-        approvedDate: DateTime(2024, 3, 12),
-        type: 'Budget Proposal',
-        status: 'Approved',
+      AppTableColumn<Document>(
+        title: 'Account Number',
+        flex: 2,
+        cellBuilder: (ctx, document) {
+          final theme = Theme.of(ctx);
+          return Text(
+            document.accountNumber,
+            style: theme.textTheme.bodySmall,
+            overflow: TextOverflow.ellipsis,
+          );
+        },
       ),
-      Document(
-        id: '3',
-        name: 'Church Event Plan',
-        identityNumber: 'CEP-2024-003',
-        approvedDate: DateTime(2024, 3, 10),
-        type: 'Event Plan',
-        status: 'Approved',
-      ),
-      Document(
-        id: '4',
-        name: 'Membership Report',
-        identityNumber: 'MR-2024-004',
-        approvedDate: DateTime(2024, 3, 8),
-        type: 'Report',
-        status: 'Approved',
-      ),
-      Document(
-        id: '5',
-        name: 'Facility Maintenance Plan',
-        identityNumber: 'FMP-2024-005',
-        approvedDate: DateTime(2024, 3, 5),
-        type: 'Maintenance Plan',
-        status: 'Approved',
-      ),
-      Document(
-        id: '6',
-        name: 'Annual Ministry Report',
-        identityNumber: 'AMR-2024-006',
-        approvedDate: DateTime(2024, 3, 3),
-        type: 'Ministry Report',
-        status: 'Approved',
-      ),
-      Document(
-        id: '7',
-        name: 'Youth Program Proposal',
-        identityNumber: 'YPP-2024-007',
-        approvedDate: DateTime(2024, 3, 1),
-        type: 'Program Proposal',
-        status: 'Approved',
-      ),
-      Document(
-        id: '8',
-        name: 'Community Outreach Report',
-        identityNumber: 'REP-CO-2024-004',
-        approvedDate: DateTime(2024, 2, 28),
-        type: 'Report',
-        status: 'Approved',
+      AppTableColumn<Document>(
+        title: 'Created Date',
+        flex: 2,
+        cellBuilder: (ctx, document) {
+          final theme = Theme.of(ctx);
+          return Text(
+            document.createdAt?.toCustomFormat('yyyy-MM-dd HH:mm') ?? 'N/A',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          );
+        },
       ),
     ];
   }
-}
 
-class _DocumentHeader extends StatelessWidget {
-  const _DocumentHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    final style = Theme.of(context).textTheme.labelSmall;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-      child: Row(
-        children: [
-          _cell(const Text('Document Name'), flex: 3, style: style),
-          _cell(const Text('Identity Number'), flex: 2, style: style),
-          _cell(const Text('Type'), flex: 2, style: style),
-          _cell(const Text('Date'), flex: 2, style: style),
-        ],
-      ),
-    );
-  }
-
-  Widget _cell(
-    Widget child, {
-    int flex = 1,
-    TextStyle? style,
-    bool alignEnd = false,
+  Widget _buildErrorWidget({
+    required ThemeData theme,
+    required Object error,
+    required VoidCallback onRetry,
   }) {
-    return Expanded(
-      flex: flex,
-      child: DefaultTextStyle(
-        style: style ?? const TextStyle(),
-        child: Align(
-          alignment: alignEnd ? Alignment.centerRight : Alignment.centerLeft,
-          child: child,
-        ),
-      ),
-    );
-  }
-}
-
-class _DocumentRow extends StatelessWidget {
-  final Document document;
-
-  const _DocumentRow({required this.document});
-
-  @override
-  Widget build(BuildContext context) {
-    final textStyle = Theme.of(context).textTheme.bodySmall;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-      child: Row(
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _cell(
-            Text(
-              document.name,
-              overflow: TextOverflow.ellipsis,
-              style: textStyle,
+          Text(
+            error.toString(),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.error,
             ),
-            flex: 3,
           ),
-          _cell(Text(document.identityNumber, style: textStyle), flex: 2),
-          _cell(Text(document.type, style: textStyle), flex: 2),
-          _cell(
-            Text(
-              DateFormat('y-MM-dd').format(document.approvedDate),
-              style: textStyle,
-            ),
-            flex: 2,
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
           ),
         ],
       ),
     );
   }
 
-  Widget _cell(Widget child, {int flex = 1, bool alignEnd = false}) {
-    return Expanded(
-      flex: flex,
-      child: Align(
-        alignment: alignEnd ? Alignment.centerRight : Alignment.centerLeft,
-        child: child,
+  void _openIdentityDrawer(BuildContext context, WidgetRef ref, String currentTemplate) {
+    DrawerUtils.showDrawer(
+      context: context,
+      drawer: _IdentityNumberEditDrawer(
+        currentTemplate: currentTemplate,
+        onSave: (val) async {
+          final repo = ref.read(documentRepositoryProvider);
+          await repo.updateIdentityTemplate(val);
+          // Refresh provider and show snackbar after successful save
+          ref.invalidate(documentSettingsProvider);
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Template updated successfully')),
+            );
+          }
+        },
+        onClose: () {
+          DrawerUtils.closeDrawer(context);
+        },
       ),
     );
   }
@@ -273,7 +217,7 @@ class _DocumentRow extends StatelessWidget {
 
 class _IdentityNumberEditDrawer extends StatefulWidget {
   final String currentTemplate;
-  final ValueChanged<String> onSave;
+  final Future<void> Function(String) onSave;
   final VoidCallback onClose;
 
   const _IdentityNumberEditDrawer({
@@ -289,6 +233,8 @@ class _IdentityNumberEditDrawer extends StatefulWidget {
 
 class _IdentityNumberEditDrawerState extends State<_IdentityNumberEditDrawer> {
   late final TextEditingController _controller;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -302,6 +248,46 @@ class _IdentityNumberEditDrawerState extends State<_IdentityNumberEditDrawer> {
     super.dispose();
   }
 
+  Future<void> _handleSave() async {
+    final newTemplate = _controller.text.trim();
+    if (newTemplate.isEmpty) {
+      setState(() {
+        _errorMessage = 'Template cannot be empty';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await widget.onSave(newTemplate);
+      // On success, schedule drawer close after any triggered rebuilds complete
+      // This avoids Navigator !_debugLocked assertion when onSave invalidates providers
+      if (!mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          widget.onClose();
+        }
+      });
+    } catch (e) {
+      // On error, show inline error and keep drawer open
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString();
+      });
+    }
+  }
+
+  void _handleRetry() {
+    setState(() {
+      _errorMessage = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -309,6 +295,10 @@ class _IdentityNumberEditDrawerState extends State<_IdentityNumberEditDrawer> {
       title: 'Edit Document Identity Number',
       subtitle: 'Update the template used for new documents',
       onClose: widget.onClose,
+      isLoading: _isLoading,
+      loadingMessage: 'Saving template...',
+      errorMessage: _errorMessage,
+      onRetry: _errorMessage != null ? _handleRetry : null,
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -361,7 +351,7 @@ class _IdentityNumberEditDrawerState extends State<_IdentityNumberEditDrawer> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           FilledButton(
-            onPressed: () => widget.onSave(_controller.text.trim()),
+            onPressed: _handleSave,
             child: const Text('Save Changes'),
           ),
         ],
