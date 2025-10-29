@@ -41,9 +41,9 @@ class Endpoints {
   static const String documents = '/document';
   static String document(String documentId) => '/document/$documentId';
 
-  // Approvals (rules, requests, etc.)
-  static const String approvals = '/approvals';
-  static String approval(String approvalId) => '/approvals/$approvalId';
+  //Approval Rule
+  static const String approvalRules = '/approval-rule';
+  static  String approvalRule(String approvalRuleId) => '/approval-rule/$approvalRuleId';
 
   // Church sub-resources (columns and positions)
   static String churchColumns(String churchId) => '/church/$churchId/columns';

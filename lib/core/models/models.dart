@@ -11,6 +11,7 @@ export 'response/response.dart';
 // Domain models
 export 'account.dart';
 export 'activity.dart';
+export 'approval_rule.dart';
 export 'approval_status.dart';
 export 'approver.dart';
 export 'auth_credentials.dart';

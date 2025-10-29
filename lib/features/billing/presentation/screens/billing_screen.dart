@@ -1,96 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:palakat_admin/constants.dart';
 import 'package:palakat_admin/models.dart' hide Column;
 import 'package:palakat_admin/utils.dart';
 import 'package:palakat_admin/widgets.dart';
+import '../state/billing_controller.dart';
+import '../state/billing_screen_state.dart';
 
-class BillingScreen extends StatefulWidget {
+class BillingScreen extends ConsumerStatefulWidget {
   const BillingScreen({super.key});
 
   @override
-  State<BillingScreen> createState() => _BillingScreenState();
+  ConsumerState<BillingScreen> createState() => _BillingScreenState();
 }
 
-class _BillingScreenState extends State<BillingScreen> {
-  final TextEditingController _searchController = TextEditingController();
-  int _rowsPerPage = 10;
-  int _page = 0;
-  DateTimeRange? _dateRange;
-  BillingStatus? _statusFilter;
+class _BillingScreenState extends ConsumerState<BillingScreen> {
+  late final TextEditingController _searchController;
+  late final Debouncer _searchDebouncer;
 
-  late final List<BillingItem> _allBillingItems;
-  late final List<PaymentHistory> _allPaymentHistory;
+  BillingController get controller => ref.read(billingControllerProvider.notifier);
+  BillingScreenState get state => ref.watch(billingControllerProvider);
 
   @override
   void initState() {
     super.initState();
-    _allBillingItems = _generateMockBillingItems();
-    _allPaymentHistory = _generateMockPaymentHistory();
+    _searchController = TextEditingController();
+    _searchDebouncer = Debouncer(delay: const Duration(milliseconds: 300));
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchDebouncer.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged() {
+    _searchDebouncer(() {
+      controller.updateSearchQuery(_searchController.text);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    // Overdue items for urgent attention
-    final overdueItems =
-        _allBillingItems
-            .where(
-              (item) => item.status == BillingStatus.overdue || item.isOverdue,
-            )
-            .toList()
-          ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
-
-    bool inDateRange(DateTime d) {
-      if (_dateRange == null) return true;
-      final s = DateUtils.dateOnly(_dateRange!.start);
-      final e = DateUtils.dateOnly(_dateRange!.end);
-      final dd = DateUtils.dateOnly(d);
-      final afterStart = dd.isAtSameMomentAs(s) || dd.isAfter(s);
-      final beforeEnd = dd.isAtSameMomentAs(e) || dd.isBefore(e);
-      return afterStart && beforeEnd;
-    }
-
-    final filtered = _allBillingItems.where((item) {
-      final q = _searchController.text.trim().toLowerCase();
-      final dueDateStr = DateFormat(
-        'y-MM-dd',
-      ).format(item.dueDate).toLowerCase();
-      final paidDateStr = item.paidDate != null
-          ? DateFormat('y-MM-dd').format(item.paidDate!).toLowerCase()
-          : '';
-
-      final matchesQuery =
-          q.isEmpty ||
-          (item.id?.toLowerCase().contains(q) ?? false) ||
-          item.description.toLowerCase().contains(q) ||
-          item.type.displayName.toLowerCase().contains(q) ||
-          item.status.displayName.toLowerCase().contains(q) ||
-          item.formattedAmount.toLowerCase().contains(q) ||
-          dueDateStr.contains(q) ||
-          paidDateStr.contains(q) ||
-          (item.notes?.toLowerCase().contains(q) ?? false);
-
-      final matchesStatus =
-          _statusFilter == null || item.status == _statusFilter;
-      final matchesDate = inDateRange(item.dueDate);
-
-      return matchesQuery && matchesStatus && matchesDate;
-    }).toList();
-
-    final total = filtered.length;
-    final start = (_page * _rowsPerPage).clamp(0, total);
-    final end = (start + _rowsPerPage).clamp(0, total);
-    final pageRows = start < end
-        ? filtered.sublist(start, end)
-        : <BillingItem>[];
 
     return Material(
       child: SingleChildScrollView(
@@ -107,152 +62,266 @@ class _BillingScreenState extends State<BillingScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Urgent Overdue Bills
-            if (overdueItems.isNotEmpty) ...[
-              SurfaceCard(
-                title: 'Overdue Bills',
-                subtitle: 'Require urgent attention',
-                child: Column(
-                  children: [
-                    _BillingHeader(),
-                    const Divider(height: 1),
-                    ...[
-                      for (final item in overdueItems)
-                        _BillingRow(
-                          item: item,
-                          onTap: () => _showBillingItemDetail(item),
-                        ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-            ],
+            _buildOverdueBillsSection(theme),
+            _buildPaymentHistorySection(theme),
+            const SizedBox(height: 24),
+            _buildBillingItemsSection(theme),
+          ],
+        ),
+      ),
+    );
+  }
 
-            // (Billing Items card moved to bottom)
+  Widget _cardError({
+    required ThemeData theme,
+    required Object error,
+    required VoidCallback onRetry,
+    required String message,
+  }) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: theme.colorScheme.error.withValues(alpha: 0.2),
+        ),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            message,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.error,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
 
-            // Payment History
+  Widget _buildOverdueBillsSection(ThemeData theme) {
+    final billingItemsAsync = state.billingItems;
+    
+    return billingItemsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (e, st) => const SizedBox.shrink(),
+      data: (items) {
+        final overdueItems = controller.getOverdueItems();
+        
+        if (overdueItems.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Column(
+          children: [
             SurfaceCard(
-              title: 'Payment History',
-              subtitle: 'View all payment transactions and history.',
+              title: 'Overdue Bills',
+              subtitle: 'Require urgent attention',
               child: Column(
                 children: [
-                  _PaymentHistoryHeader(),
+                  _BillingHeader(),
                   const Divider(height: 1),
-                  ...[
-                    for (final payment in _allPaymentHistory.take(10))
-                      _PaymentHistoryRow(payment: payment),
-                  ],
-                  if (_allPaymentHistory.length > 10) ...[
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () => _showFullPaymentHistory(),
-                      child: Text(
-                        'View All ${_allPaymentHistory.length} Payments',
-                      ),
+                  ...overdueItems.map(
+                    (item) => _BillingRow(
+                      item: item,
+                      onTap: () => _showBillingItemDetail(item),
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),
             const SizedBox(height: 24),
+          ],
+        );
+      },
+    );
+  }
 
-            // Billing Items Table (moved to bottom)
-            SurfaceCard(
-              title: 'Billing Items',
-              subtitle: 'Manage church billing and payment records.',
+  Widget _buildPaymentHistorySection(ThemeData theme) {
+    final paymentHistoryAsync = state.paymentHistory;
+
+    return SurfaceCard(
+      title: 'Payment History',
+      subtitle: 'View all payment transactions and history.',
+      child: paymentHistoryAsync.when(
+        loading: () => Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: LoadingShimmer(
               child: Column(
                 children: [
-                  // Search and Filters
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: TextField(
-                          controller: _searchController,
-                          decoration: const InputDecoration(
-                            hintText: 'Search billing items...',
-                            prefixIcon: Icon(Icons.search),
-                            border: OutlineInputBorder(),
-                          ),
-                          onChanged: (_) => setState(() {
-                            _page = 0;
-                          }),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      DropdownButton<BillingStatus?>(
-                        value: _statusFilter,
-                        hint: const Text('All Status'),
-                        items: [
-                          const DropdownMenuItem(
-                            value: null,
-                            child: Text('All Status'),
-                          ),
-                          ...BillingStatus.values.map(
-                            (status) => DropdownMenuItem(
-                              value: status,
-                              child: Text(status.displayName),
-                            ),
-                          ),
-                        ],
-                        onChanged: (status) => setState(() {
-                          _statusFilter = status;
-                          _page = 0;
-                        }),
-                      ),
-                      const SizedBox(width: 8),
-                      DateRangeFilter(
-                        value: _dateRange,
-                        onChanged: (r) => setState(() {
-                          _dateRange = r;
-                          _page = 0;
-                        }),
-                        onClear: () => setState(() {
-                          _dateRange = null;
-                          _page = 0;
-                        }),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Table Header
-                  _BillingHeader(),
-                  const Divider(height: 1),
-
-                  // Table Rows
-                  ...[
-                    for (final item in pageRows)
-                      _BillingRow(
-                        item: item,
-                        onTap: () => _showBillingItemDetail(item),
-                      ),
-                  ],
-
-                  const SizedBox(height: 8),
-                  // Pagination
-                  PaginationBar(
-                    total: total,
-                    pageSize: _rowsPerPage,
-                    page: _page,
-                    onPageSizeChanged: (v) => setState(() {
-                      _rowsPerPage = v;
-                      _page = 0;
-                    }),
-                    onPrev: () => setState(() {
-                      if (_page > 0) _page -= 1;
-                    }),
-                    onNext: () => setState(() {
-                      final maxPage = (total / _rowsPerPage).ceil() - 1;
-                      if (_page < maxPage) _page += 1;
-                    }), onPageChanged: (int value) {  },
-                  ),
+                  ShimmerPlaceholders.table(rows: 5, columns: 5),
                 ],
               ),
             ),
-          ],
+          ),
         ),
+        error: (e, st) => _cardError(
+          theme: theme,
+          error: e,
+          onRetry: controller.fetchPaymentHistory,
+          message: 'Failed to load payment history.',
+        ),
+        data: (payments) {
+          return Column(
+            children: [
+              _PaymentHistoryHeader(),
+              const Divider(height: 1),
+              ...payments.take(10).map(
+                (payment) => _PaymentHistoryRow(payment: payment),
+              ),
+              if (payments.length > 10) ...[
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => _showFullPaymentHistory(payments),
+                  child: Text('View All ${payments.length} Payments'),
+                ),
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildBillingItemsSection(ThemeData theme) {
+    final billingItemsAsync = state.billingItems;
+    final filteredItems = controller.getFilteredBillingItems();
+    final paginatedItems = controller.getPaginatedBillingItems();
+    final total = filteredItems.length;
+
+    return SurfaceCard(
+      title: 'Billing Items',
+      subtitle: billingItemsAsync.hasValue && total > 0
+          ? 'Manage church billing and payment records. Total items: $total'
+          : 'Manage church billing and payment records.',
+      child: billingItemsAsync.when(
+        loading: () => Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: LoadingShimmer(
+              child: Column(
+                children: [
+                  // Search bar shimmer
+                  ShimmerPlaceholders.text(width: double.infinity, height: 48),
+                  const SizedBox(height: 16),
+                  // Table shimmer
+                  ShimmerPlaceholders.table(rows: 5, columns: 5),
+                ],
+              ),
+            ),
+          ),
+        ),
+        error: (e, st) => _cardError(
+          theme: theme,
+          error: e,
+          onRetry: controller.fetchBillingItems,
+          message: 'Failed to load billing items.',
+        ),
+        data: (items) {
+          return Column(
+            children: [
+              // Search and Filters
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: const InputDecoration(
+                        hintText: 'Search billing items...',
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  DropdownButton<BillingStatus?>(
+                    value: state.statusFilter,
+                    hint: const Text('All Status'),
+                    items: [
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('All Status'),
+                      ),
+                      ...BillingStatus.values.map(
+                        (status) => DropdownMenuItem(
+                          value: status,
+                          child: Text(status.displayName),
+                        ),
+                      ),
+                    ],
+                    onChanged: controller.updateStatusFilter,
+                  ),
+                  const SizedBox(width: 8),
+                  DateRangeFilter(
+                    value: state.dateRange,
+                    onChanged: controller.updateDateRange,
+                    onClear: () => controller.updateDateRange(null),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Table Header
+              _BillingHeader(),
+              const Divider(height: 1),
+
+              // Table Rows
+              if (paginatedItems.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    'No billing items found.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                )
+              else
+                ...paginatedItems.map(
+                  (item) => _BillingRow(
+                    item: item,
+                    onTap: () => _showBillingItemDetail(item),
+                  ),
+                ),
+
+              const SizedBox(height: 8),
+              // Pagination
+              PaginationBar(
+                total: total,
+                pageSize: state.rowsPerPage,
+                page: state.page,
+                onPageSizeChanged: (v) => controller.updateRowsPerPage(v),
+                onPrev: () {
+                  if (state.page > 0) controller.updatePage(state.page - 1);
+                },
+                onNext: () {
+                  final maxPage = (total / state.rowsPerPage).ceil() - 1;
+                  if (state.page < maxPage) controller.updatePage(state.page + 1);
+                },
+                onPageChanged: (int value) {},
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -263,52 +332,37 @@ class _BillingScreenState extends State<BillingScreen> {
       drawer: _BillingDetailDrawer(
         item: item!,
         onClose: () => DrawerUtils.closeDrawer(context),
-        onPayment: () {
-          showDialog(
+        onPayment: () async {
+          final result = await showDialog<Map<String, dynamic>?>(
             context: context,
-            builder: (dialogCtx) => _PaymentDialog(
-              item: item,
-              onPayment: (paymentMethod, transactionId, notes) {
-                setState(() {
-                  final index = _allBillingItems.indexWhere(
-                    (i) => i.id == item.id,
-                  );
-                  if (index != -1) {
-                    _allBillingItems[index] = item.copyWith(
-                      status: BillingStatus.paid,
-                      paidDate: DateTime.now(),
-                      paymentMethod: paymentMethod,
-                      transactionId: transactionId,
-                      notes: notes,
-                      updatedAt: DateTime.now(),
-                    );
-                  }
-
-                  _allPaymentHistory.insert(
-                    0,
-                    PaymentHistory(
-                      id: 'PAY-${DateTime.now().millisecondsSinceEpoch}',
-                      billingItemId: item.id ?? '',
-                      amount: item.amount,
-                      paymentMethod: paymentMethod,
-                      transactionId: transactionId,
-                      paymentDate: DateTime.now(),
-                      notes: notes,
-                      processedBy: 'Admin User',
-                    ),
-                  );
-                });
-              },
-            ),
+            builder: (dialogCtx) => _PaymentDialog(item: item),
           );
+
+          if (result != null && mounted) {
+            try {
+              await controller.recordPayment(
+                billingItemId: item.id ?? '',
+                paymentMethod: result['paymentMethod'] as PaymentMethod,
+                transactionId: result['transactionId'] as String?,
+                notes: result['notes'] as String?,
+              );
+
+              if (mounted) {
+                DrawerUtils.closeDrawer(context);
+                AppSnackbars.showSuccess(context, message: 'Payment recorded successfully');
+              }
+            } catch (e) {
+              if (mounted) {
+                AppSnackbars.showError(context, message: 'Failed to record payment: $e');
+              }
+            }
+          }
         },
       ),
     );
   }
 
-  // Payment dialog removed with actions column
-
-  void _showFullPaymentHistory() {
+  void _showFullPaymentHistory(List<PaymentHistory> payments) {
     DrawerUtils.showDrawer(
       context: context,
       drawer: SideDrawer(
@@ -320,135 +374,13 @@ class _BillingScreenState extends State<BillingScreen> {
           children: [
             _PaymentHistoryHeader(),
             const Divider(height: 1),
-            ...[
-              for (final payment in _allPaymentHistory)
-                _PaymentHistoryRow(payment: payment),
-            ],
+            ...payments.map(
+              (payment) => _PaymentHistoryRow(payment: payment),
+            ),
           ],
         ),
       ),
     );
-  }
-
-  List<BillingItem> _generateMockBillingItems() {
-    final now = DateTime.now();
-    return [
-      BillingItem(
-        id: 'BILL-1001',
-        description: 'Monthly System Subscription - September 2024',
-        amount: 1499.00,
-        type: BillingType.subscription,
-        status: BillingStatus.paid,
-        dueDate: now.subtract(const Duration(days: 15)),
-        paidDate: now.subtract(const Duration(days: 10)),
-        paymentMethod: PaymentMethod.cashless,
-        transactionId: 'TXN-CC-001',
-        notes: 'Paid via credit card ending in 4532',
-        createdAt: now.subtract(const Duration(days: 30)),
-        updatedAt: now.subtract(const Duration(days: 10)),
-      ),
-      BillingItem(
-        id: 'BILL-1002',
-        description: 'Setup Fee - Initial Configuration',
-        amount: 2500.00,
-        type: BillingType.oneTime,
-        status: BillingStatus.paid,
-        dueDate: now.subtract(const Duration(days: 45)),
-        paidDate: now.subtract(const Duration(days: 40)),
-        paymentMethod: PaymentMethod.cashless,
-        transactionId: 'TXN-BT-001',
-        createdAt: now.subtract(const Duration(days: 50)),
-        updatedAt: now.subtract(const Duration(days: 40)),
-      ),
-      BillingItem(
-        id: 'BILL-1003',
-        description: 'Monthly System Subscription - October 2024',
-        amount: 1499.00,
-        type: BillingType.subscription,
-        status: BillingStatus.pending,
-        dueDate: now.add(const Duration(days: 5)),
-        createdAt: now.subtract(const Duration(days: 5)),
-        updatedAt: now.subtract(const Duration(days: 5)),
-      ),
-      BillingItem(
-        id: 'BILL-1004',
-        description: 'Additional Storage - 100GB',
-        amount: 299.00,
-        type: BillingType.oneTime,
-        status: BillingStatus.overdue,
-        dueDate: now.subtract(const Duration(days: 5)),
-        notes: 'Payment reminder sent',
-        createdAt: now.subtract(const Duration(days: 20)),
-        updatedAt: now.subtract(const Duration(days: 2)),
-      ),
-      BillingItem(
-        id: 'BILL-1005',
-        description: 'Premium Support Package - Q4 2024',
-        amount: 999.00,
-        type: BillingType.recurring,
-        status: BillingStatus.pending,
-        dueDate: now.add(const Duration(days: 15)),
-        createdAt: now.subtract(const Duration(days: 10)),
-        updatedAt: now.subtract(const Duration(days: 10)),
-      ),
-      BillingItem(
-        id: 'BILL-1006',
-        description: 'Training Session - Staff Onboarding',
-        amount: 1200.00,
-        type: BillingType.oneTime,
-        status: BillingStatus.cancelled,
-        dueDate: now.subtract(const Duration(days: 30)),
-        notes: 'Cancelled due to schedule conflict',
-        createdAt: now.subtract(const Duration(days: 40)),
-        updatedAt: now.subtract(const Duration(days: 25)),
-      ),
-    ];
-  }
-
-  List<PaymentHistory> _generateMockPaymentHistory() {
-    final now = DateTime.now();
-    return [
-      PaymentHistory(
-        id: 'PAY-1001',
-        billingItemId: 'BILL-1001',
-        amount: 1499.00,
-        paymentMethod: PaymentMethod.cashless,
-        transactionId: 'TXN-CC-001',
-        paymentDate: now.subtract(const Duration(days: 10)),
-        notes: 'Automatic payment via saved card',
-        processedBy: 'System',
-      ),
-      PaymentHistory(
-        id: 'PAY-1002',
-        billingItemId: 'BILL-1002',
-        amount: 2500.00,
-        paymentMethod: PaymentMethod.cashless,
-        transactionId: 'TXN-BT-001',
-        paymentDate: now.subtract(const Duration(days: 40)),
-        notes: 'Bank transfer from church account',
-        processedBy: 'Admin User',
-      ),
-      PaymentHistory(
-        id: 'PAY-1003',
-        billingItemId: 'BILL-0998',
-        amount: 1499.00,
-        paymentMethod: PaymentMethod.cashless,
-        transactionId: 'TXN-CC-002',
-        paymentDate: now.subtract(const Duration(days: 45)),
-        notes: 'Monthly subscription payment',
-        processedBy: 'System',
-      ),
-      PaymentHistory(
-        id: 'PAY-1004',
-        billingItemId: 'BILL-0997',
-        amount: 599.00,
-        paymentMethod: PaymentMethod.cashless,
-        transactionId: 'TXN-DW-001',
-        paymentDate: now.subtract(const Duration(days: 60)),
-        notes: 'Paid via PayPal',
-        processedBy: 'Admin User',
-      ),
-    ];
   }
 }
 
@@ -824,9 +756,8 @@ class _BillingDetailDrawer extends StatelessWidget {
 
 class _PaymentDialog extends StatefulWidget {
   final BillingItem item;
-  final Function(PaymentMethod, String?, String?) onPayment;
 
-  const _PaymentDialog({required this.item, required this.onPayment});
+  const _PaymentDialog({required this.item});
 
   @override
   State<_PaymentDialog> createState() => _PaymentDialogState();
@@ -913,16 +844,15 @@ class _PaymentDialogState extends State<_PaymentDialog> {
         ),
         ElevatedButton(
           onPressed: () {
-            widget.onPayment(
-              _paymentMethod,
-              _transactionController.text.trim().isEmpty
+            Navigator.of(context).pop({
+              'paymentMethod': _paymentMethod,
+              'transactionId': _transactionController.text.trim().isEmpty
                   ? null
                   : _transactionController.text.trim(),
-              _notesController.text.trim().isEmpty
+              'notes': _notesController.text.trim().isEmpty
                   ? null
                   : _notesController.text.trim(),
-            );
-            Navigator.of(context).pop();
+            });
           },
           child: const Text('Record Payment'),
         ),

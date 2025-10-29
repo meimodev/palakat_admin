@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:palakat_admin/models.dart' hide Column;
 import 'package:palakat_admin/utils.dart';
 import 'package:palakat_admin/widgets.dart';
-import 'package:palakat_admin/repositories.dart';
+import '../state/approval_controller.dart';
+import '../state/approval_screen_state.dart';
+import '../widgets/approval_edit_drawer.dart';
 
 class ApprovalScreen extends ConsumerStatefulWidget {
   const ApprovalScreen({super.key});
@@ -13,272 +15,268 @@ class ApprovalScreen extends ConsumerStatefulWidget {
 }
 
 class _ApprovalScreenState extends ConsumerState<ApprovalScreen> {
-  late final TextEditingController _searchController;
-  late final Debouncer _searchDebouncer;
+  ApprovalController get controller =>
+      ref.read(approvalControllerProvider.notifier);
 
-  @override
-  void initState() {
-    super.initState();
-    _searchController = TextEditingController();
-    _searchDebouncer = Debouncer(delay: const Duration(milliseconds: 300));
-    _searchController.addListener(_onSearchChanged);
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _searchDebouncer.dispose();
-    super.dispose();
-  }
-
-  void _onSearchChanged() {
-    _searchDebouncer(() {
-      ref.read(approvalScreenStateProvider.notifier)
-          .updateSearchQuery(_searchController.text);
-    });
-  }
-  
+  ApprovalScreenState get state => ref.watch(approvalControllerProvider);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final screenState = ref.watch(approvalScreenStateProvider);
-    final rulesAsync = ref.watch(approvalRulesAsyncProvider);
-    final screenNotifier = ref.read(approvalScreenStateProvider.notifier);
-    
+
     return Material(
-      color: theme.colorScheme.surface,
-      child: rulesAsync.when(
-        loading: () => const AppLoadingWidget(
-          message: 'Loading approval rules...',
-        ),
-        error: (error, stackTrace) => CompactErrorWidget(
-          error: error is AppError 
-            ? error 
-            : AppError.unknown('Failed to load approval rules'),
-          onRetry: () => ref.refresh(approvalRulesAsyncProvider),
-        ),
-        data: (rules) => _buildApprovalContent(
-          context, 
-          theme, 
-          screenState, 
-          rules, 
-          screenNotifier,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Approvals', style: theme.textTheme.headlineMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Configure approval routing rules and requirements.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            _buildApprovalRulesSection(theme),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildApprovalContent(
-    BuildContext context,
-    ThemeData theme,
-    ApprovalScreenStateData screenState,
-    List<ApprovalRule> rules,
-    ApprovalScreenState screenNotifier,
-  ) {
-    final repository = ref.read(approvalRepositoryProvider);
-    final filteredRules = repository.filterApprovalRules(
-      rules,
-      screenState.searchQuery,
-      screenState.activeOnly,
-    );
-    final paginatedRules = repository.getPaginatedApprovalRules(
-      filteredRules,
-      screenState.page,
-      screenState.rowsPerPage,
-    );
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-            Text('Approvals', style: theme.textTheme.headlineMedium),
-            const SizedBox(height: 8),
-            Text(
-              'Configure approval routing rules.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 16),
+  Widget _buildApprovalRulesSection(ThemeData theme) {
+    final rulesAsync = state.rules;
+    final positionsAsync = state.positions;
+    final rules = rulesAsync.value?.data ?? [];
+    final pagination = rulesAsync.value?.pagination;
+    final positions = positionsAsync.value?.data ?? [];
 
-            SurfaceCard(
-              title: 'Approval Rules',
-              subtitle: 'Configure approval routing rules and requirements.',
-              trailing: FilledButton.icon(
-                onPressed: () => _showAddRuleDialog(context),
-                icon: const Icon(Icons.add),
-                label: const Text('Add Rule'),
-              ),
-              child: Column(
-                children: [
-                  // Search and Filter Controls
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          decoration: const InputDecoration(
-                            hintText: 'Search approval rules...',
-                            prefixIcon: Icon(Icons.search),
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      FilterChip(
-                        label: const Text('Active Only'),
-                        selected: screenState.activeOnly == true,
-                        onSelected: (selected) {
-                          screenNotifier.updateActiveFilter(selected ? true : null);
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  // Rules List
-                  if (paginatedRules.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(32.0),
-                      child: Text('No approval rules found'),
-                    )
-                  else
-                    ...paginatedRules.map((rule) => _ApprovalRuleCard(
-                      key: ValueKey(rule.id),
-                      rule: rule,
-                      onEdit: () => _showEditRuleDialog(context, rule),
-                      onToggleActive: () => _toggleRuleActive(rule),
-                    )),
-                ],
-              ),
-            ),
-          ],
+    return SurfaceCard(
+      title: 'Approval Rules',
+      subtitle: 'Configure approval routing rules and requirements',
+      trailing: ElevatedButton.icon(
+        onPressed: rulesAsync.hasValue && positionsAsync.hasValue
+            ? () => _showAddRuleDialog(context)
+            : null,
+        icon: const Icon(Icons.add),
+        label: const Text('Add Rule'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: theme.colorScheme.primary,
+          foregroundColor: theme.colorScheme.onPrimary,
+          disabledBackgroundColor: theme.colorScheme.surfaceContainerHighest,
         ),
-      );
+      ),
+      child: AppTable<ApprovalRule>(
+        loading: rulesAsync.isLoading,
+        data: rules,
+        errorText: rulesAsync.hasError ? rulesAsync.error.toString() : null,
+        onRetry: controller.refresh,
+        filtersConfig: AppTableFiltersConfig(
+          searchHint: 'Search approval rules...',
+          onSearchChanged: controller.onChangedSearch,
+          positionOptions: positions,
+          positionValue:
+              positions.isNotEmpty && state.selectedPositionId != null
+              ? positions.firstWhere(
+                  (p) => p.id == state.selectedPositionId,
+                  orElse: () => positions.first,
+                )
+              : null,
+          onPositionChanged: (position) {
+            controller.onChangedPositionFilter(position?.id);
+          },
+          dropdownLabel: 'Status',
+          dropdownOptions: const {'active': 'Active', 'inactive': 'Inactive'},
+          dropdownValue: state.activeOnly == null
+              ? null
+              : (state.activeOnly! ? 'active' : 'inactive'),
+          onDropdownChanged: (value) {
+            final activeOnly = value == null
+                ? null
+                : (value == 'active' ? true : false);
+            controller.onChangedActiveFilter(activeOnly);
+          },
+        ),
+        pagination: pagination != null
+            ? AppTablePaginationConfig(
+                total: pagination.total,
+                pageSize: pagination.pageSize,
+                page: pagination.page,
+                onPageSizeChanged: controller.onChangedPageSize,
+                onPageChanged: controller.onChangedPage,
+                onPrev: pagination.hasPrev ? controller.onPrevPage : null,
+                onNext: pagination.hasNext ? controller.onNextPage : null,
+              )
+            : null,
+        columns: _buildTableColumns(context),
+        onRowTap: _showEditRuleDialog,
+      ),
+    );
+  }
+
+  /// Builds the table column configuration for the approval rules table
+  List<AppTableColumn<ApprovalRule>> _buildTableColumns(BuildContext context) {
+    return [
+      AppTableColumn<ApprovalRule>(
+        title: 'Rule Name',
+        flex: 3,
+        cellBuilder: (ctx, rule) {
+          final theme = Theme.of(ctx);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                rule.name,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (rule.description != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  rule.description!,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ],
+          );
+        },
+      ),
+      AppTableColumn<ApprovalRule>(
+        title: 'Positions',
+        flex: 2,
+        cellBuilder: (ctx, rule) {
+          final theme = Theme.of(ctx);
+          return Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            children: rule.positions.map((position) {
+              return Chip(
+                label: Text(position.name, style: theme.textTheme.labelSmall),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+                side: BorderSide(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.3),
+                ),
+              );
+            }).toList(),
+          );
+        },
+      ),
+      AppTableColumn<ApprovalRule>(
+        title: 'Status',
+        flex: 1,
+        cellBuilder: (ctx, rule) {
+          final theme = Theme.of(ctx);
+          return Chip(
+            label: Text(
+              rule.active ? 'Active' : 'Inactive',
+              style: theme.textTheme.labelSmall,
+            ),
+            backgroundColor: rule.active
+                ? theme.colorScheme.primaryContainer
+                : theme.colorScheme.surfaceContainerHighest,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+          );
+        },
+      ),
+    ];
   }
 
   void _showAddRuleDialog(BuildContext context) {
-    // TODO: Implement add rule dialog
-    AppSnackbars.showSuccess(
-      context,
-      title: 'Coming soon',
-      message: 'Add rule dialog - Coming soon!',
+    DrawerUtils.showDrawer(
+      context: context,
+      drawer: ApprovalEditDrawer(
+        churchId: controller.church.id!,
+        onSave: (rule) async {
+          try {
+            await controller.saveRule(rule);
+            if (!mounted) return;
+            AppSnackbars.showSuccess(
+              context,
+              title: 'Created',
+              message: 'Approval rule created successfully',
+            );
+          } catch (e) {
+            if (!mounted) return;
+            final msg = e is AppError
+                ? e.userMessage
+                : 'Failed to create approval rule';
+            final code = e is AppError ? e.statusCode : null;
+            AppSnackbars.showError(
+              context,
+              title: 'Create failed',
+              message: msg,
+              statusCode: code,
+            );
+          }
+        },
+        onClose: () => DrawerUtils.closeDrawer(context),
+      ),
     );
   }
 
-  void _showEditRuleDialog(BuildContext context, ApprovalRule rule) {
-    // TODO: Implement edit rule dialog
-    AppSnackbars.showSuccess(
-      context,
-      title: 'Coming soon',
-      message: 'Edit rule: ${rule.name} - Coming soon!',
-    );
-  }
-
-  void _toggleRuleActive(ApprovalRule rule) {
-    // TODO: Implement toggle rule active status
-    AppSnackbars.showSuccess(
-      context,
-      title: 'Coming soon',
-      message: 'Toggle ${rule.name} status - Coming soon!',
-    );
-  }
-}
-
-class _ApprovalRuleCard extends StatelessWidget {
-  final ApprovalRule rule;
-  final VoidCallback onEdit;
-  final VoidCallback onToggleActive;
-
-  const _ApprovalRuleCard({
-    super.key,
-    required this.rule,
-    required this.onEdit,
-    required this.onToggleActive,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        rule.name,
-                        style: theme.textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        rule.description,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Chip(
-                  label: Text(rule.isActive ? 'Active' : 'Inactive'),
-                  backgroundColor: rule.isActive 
-                    ? theme.colorScheme.primaryContainer
-                    : theme.colorScheme.surfaceContainerHighest,
-                ),
-                const SizedBox(width: 8),
-                PopupMenuButton(
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      onTap: onEdit,
-                      child: const Row(
-                        children: [
-                          Icon(Icons.edit),
-                          SizedBox(width: 8),
-                          Text('Edit'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      onTap: onToggleActive,
-                      child: Row(
-                        children: [
-                          Icon(rule.isActive ? Icons.pause : Icons.play_arrow),
-                          const SizedBox(width: 8),
-                          Text(rule.isActive ? 'Deactivate' : 'Activate'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              children: [
-                ...rule.requiredApprovers.map((approver) => Chip(
-                  label: Text(approver),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                )),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Minimum approvals: ${rule.minimumApprovals}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
+  void _showEditRuleDialog(ApprovalRule rule) {
+    DrawerUtils.showDrawer(
+      context: context,
+      drawer: ApprovalEditDrawer(
+        ruleId: rule.id,
+        churchId: controller.church.id!,
+        onSave: (updated) async {
+          try {
+            await controller.saveRule(updated);
+            if (!mounted) return;
+            AppSnackbars.showSuccess(
+              context,
+              title: 'Saved',
+              message: 'Approval rule updated successfully',
+            );
+          } catch (e) {
+            if (!mounted) return;
+            final msg = e is AppError
+                ? e.userMessage
+                : 'Failed to update approval rule';
+            final code = e is AppError ? e.statusCode : null;
+            AppSnackbars.showError(
+              context,
+              title: 'Update failed',
+              message: msg,
+              statusCode: code,
+            );
+          }
+        },
+        onDelete: () async {
+          try {
+            await controller.deleteRule(rule.id!);
+            if (!mounted) return;
+            AppSnackbars.showSuccess(
+              context,
+              title: 'Deleted',
+              message: 'Approval rule deleted successfully',
+            );
+          } catch (e) {
+            if (!mounted) return;
+            final msg = e is AppError
+                ? e.userMessage
+                : 'Failed to delete approval rule';
+            final code = e is AppError ? e.statusCode : null;
+            AppSnackbars.showError(
+              context,
+              title: 'Delete failed',
+              message: msg,
+              statusCode: code,
+            );
+          }
+        },
+        onClose: () => DrawerUtils.closeDrawer(context),
       ),
     );
   }

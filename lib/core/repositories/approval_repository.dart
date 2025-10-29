@@ -1,263 +1,159 @@
+import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../models/async_state.dart' as app_async;
 import '../models/app_error.dart';
-import '../services/api_service.dart';
+import '../models/approval_rule.dart';
+import '../models/member_position.dart';
+import '../models/request/request.dart';
+import '../models/response/response.dart';
+import '../services/http_service.dart';
+import '../utils/error_mapper.dart';
+import '../config/endpoint.dart';
 
 part 'approval_repository.g.dart';
 
-/// Model for approval rules and configurations
-class ApprovalRule {
-  final String id;
-  final String name;
-  final String description;
-  final List<String> requiredApprovers;
-  final int minimumApprovals;
-  final bool isActive;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  const ApprovalRule({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.requiredApprovers,
-    required this.minimumApprovals,
-    required this.isActive,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  /// Create ApprovalRule from JSON data
-  factory ApprovalRule.fromJson(Map<String, dynamic> json) {
-    return ApprovalRule(
-      id: json['id'].toString(),
-      name: json['name'] ?? 'Unknown Rule',
-      description: json['description'] ?? 'No description available',
-      requiredApprovers: List<String>.from(json['approvers'] ?? ['Admin']),
-      minimumApprovals: 1,
-      isActive: json['isActive'] ?? true,
-      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
-      updatedAt: DateTime.tryParse(json['updatedAt'] ?? '') ?? DateTime.now(),
-    );
-  }
-}
-
-/// Repository for managing approval rules and configurations with proper error handling
+/// Repository for managing approval rules and configurations
 class ApprovalRepository {
-  final ApiService _apiService;
+  final Ref _ref;
   
-  ApprovalRepository(this._apiService);
+  ApprovalRepository(this._ref);
   
-  /// Get all approval rules with proper async state handling using HTTP
-  Future<app_async.AsyncState<List<ApprovalRule>>> getApprovalRulesAsync() async {
+  /// Fetch approval rules with pagination
+  Future<PaginationResponseWrapper<ApprovalRule>> fetchApprovalRules({
+    required PaginationRequestWrapper<GetFetchApprovalRulesRequest> paginationRequest,
+  }) async {
     try {
-      final rulesData = await _apiService.getApprovalRules();
-      final rules = rulesData.map((data) => ApprovalRule.fromJson(data)).toList();
-      return app_async.AsyncSuccess(rules);
-    } catch (e) {
-      if (e is AppError) {
-        return app_async.AsyncError(e);
-      }
-      return app_async.AsyncError(AppError.unknown('Failed to load approval rules: $e'));
+      final http = _ref.read(httpServiceProvider);
+      final query = paginationRequest.toJsonFlat((p) => p.toJson());
+      
+      final response = await http.get<Map<String, dynamic>>(
+        Endpoints.approvalRules,
+        queryParameters: query,
+      );
+      
+      final data = response.data ?? {};
+      return PaginationResponseWrapper.fromJson(
+        data,
+        (e) => ApprovalRule.fromJson(e as Map<String, dynamic>),
+      );
+    } on DioException catch (e) {
+      throw ErrorMapper.fromDio(e, 'Failed to fetch approval rules');
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to fetch approval rules', e, st);
     }
   }
-  
-  /// Generate mock approval rules (synchronous version for backward compatibility)
-  List<ApprovalRule> getAllApprovalRules() {
-    return _generateMockApprovalRules();
-  }
-  
-  /// Internal method to generate mock approval rules
-  List<ApprovalRule> _generateMockApprovalRules() {
-    final now = DateTime.now();
-    return [
-      ApprovalRule(
-        id: 'RULE-001',
-        name: 'Financial Transactions',
-        description: 'Approval required for all financial transactions above \$500',
-        requiredApprovers: ['Pastor John', 'Treasurer Mary'],
-        minimumApprovals: 2,
-        isActive: true,
-        createdAt: now.subtract(const Duration(days: 30)),
-        updatedAt: now.subtract(const Duration(days: 5)),
-      ),
-      ApprovalRule(
-        id: 'RULE-002',
-        name: 'Event Planning',
-        description: 'Approval required for church events and activities',
-        requiredApprovers: ['Pastor John', 'Event Coordinator Sarah'],
-        minimumApprovals: 1,
-        isActive: true,
-        createdAt: now.subtract(const Duration(days: 25)),
-        updatedAt: now.subtract(const Duration(days: 10)),
-      ),
-      ApprovalRule(
-        id: 'RULE-003',
-        name: 'Facility Usage',
-        description: 'Approval required for external facility usage requests',
-        requiredApprovers: ['Facility Manager Tom', 'Pastor John'],
-        minimumApprovals: 1,
-        isActive: true,
-        createdAt: now.subtract(const Duration(days: 20)),
-        updatedAt: now.subtract(const Duration(days: 2)),
-      ),
-      ApprovalRule(
-        id: 'RULE-004',
-        name: 'Volunteer Coordination',
-        description: 'Approval required for volunteer role assignments',
-        requiredApprovers: ['Volunteer Coordinator Lisa'],
-        minimumApprovals: 1,
-        isActive: false,
-        createdAt: now.subtract(const Duration(days: 15)),
-        updatedAt: now.subtract(const Duration(days: 1)),
-      ),
-    ];
+
+  /// Fetch membership positions with pagination
+  Future<PaginationResponseWrapper<MemberPosition>> fetchMembershipPositions({
+    required PaginationRequestWrapper<GetFetchPositionsRequest> paginationRequest,
+  }) async {
+    try {
+      final http = _ref.read(httpServiceProvider);
+      final query = paginationRequest.toJsonFlat((p) => p.toJson());
+      
+      final response = await http.get<Map<String, dynamic>>(
+        Endpoints.membershipPositions,
+        queryParameters: query,
+      );
+      
+      final data = response.data ?? {};
+      return PaginationResponseWrapper.fromJson(
+        data,
+        (e) => MemberPosition.fromJson(e as Map<String, dynamic>),
+      );
+    } on DioException catch (e) {
+      throw ErrorMapper.fromDio(e, 'Failed to fetch positions');
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to fetch positions', e, st);
+    }
   }
 
-  /// Filter approval rules based on search query
-  List<ApprovalRule> filterApprovalRules(
-    List<ApprovalRule> rules,
-    String searchQuery,
-    bool? activeOnly,
-  ) {
-    return rules.where((rule) {
-      // Search filter
-      final query = searchQuery.trim().toLowerCase();
-      final matchesQuery = query.isEmpty ||
-          rule.name.toLowerCase().contains(query) ||
-          rule.description.toLowerCase().contains(query) ||
-          rule.requiredApprovers.any((approver) => 
-            approver.toLowerCase().contains(query));
-
-      // Active filter
-      final matchesActiveFilter = activeOnly == null || rule.isActive == activeOnly;
-
-      return matchesQuery && matchesActiveFilter;
-    }).toList();
+  /// Fetch a single approval rule by ID
+  Future<ApprovalRule> fetchApprovalRuleById(int ruleId) async {
+    try {
+      final http = _ref.read(httpServiceProvider);
+      final response = await http.get<Map<String, dynamic>>(
+        Endpoints.approvalRule(ruleId.toString()),
+      );
+      
+      final body = response.data;
+      final Map<String, dynamic> json = body?['data'] ?? {};
+      if (json.isEmpty) {
+        throw AppError.network('Invalid approval rule response payload');
+      }
+      
+      return ApprovalRule.fromJson(json);
+    } on DioException catch (e) {
+      throw ErrorMapper.fromDio(e, 'Failed to fetch approval rule');
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to fetch approval rule', e, st);
+    }
   }
 
-  /// Get paginated approval rules
-  List<ApprovalRule> getPaginatedApprovalRules(
-    List<ApprovalRule> rules,
-    int page,
-    int rowsPerPage,
-  ) {
-    final start = (page * rowsPerPage).clamp(0, rules.length);
-    final end = (start + rowsPerPage).clamp(0, rules.length);
-    return start < end ? rules.sublist(start, end) : <ApprovalRule>[];
+  /// Create a new approval rule
+  Future<ApprovalRule> createApprovalRule(Map<String, dynamic> data) async {
+    try {
+      final http = _ref.read(httpServiceProvider);
+      final response = await http.post<Map<String, dynamic>>(
+        Endpoints.approvalRules,
+        data: data,
+      );
+      
+      final body = response.data;
+      final Map<String, dynamic> json = body?['data'] ?? {};
+      if (json.isEmpty) {
+        throw AppError.network('Invalid create approval rule response payload');
+      }
+      
+      return ApprovalRule.fromJson(json);
+    } on DioException catch (e) {
+      throw ErrorMapper.fromDio(e, 'Failed to create approval rule');
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to create approval rule', e, st);
+    }
+  }
+
+  /// Update an existing approval rule
+  Future<ApprovalRule> updateApprovalRule({
+    required int ruleId,
+    required Map<String, dynamic> data,
+  }) async {
+    try {
+      final http = _ref.read(httpServiceProvider);
+      final response = await http.patch<Map<String, dynamic>>(
+        Endpoints.approvalRule(ruleId.toString()),
+        data: data,
+      );
+      
+      final body = response.data;
+      final Map<String, dynamic> json = body?['data'] ?? {};
+      if (json.isEmpty) {
+        throw AppError.network('Invalid update approval rule response payload');
+      }
+      
+      return ApprovalRule.fromJson(json);
+    } on DioException catch (e) {
+      throw ErrorMapper.fromDio(e, 'Failed to update approval rule');
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to update approval rule', e, st);
+    }
+  }
+
+  /// Delete an approval rule
+  Future<void> deleteApprovalRule(int ruleId) async {
+    try {
+      final http = _ref.read(httpServiceProvider);
+      await http.delete(Endpoints.approvalRule(ruleId.toString()));
+    } on DioException catch (e) {
+      throw ErrorMapper.fromDio(e, 'Failed to delete approval rule');
+    } catch (e, st) {
+      throw ErrorMapper.unknown('Failed to delete approval rule', e, st);
+    }
   }
 }
 
 /// Riverpod provider for ApprovalRepository
 @riverpod
 ApprovalRepository approvalRepository(Ref ref) {
-  final apiService = ref.watch(apiServiceProvider);
-  return ApprovalRepository(apiService);
+  return ApprovalRepository(ref);
 }
 
-/// Provider for all approval rules with async state handling
-@riverpod
-Future<List<ApprovalRule>> approvalRulesAsync(Ref ref) async {
-  final repository = ref.watch(approvalRepositoryProvider);
-  final result = await repository.getApprovalRulesAsync();
-  
-  return result.when(
-    loading: () => throw StateError('Loading'),
-    success: (data) => data,
-    error: (error) => throw error,
-  );
-}
-
-/// Provider for all approval rules (synchronous - for backward compatibility)
-@riverpod
-List<ApprovalRule> allApprovalRules(Ref ref) {
-  final repository = ref.watch(approvalRepositoryProvider);
-  return repository.getAllApprovalRules();
-}
-
-/// State class for approval screen state
-class ApprovalScreenStateData {
-  final String searchQuery;
-  final bool? activeOnly;
-  final int page;
-  final int rowsPerPage;
-
-  const ApprovalScreenStateData({
-    this.searchQuery = '',
-    this.activeOnly,
-    this.page = 0,
-    this.rowsPerPage = 10,
-  });
-
-  ApprovalScreenStateData copyWith({
-    String? searchQuery,
-    bool? activeOnly,
-    bool clearActiveFilter = false,
-    int? page,
-    int? rowsPerPage,
-  }) {
-    return ApprovalScreenStateData(
-      searchQuery: searchQuery ?? this.searchQuery,
-      activeOnly: clearActiveFilter ? null : (activeOnly ?? this.activeOnly),
-      page: page ?? this.page,
-      rowsPerPage: rowsPerPage ?? this.rowsPerPage,
-    );
-  }
-}
-
-/// Provider for approval screen state using Riverpod generator
-@riverpod
-class ApprovalScreenState extends _$ApprovalScreenState {
-  @override
-  ApprovalScreenStateData build() {
-    return const ApprovalScreenStateData();
-  }
-
-  void updateSearchQuery(String query) {
-    state = state.copyWith(searchQuery: query, page: 0);
-  }
-
-  void updateActiveFilter(bool? activeOnly) {
-    state = state.copyWith(activeOnly: activeOnly, page: 0);
-  }
-
-  void clearActiveFilter() {
-    state = state.copyWith(clearActiveFilter: true, page: 0);
-  }
-
-  void updatePage(int page) {
-    state = state.copyWith(page: page);
-  }
-
-  void updateRowsPerPage(int rowsPerPage) {
-    state = state.copyWith(rowsPerPage: rowsPerPage, page: 0);
-  }
-}
-
-/// Provider for filtered approval rules
-@riverpod
-List<ApprovalRule> filteredApprovalRules(Ref ref) {
-  final rules = ref.watch(allApprovalRulesProvider);
-  final screenState = ref.watch(approvalScreenStateProvider);
-  final repository = ref.watch(approvalRepositoryProvider);
-  
-  return repository.filterApprovalRules(
-    rules,
-    screenState.searchQuery,
-    screenState.activeOnly,
-  );
-}
-
-/// Provider for paginated approval rules
-@riverpod
-List<ApprovalRule> paginatedApprovalRules(Ref ref) {
-  final filteredRules = ref.watch(filteredApprovalRulesProvider);
-  final screenState = ref.watch(approvalScreenStateProvider);
-  final repository = ref.watch(approvalRepositoryProvider);
-  
-  return repository.getPaginatedApprovalRules(
-    filteredRules,
-    screenState.page,
-    screenState.rowsPerPage,
-  );
-}
