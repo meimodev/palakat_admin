@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:palakat_admin/core/extension/extension.dart';
 import 'package:palakat_admin/core/models/approver.dart';
-import 'package:palakat_admin/core/services/approver_service.dart';
+import 'package:palakat_admin/core/repositories/approver_repository.dart';
 import 'package:palakat_admin/core/utils/date_utils.dart';
 
 /// Compact approver card for displaying in table cells (wrapped layout)
@@ -19,11 +19,11 @@ class ApproverCardCompact extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final approverService = ref.watch(approverServiceProvider);
+    final approverRepository = ref.watch(approverRepositoryProvider);
     
     final approverName = approver.membership?.account?.name ?? 'Unknown';
     final status = approver.status;
-    final statusDisplay = approverService.getStatusDisplay(status);
+    final statusDisplay = approverRepository.getStatusDisplay(status);
     final statusColor = Color(statusDisplay.colorValue);
     final lastUpdate = approver.updatedAt ?? approver.createdAt ?? fallbackDate;
     final statusIcon = status.icon;
@@ -87,11 +87,11 @@ class ApproverCardFull extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final approverService = ref.watch(approverServiceProvider);
+    final approverRepository = ref.watch(approverRepositoryProvider);
 
     final approverName = approver.membership?.account?.name ?? 'Unknown';
     final status = approver.status;
-    final statusDisplay = approverService.getStatusDisplay(status);
+    final statusDisplay = approverRepository.getStatusDisplay(status);
     final statusColor = Color(statusDisplay.colorValue);
     final lastUpdate = approver.updatedAt ?? approver.createdAt ?? fallbackDate;
     final positions = approver.membership?.membershipPositions ?? [];

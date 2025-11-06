@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:palakat_admin/models.dart';
 import 'package:palakat_admin/repositories.dart';
-import 'package:palakat_admin/core/models/async_state.dart' as app_async;
 import 'package:palakat_admin/core/constants/enums.dart';
 import 'billing_screen_state.dart';
 
@@ -29,12 +28,9 @@ class BillingController extends _$BillingController {
       
       final result = await billingRepo.getBillingItemsAsync();
       
-      state = state.copyWith(
-        billingItems: switch (result) {
-          app_async.AsyncSuccess(data: final data) => AsyncValue.data(data),
-          app_async.AsyncError(error: final error) => AsyncValue.error(error, StackTrace.current),
-          app_async.AsyncLoading() => const AsyncValue.loading(),
-        },
+      result.when(
+        onSuccess: (data) => state = state.copyWith(billingItems: AsyncValue.data(data)),
+        onFailure: (failure) => state = state.copyWith(billingItems: AsyncValue.error(failure.message, StackTrace.current)),
       );
     } catch (e, st) {
       state = state.copyWith(billingItems: AsyncValue.error(e, st));
@@ -47,12 +43,9 @@ class BillingController extends _$BillingController {
       
       final result = await billingRepo.getPaymentHistoryAsync();
       
-      state = state.copyWith(
-        paymentHistory: switch (result) {
-          app_async.AsyncSuccess(data: final data) => AsyncValue.data(data),
-          app_async.AsyncError(error: final error) => AsyncValue.error(error, StackTrace.current),
-          app_async.AsyncLoading() => const AsyncValue.loading(),
-        },
+      result.when(
+        onSuccess: (data) => state = state.copyWith(paymentHistory: AsyncValue.data(data)),
+        onFailure: (failure) => state = state.copyWith(paymentHistory: AsyncValue.error(failure.message, StackTrace.current)),
       );
     } catch (e, st) {
       state = state.copyWith(paymentHistory: AsyncValue.error(e, st));
@@ -93,17 +86,14 @@ class BillingController extends _$BillingController {
         notes: notes,
       );
 
-      switch (result) {
-        case app_async.AsyncSuccess():
+      result.when(
+        onSuccess: (_) async {
           // Refresh both lists after successful payment
           await fetchBillingItems();
           await fetchPaymentHistory();
-        case app_async.AsyncError(error: final error):
-          throw error;
-        case app_async.AsyncLoading():
-          // Should not happen but handle it
-          break;
-      }
+        },
+        onFailure: (failure) => throw Exception(failure.message),
+      );
     } catch (e) {
       rethrow;
     }

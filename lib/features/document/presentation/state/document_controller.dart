@@ -22,22 +22,31 @@ class DocumentController extends _$DocumentController {
 
   Future<void> _fetchDocuments() async {
     state = state.copyWith(documents: const AsyncLoading());
-    try {
-      final repository = ref.read(documentRepositoryProvider);
+    final repository = ref.read(documentRepositoryProvider);
 
-      final documents = await repository.fetchDocuments(
-        paginationRequest: PaginationRequestWrapper(
-          data: GetFetchDocumentsRequest(
-            churchId: church.id!,
-          ),
-          page: state.currentPage,
-          pageSize: state.pageSize,
+    final result = await repository.fetchDocuments(
+      paginationRequest: PaginationRequestWrapper(
+        data: GetFetchDocumentsRequest(
+          churchId: church.id!,
         ),
-      );
-      state = state.copyWith(documents: AsyncData(documents));
-    } catch (e, st) {
-      state = state.copyWith(documents: AsyncError(e, st));
-    }
+        page: state.currentPage,
+        pageSize: state.pageSize,
+      ),
+    );
+
+    result.when(
+      onSuccess: (documents) {
+        state = state.copyWith(documents: AsyncData(documents));
+      },
+      onFailure: (failure) {
+        state = state.copyWith(
+          documents: AsyncError(
+            AppError.serverError(failure.message, statusCode: failure.code),
+            StackTrace.current,
+          ),
+        );
+      },
+    );
   }
 
   Future<void> refresh() async {

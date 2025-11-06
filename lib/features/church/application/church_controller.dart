@@ -48,10 +48,13 @@ class ChurchController extends _$ChurchController {
         churchId: updated.id!,
         update: payload,
       );
-      state = state.copyWith(church: AsyncData(result));
-
-      // Sync cached auth account.membership.church on success
-      _updateCachedAccountLocation();
+      result.when(
+        onSuccess: (church) {
+          state = state.copyWith(church: AsyncData(church));
+          _updateCachedAccountLocation();
+        },
+        onFailure: (failure) => throw Exception(failure.message),
+      );
     } catch (e, st) {
       _catchError(e, st);
     }
@@ -78,12 +81,16 @@ class ChurchController extends _$ChurchController {
         update: payload,
       );
 
-      final updatedPositions = currentList
-          .map<MemberPosition>((e) => e.id == result.id ? result : e)
-          .toList();
-      state = state.copyWith(positions: AsyncData(updatedPositions));
-
-      await _updateCachedAccountLocation();
+      result.when(
+        onSuccess: (position) {
+          final updatedPositions = currentList
+              .map<MemberPosition>((e) => e.id == position.id ? position : e)
+              .toList();
+          state = state.copyWith(positions: AsyncData(updatedPositions));
+          _updateCachedAccountLocation();
+        },
+        onFailure: (failure) => throw Exception(failure.message),
+      );
     } catch (e, st) {
       _catchError(e, st);
     }
@@ -94,7 +101,10 @@ class ChurchController extends _$ChurchController {
     try {
       state = state.copyWith(church: AsyncLoading());
       final result = await churchRepo.fetchChurchProfile(previous.id!);
-      state = state.copyWith(church: AsyncData(result));
+      result.when(
+        onSuccess: (church) => state = state.copyWith(church: AsyncData(church)),
+        onFailure: (failure) => throw Exception(failure.message),
+      );
     } catch (e, st) {
       _catchError(e, st);
     }
@@ -114,9 +124,13 @@ class ChurchController extends _$ChurchController {
         update: payload,
       );
 
-      state = state.copyWith(location: AsyncData(result));
-
-      _updateCachedAccountLocation();
+      result.when(
+        onSuccess: (location) {
+          state = state.copyWith(location: AsyncData(location));
+          _updateCachedAccountLocation();
+        },
+        onFailure: (failure) => throw Exception(failure.message),
+      );
     } catch (e, st) {
       _catchError(e, st);
     }
@@ -126,7 +140,10 @@ class ChurchController extends _$ChurchController {
     try {
       state = state.copyWith(location: AsyncLoading());
       final result = await churchRepo.fetchLocation(locationId);
-      state = state.copyWith(location: AsyncData(result));
+      result.when(
+        onSuccess: (location) => state = state.copyWith(location: AsyncData(location)),
+        onFailure: (failure) => throw Exception(failure.message),
+      );
     } catch (e, st) {
       _catchError(e, st);
     }
@@ -134,8 +151,12 @@ class ChurchController extends _$ChurchController {
 
   Future<Location> fetchLocationDetail(int locationId) async {
     try {
-      final fetched = await churchRepo.fetchLocation(locationId);
-      return fetched;
+      final result = await churchRepo.fetchLocation(locationId);
+      final value = result.when<Location>(
+        onSuccess: (location) => location,
+        onFailure: (failure) => throw Exception(failure.message),
+      );
+      return value!;
     } catch (e) {
       rethrow;
     }
@@ -168,14 +189,17 @@ class ChurchController extends _$ChurchController {
         update: payload,
       );
 
-      final updatedColumns = [
-        for (final c in currentList)
-          if (c.id == result.id) result else c,
-      ];
-      state = state.copyWith(columns: AsyncData(updatedColumns));
-
-      // Sync cached auth account.membership.church columns on success
-      await _updateCachedAccountLocation();
+      result.when(
+        onSuccess: (column) {
+          final updatedColumns = [
+            for (final c in currentList)
+              if (c.id == column.id) column else c,
+          ];
+          state = state.copyWith(columns: AsyncData(updatedColumns));
+          _updateCachedAccountLocation();
+        },
+        onFailure: (failure) => throw Exception(failure.message),
+      );
     } catch (e, st) {
       _catchError(e, st);
     }
@@ -187,13 +211,17 @@ class ChurchController extends _$ChurchController {
       state = state.copyWith(columns: const AsyncLoading());
 
       final payload = {'name': toCreate.name, 'churchId': toCreate.churchId};
-      final created = await churchRepo.createColumn(data: payload);
+      final result = await churchRepo.createColumn(data: payload);
 
-      final current = previousColumns.value ?? const <cm.Column>[];
-      final updatedColumns = List<cm.Column>.from(current)..add(created);
-      state = state.copyWith(columns: AsyncData(updatedColumns));
-
-      await _updateCachedAccountLocation();
+      result.when(
+        onSuccess: (created) {
+          final current = previousColumns.value ?? const <cm.Column>[];
+          final updatedColumns = List<cm.Column>.from(current)..add(created);
+          state = state.copyWith(columns: AsyncData(updatedColumns));
+          _updateCachedAccountLocation();
+        },
+        onFailure: (failure) => throw Exception(failure.message),
+      );
     } catch (e, st) {
       _catchError(e, st);
     }
@@ -204,11 +232,16 @@ class ChurchController extends _$ChurchController {
     final previousColumns = state.columns;
     try {
       state = state.copyWith(columns: const AsyncLoading());
-      await churchRepo.deleteColumn(columnId: columnId);
+      final result = await churchRepo.deleteColumn(columnId: columnId);
 
-      final current = previousColumns.value ?? const <cm.Column>[];
-      final updatedColumns = current.where((c) => c.id != columnId).toList();
-      state = state.copyWith(columns: AsyncData(updatedColumns));
+      result.when(
+        onSuccess: (_) {
+          final current = previousColumns.value ?? const <cm.Column>[];
+          final updatedColumns = current.where((c) => c.id != columnId).toList();
+          state = state.copyWith(columns: AsyncData(updatedColumns));
+        },
+        onFailure: (failure) => throw Exception(failure.message),
+      );
     } catch (e, st) {
       _catchError(e, st);
     }
@@ -216,8 +249,12 @@ class ChurchController extends _$ChurchController {
 
   Future<ColumnDetail> fetchColumn(int columnId) async {
     try {
-      final fetched = await churchRepo.fetchColumn(columnId: columnId);
-      return fetched;
+      final result = await churchRepo.fetchColumn(columnId: columnId);
+      final value = result.when<ColumnDetail>(
+        onSuccess: (column) => column,
+        onFailure: (failure) => throw Exception(failure.message),
+      );
+      return value!;
     } catch (e) {
       rethrow;
     }
@@ -225,8 +262,12 @@ class ChurchController extends _$ChurchController {
 
   Future<MemberPositionDetail> fetchPosition(int positionId) async {
     try {
-      final fetched = await churchRepo.fetchPosition(positionId: positionId);
-      return fetched;
+      final result = await churchRepo.fetchPosition(positionId: positionId);
+      final value = result.when<MemberPositionDetail>(
+        onSuccess: (position) => position,
+        onFailure: (failure) => throw Exception(failure.message),
+      );
+      return value!;
     } catch (e) {
       rethrow;
     }
@@ -237,7 +278,10 @@ class ChurchController extends _$ChurchController {
     try {
       state = state.copyWith(columns: const AsyncLoading());
       final result = await churchRepo.fetchColumns(churchId: churchId);
-      state = state.copyWith(columns: AsyncData(result));
+      result.when(
+        onSuccess: (columns) => state = state.copyWith(columns: AsyncData(columns)),
+        onFailure: (failure) => throw Exception(failure.message),
+      );
     } catch (e, st) {
       _catchError(e, st);
     }
@@ -247,7 +291,10 @@ class ChurchController extends _$ChurchController {
     try {
       state = state.copyWith(positions: const AsyncLoading());
       final result = await churchRepo.fetchPositions(churchId: churchId);
-      state = state.copyWith(positions: AsyncData(result));
+      result.when(
+        onSuccess: (positions) => state = state.copyWith(positions: AsyncData(positions)),
+        onFailure: (failure) => throw Exception(failure.message),
+      );
     } catch (e, st) {
       _catchError(e, st);
     }
@@ -259,13 +306,17 @@ class ChurchController extends _$ChurchController {
       state = state.copyWith(positions: const AsyncLoading());
 
       final payload = {'name': toCreate.name, 'churchId': toCreate.churchId};
-      final created = await churchRepo.createMemberPosition(data: payload);
+      final result = await churchRepo.createMemberPosition(data: payload);
 
-      final current = previousPositions.value ?? const <MemberPosition>[];
-      final updated = List<MemberPosition>.from(current)..add(created);
-      state = state.copyWith(positions: AsyncData(updated));
-
-      await _updateCachedAccountLocation();
+      result.when(
+        onSuccess: (created) {
+          final current = previousPositions.value ?? const <MemberPosition>[];
+          final updated = List<MemberPosition>.from(current)..add(created);
+          state = state.copyWith(positions: AsyncData(updated));
+          _updateCachedAccountLocation();
+        },
+        onFailure: (failure) => throw Exception(failure.message),
+      );
     } catch (e, st) {
       _catchError(e, st);
     }
@@ -275,11 +326,16 @@ class ChurchController extends _$ChurchController {
     final previousPositions = state.positions;
     try {
       state = state.copyWith(positions: const AsyncLoading());
-      await churchRepo.deletePosition(positionId: positionId);
+      final result = await churchRepo.deletePosition(positionId: positionId);
 
-      final current = previousPositions.value ?? const <MemberPosition>[];
-      final updated = current.where((p) => p.id != positionId).toList();
-      state = state.copyWith(positions: AsyncData(updated));
+      result.when(
+        onSuccess: (_) {
+          final current = previousPositions.value ?? const <MemberPosition>[];
+          final updated = current.where((p) => p.id != positionId).toList();
+          state = state.copyWith(positions: AsyncData(updated));
+        },
+        onFailure: (failure) => throw Exception(failure.message),
+      );
     } catch (e, st) {
       _catchError(e, st);
     }
@@ -287,8 +343,12 @@ class ChurchController extends _$ChurchController {
 
   Future<Church> fetchChurchDetail(int churchId) async {
     try {
-      final fetched = await churchRepo.fetchChurchProfile(churchId);
-      return fetched;
+      final result = await churchRepo.fetchChurchProfile(churchId);
+      final value = result.when<Church>(
+        onSuccess: (church) => church,
+        onFailure: (failure) => throw Exception(failure.message),
+      );
+      return value!;
     } catch (e) {
       rethrow;
     }

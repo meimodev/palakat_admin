@@ -41,7 +41,7 @@ class ReportController extends _$ReportController {
         actualDateRange = state.dateRangePreset.getDateRange();
       }
       
-      final reports = await repository.fetchReports(
+      final result = await repository.fetchReports(
         paginationRequest: PaginationRequestWrapper(
           data: GetFetchReportsRequest(
             churchId: church.id!,
@@ -54,7 +54,17 @@ class ReportController extends _$ReportController {
           pageSize: state.pageSize,
         ),
       );
-      state = state.copyWith(reports: AsyncData(reports));
+      
+      result.when(
+        onSuccess: (reports) {
+          state = state.copyWith(reports: AsyncData(reports));
+        },
+        onFailure: (failure) {
+          state = state.copyWith(
+            reports: AsyncError(Exception(failure.message), StackTrace.current),
+          );
+        },
+      );
     } catch (e, st) {
       state = state.copyWith(reports: AsyncError(e, st));
     }
@@ -122,31 +132,50 @@ class ReportController extends _$ReportController {
   }
 
   // Fetch single report detail (doesn't mutate state)
-  Future<Report> fetchReport(int reportId) async {
+  Future<Report?> fetchReport(int reportId) async {
     final repository = ref.read(reportRepositoryProvider);
-    return await repository.fetchReport(reportId: reportId);
+    final result = await repository.fetchReport(reportId: reportId);
+    return result.when(
+      onSuccess: (report) => report,
+      onFailure: (failure) => throw Exception(failure.message),
+    );
   }
 
   // Generate report
   Future<void> generateReport(Map<String, dynamic> data) async {
     final repository = ref.read(reportRepositoryProvider);
-    await repository.generateReport(data: data);
+    final result = await repository.generateReport(data: data);
+    
+    result.when(
+      onSuccess: (_) {},
+      onFailure: (failure) => throw Exception(failure.message),
+    );
+    
     await _fetchReports();
   }
 
   // Delete report
   Future<void> deleteReport(int reportId) async {
     final repository = ref.read(reportRepositoryProvider);
-    await repository.deleteReport(reportId: reportId);
+    final result = await repository.deleteReport(reportId: reportId);
+    
+    result.when(
+      onSuccess: (_) {},
+      onFailure: (failure) => throw Exception(failure.message),
+    );
 
     // Refresh the list after delete
     await _fetchReports();
   }
 
   // Download report
-  Future<String> downloadReport(int reportId) async {
+  Future<String?> downloadReport(int reportId) async {
     final repository = ref.read(reportRepositoryProvider);
-    return await repository.downloadReport(reportId: reportId);
+    final result = await repository.downloadReport(reportId: reportId);
+    return result.when(
+      onSuccess: (url) => url,
+      onFailure: (failure) => throw Exception(failure.message),
+    );
   }
 }
 

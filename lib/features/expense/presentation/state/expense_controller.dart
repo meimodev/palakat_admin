@@ -30,34 +30,43 @@ class ExpenseController extends _$ExpenseController {
 
   Future<void> _fetchExpenses() async {
     state = state.copyWith(expenses: const AsyncLoading());
-    try {
-      final repository = ref.read(expenseRepositoryProvider);
-      
-      // Calculate actual date range from preset
-      DateTimeRange? actualDateRange;
-      if (state.dateRangePreset == DateRangePreset.custom) {
-        actualDateRange = state.customDateRange;
-      } else if (state.dateRangePreset != DateRangePreset.allTime) {
-        actualDateRange = state.dateRangePreset.getDateRange();
-      }
-      
-      final expenses = await repository.fetchExpenses(
-        paginationRequest: PaginationRequestWrapper(
-          data: GetFetchExpensesRequest(
-            churchId: church.id!,
-            search: state.searchQuery.isEmpty ? null : state.searchQuery,
-            startDate: actualDateRange?.start,
-            endDate: actualDateRange?.end,
-            paymentMethod: state.paymentMethodFilter,
-          ),
-          page: state.currentPage,
-          pageSize: state.pageSize,
-        ),
-      );
-      state = state.copyWith(expenses: AsyncData(expenses));
-    } catch (e, st) {
-      state = state.copyWith(expenses: AsyncError(e, st));
+    final repository = ref.read(expenseRepositoryProvider);
+
+    // Calculate actual date range from preset
+    DateTimeRange? actualDateRange;
+    if (state.dateRangePreset == DateRangePreset.custom) {
+      actualDateRange = state.customDateRange;
+    } else if (state.dateRangePreset != DateRangePreset.allTime) {
+      actualDateRange = state.dateRangePreset.getDateRange();
     }
+
+    final result = await repository.fetchExpenses(
+      paginationRequest: PaginationRequestWrapper(
+        data: GetFetchExpensesRequest(
+          churchId: church.id!,
+          search: state.searchQuery.isEmpty ? null : state.searchQuery,
+          startDate: actualDateRange?.start,
+          endDate: actualDateRange?.end,
+          paymentMethod: state.paymentMethodFilter,
+        ),
+        page: state.currentPage,
+        pageSize: state.pageSize,
+      ),
+    );
+
+    result.when(
+      onSuccess: (expenses) {
+        state = state.copyWith(expenses: AsyncData(expenses));
+      },
+      onFailure: (failure) {
+        state = state.copyWith(
+          expenses: AsyncError(
+            AppError.serverError(failure.message, statusCode: failure.code),
+            StackTrace.current,
+          ),
+        );
+      },
+    );
   }
 
   void onChangedSearch(String value) {
@@ -124,7 +133,17 @@ class ExpenseController extends _$ExpenseController {
   // Fetch single expense detail (doesn't mutate state)
   Future<Expense> fetchExpense(int expenseId) async {
     final repository = ref.read(expenseRepositoryProvider);
-    return await repository.fetchExpense(expenseId: expenseId);
+    final result = await repository.fetchExpense(expenseId: expenseId);
+
+    final expense = result.when<Expense>(
+      onSuccess: (expense) => expense,
+      onFailure: (failure) {
+        throw AppError.serverError(failure.message, statusCode: failure.code);
+      },
+    );
+
+    // If we reach here, expense must be non-null because failure would have thrown
+    return expense!;
   }
 
   // Save expense (create or update)
@@ -132,22 +151,38 @@ class ExpenseController extends _$ExpenseController {
     final repository = ref.read(expenseRepositoryProvider);
 
     final payload = expense.toJson();
+    Result<Expense, Failure> result;
+
     if (expense.id != null) {
-      await repository.updateExpense(expenseId: expense.id!, update: payload);
+      result = await repository.updateExpense(expenseId: expense.id!, update: payload);
     } else {
-      await repository.createExpense(data: payload);
+      result = await repository.createExpense(data: payload);
     }
 
-    await _fetchExpenses();
+    result.when(
+      onSuccess: (_) async {
+        await _fetchExpenses();
+      },
+      onFailure: (failure) {
+        throw AppError.serverError(failure.message, statusCode: failure.code);
+      },
+    );
   }
 
   // Delete expense
   Future<void> deleteExpense(int expenseId) async {
     final repository = ref.read(expenseRepositoryProvider);
-    await repository.deleteExpense(expenseId: expenseId);
+    final result = await repository.deleteExpense(expenseId: expenseId);
 
-    // Refresh the list after delete
-    await _fetchExpenses();
+    result.when(
+      onSuccess: (_) async {
+        // Refresh the list after delete
+        await _fetchExpenses();
+      },
+      onFailure: (failure) {
+        throw AppError.serverError(failure.message, statusCode: failure.code);
+      },
+    );
   }
 }
 

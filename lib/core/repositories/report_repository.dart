@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:palakat_admin/core/models/request/request.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/report.dart';
-import '../models/app_error.dart';
+import '../models/result.dart';
 import '../models/response/response.dart';
 import '../services/http_service.dart';
 import '../utils/error_mapper.dart';
@@ -18,7 +18,7 @@ class ReportRepository {
 
   final Ref _ref;
 
-  Future<PaginationResponseWrapper<Report>> fetchReports({
+  Future<Result<PaginationResponseWrapper<Report>, Failure>> fetchReports({
     required PaginationRequestWrapper paginationRequest,
   }) async {
     try {
@@ -32,18 +32,21 @@ class ReportRepository {
       );
 
       final data = response.data ?? {};
-      return PaginationResponseWrapper.fromJson(
+      final result = PaginationResponseWrapper.fromJson(
         data,
         (e) => Report.fromJson(e as Map<String, dynamic>),
       );
+      return Result.success(result);
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to fetch reports');
+      final error = ErrorMapper.fromDio(e, 'Failed to fetch reports');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to fetch reports', e, st);
+      final error = ErrorMapper.unknown('Failed to fetch reports', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
-  Future<Report> fetchReport({required int reportId}) async {
+  Future<Result<Report, Failure>> fetchReport({required int reportId}) async {
     try {
       final http = _ref.read(httpServiceProvider);
       final response = await http.get<Map<String, dynamic>>(
@@ -53,17 +56,19 @@ class ReportRepository {
       final data = response.data;
       final Map<String, dynamic> json = data?['data'] ?? {};
       if (json.isEmpty) {
-        throw AppError.network('Invalid report response payload');
+        return Result.failure(Failure('Invalid report response payload'));
       }
-      return Report.fromJson(json);
+      return Result.success(Report.fromJson(json));
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to fetch report');
+      final error = ErrorMapper.fromDio(e, 'Failed to fetch report');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to fetch report', e, st);
+      final error = ErrorMapper.unknown('Failed to fetch report', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
-  Future<Report> generateReport({required Map<String, dynamic> data}) async {
+  Future<Result<Report, Failure>> generateReport({required Map<String, dynamic> data}) async {
     try {
       final http = _ref.read(httpServiceProvider);
       final response = await http.post<Map<String, dynamic>>(
@@ -74,38 +79,45 @@ class ReportRepository {
       final body = response.data;
       final Map<String, dynamic> json = body?['data'] ?? {};
       if (json.isEmpty) {
-        throw AppError.network('Invalid generate report response payload');
+        return Result.failure(Failure('Invalid generate report response payload'));
       }
-      return Report.fromJson(json);
+      return Result.success(Report.fromJson(json));
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to generate report');
+      final error = ErrorMapper.fromDio(e, 'Failed to generate report');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to generate report', e, st);
+      final error = ErrorMapper.unknown('Failed to generate report', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
-  Future<void> deleteReport({required int reportId}) async {
+  Future<Result<void, Failure>> deleteReport({required int reportId}) async {
     try {
       final http = _ref.read(httpServiceProvider);
       await http.delete<void>(Endpoints.report(reportId.toString()));
+      return Result.success(null);
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to delete report');
+      final error = ErrorMapper.fromDio(e, 'Failed to delete report');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to delete report', e, st);
+      final error = ErrorMapper.unknown('Failed to delete report', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
-  Future<String> downloadReport({required int reportId}) async {
+  Future<Result<String, Failure>> downloadReport({required int reportId}) async {
     try {
       final http = _ref.read(httpServiceProvider);
       final response = await http.get<String>(
         '${Endpoints.report(reportId.toString())}/download',
       );
-      return response.data ?? '';
+      return Result.success(response.data ?? '');
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to download report');
+      final error = ErrorMapper.fromDio(e, 'Failed to download report');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to download report', e, st);
+      final error = ErrorMapper.unknown('Failed to download report', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 }

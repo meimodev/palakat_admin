@@ -32,7 +32,7 @@ class ApprovalController extends _$ApprovalController {
     try {
       final repository = ref.read(approvalRepositoryProvider);
       
-      final rules = await repository.fetchApprovalRules(
+      final result = await repository.fetchApprovalRules(
         paginationRequest: PaginationRequestWrapper(
           data: GetFetchApprovalRulesRequest(
             churchId: church.id!,
@@ -44,7 +44,10 @@ class ApprovalController extends _$ApprovalController {
           pageSize: state.pageSize,
         ),
       );
-      state = state.copyWith(rules: AsyncValue.data(rules));
+      result.when(
+        onSuccess: (rules) => state = state.copyWith(rules: AsyncValue.data(rules)),
+        onFailure: (failure) => state = state.copyWith(rules: AsyncValue.error(failure.message, StackTrace.current)),
+      );
     } catch (e, st) {
       state = state.copyWith(rules: AsyncValue.error(e, st));
     }
@@ -56,7 +59,7 @@ class ApprovalController extends _$ApprovalController {
       final repository = ref.read(approvalRepositoryProvider);
       
       // Fetch all positions for the church (no pagination needed for positions dropdown)
-      final positions = await repository.fetchMembershipPositions(
+      final result = await repository.fetchMembershipPositions(
         paginationRequest: PaginationRequestWrapper(
           data: GetFetchPositionsRequest(
             churchId: church.id!,
@@ -65,7 +68,10 @@ class ApprovalController extends _$ApprovalController {
           pageSize: 100, // Get all positions
         ),
       );
-      state = state.copyWith(positions: AsyncValue.data(positions));
+      result.when(
+        onSuccess: (positions) => state = state.copyWith(positions: AsyncValue.data(positions)),
+        onFailure: (failure) => state = state.copyWith(positions: AsyncValue.error(failure.message, StackTrace.current)),
+      );
     } catch (e, st) {
       state = state.copyWith(positions: AsyncValue.error(e, st));
     }
@@ -126,20 +132,14 @@ class ApprovalController extends _$ApprovalController {
       final repository = ref.read(approvalRepositoryProvider);
       final data = rule.toJson();
       
-      if (rule.id == null || rule.id == 0) {
-        // Remove id for creation
-        data.remove('id');
-        await repository.createApprovalRule(data);
-      } else {
-        // Update existing rule
-        await repository.updateApprovalRule(
-          ruleId: rule.id!,
-          data: data,
-        );
-      }
+      final result = rule.id == null || rule.id == 0
+          ? await repository.createApprovalRule(data..remove('id'))
+          : await repository.updateApprovalRule(ruleId: rule.id!, data: data);
       
-      // Refresh the list after save
-      await _fetchRules();
+      result.when(
+        onSuccess: (_) => _fetchRules(),
+        onFailure: (failure) => throw Exception(failure.message),
+      );
     } catch (e) {
       rethrow;
     }
@@ -148,10 +148,12 @@ class ApprovalController extends _$ApprovalController {
   Future<void> deleteRule(int ruleId) async {
     try {
       final repository = ref.read(approvalRepositoryProvider);
-      await repository.deleteApprovalRule(ruleId);
+      final result = await repository.deleteApprovalRule(ruleId);
       
-      // Refresh the list after delete
-      await _fetchRules();
+      result.when(
+        onSuccess: (_) => _fetchRules(),
+        onFailure: (failure) => throw Exception(failure.message),
+      );
     } catch (e) {
       rethrow;
     }
@@ -161,7 +163,12 @@ class ApprovalController extends _$ApprovalController {
   Future<ApprovalRule> fetchRuleDetail(int ruleId) async {
     try {
       final repository = ref.read(approvalRepositoryProvider);
-      return await repository.fetchApprovalRuleById(ruleId);
+      final result = await repository.fetchApprovalRuleById(ruleId);
+      final value = result.when<ApprovalRule>(
+        onSuccess: (rule) => rule,
+        onFailure: (failure) => throw Exception(failure.message),
+      );
+      return value!;
     } catch (e) {
       rethrow;
     }
@@ -182,7 +189,11 @@ class ApprovalController extends _$ApprovalController {
         ),
       );
       
-      return result.data;
+      final value = result.when<List<MemberPosition>>(
+        onSuccess: (positions) => positions.data,
+        onFailure: (failure) => throw Exception(failure.message),
+      );
+      return value!;
     } catch (e) {
       rethrow;
     }

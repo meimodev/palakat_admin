@@ -30,34 +30,43 @@ class RevenueController extends _$RevenueController {
 
   Future<void> _fetchRevenues() async {
     state = state.copyWith(revenues: const AsyncLoading());
-    try {
-      final repository = ref.read(revenueRepositoryProvider);
-      
-      // Calculate actual date range from preset
-      DateTimeRange? actualDateRange;
-      if (state.dateRangePreset == DateRangePreset.custom) {
-        actualDateRange = state.customDateRange;
-      } else if (state.dateRangePreset != DateRangePreset.allTime) {
-        actualDateRange = state.dateRangePreset.getDateRange();
-      }
-      
-      final revenues = await repository.fetchRevenues(
-        paginationRequest: PaginationRequestWrapper(
-          data: GetFetchRevenuesRequest(
-            churchId: church.id!,
-            search: state.searchQuery.isEmpty ? null : state.searchQuery,
-            startDate: actualDateRange?.start,
-            endDate: actualDateRange?.end,
-            paymentMethod: state.paymentMethodFilter,
-          ),
-          page: state.currentPage,
-          pageSize: state.pageSize,
-        ),
-      );
-      state = state.copyWith(revenues: AsyncData(revenues));
-    } catch (e, st) {
-      state = state.copyWith(revenues: AsyncError(e, st));
+    final repository = ref.read(revenueRepositoryProvider);
+
+    // Calculate actual date range from preset
+    DateTimeRange? actualDateRange;
+    if (state.dateRangePreset == DateRangePreset.custom) {
+      actualDateRange = state.customDateRange;
+    } else if (state.dateRangePreset != DateRangePreset.allTime) {
+      actualDateRange = state.dateRangePreset.getDateRange();
     }
+
+    final result = await repository.fetchRevenues(
+      paginationRequest: PaginationRequestWrapper(
+        data: GetFetchRevenuesRequest(
+          churchId: church.id!,
+          search: state.searchQuery.isEmpty ? null : state.searchQuery,
+          startDate: actualDateRange?.start,
+          endDate: actualDateRange?.end,
+          paymentMethod: state.paymentMethodFilter,
+        ),
+        page: state.currentPage,
+        pageSize: state.pageSize,
+      ),
+    );
+
+    result.when(
+      onSuccess: (revenues) {
+        state = state.copyWith(revenues: AsyncData(revenues));
+      },
+      onFailure: (failure) {
+        state = state.copyWith(
+          revenues: AsyncError(
+            AppError.serverError(failure.message, statusCode: failure.code),
+            StackTrace.current,
+          ),
+        );
+      },
+    );
   }
 
   void onChangedSearch(String value) {
@@ -124,7 +133,17 @@ class RevenueController extends _$RevenueController {
   // Fetch single revenue detail (doesn't mutate state)
   Future<Revenue> fetchRevenue(int revenueId) async {
     final repository = ref.read(revenueRepositoryProvider);
-    return await repository.fetchRevenue(revenueId: revenueId);
+    final result = await repository.fetchRevenue(revenueId: revenueId);
+
+    final revenue = result.when<Revenue>(
+      onSuccess: (revenue) => revenue,
+      onFailure: (failure) {
+        throw AppError.serverError(failure.message, statusCode: failure.code);
+      },
+    );
+
+    // If we reach here, revenue must be non-null because failure would have thrown
+    return revenue!;
   }
 
   // Save revenue (create or update)
@@ -132,22 +151,38 @@ class RevenueController extends _$RevenueController {
     final repository = ref.read(revenueRepositoryProvider);
 
     final payload = revenue.toJson();
+    Result<Revenue, Failure> result;
+
     if (revenue.id != null) {
-      await repository.updateRevenue(revenueId: revenue.id!, update: payload);
+      result = await repository.updateRevenue(revenueId: revenue.id!, update: payload);
     } else {
-      await repository.createRevenue(data: payload);
+      result = await repository.createRevenue(data: payload);
     }
 
-    await _fetchRevenues();
+    result.when(
+      onSuccess: (_) async {
+        await _fetchRevenues();
+      },
+      onFailure: (failure) {
+        throw AppError.serverError(failure.message, statusCode: failure.code);
+      },
+    );
   }
 
   // Delete revenue
   Future<void> deleteRevenue(int revenueId) async {
     final repository = ref.read(revenueRepositoryProvider);
-    await repository.deleteRevenue(revenueId: revenueId);
+    final result = await repository.deleteRevenue(revenueId: revenueId);
 
-    // Refresh the list after delete
-    await _fetchRevenues();
+    result.when(
+      onSuccess: (_) async {
+        // Refresh the list after delete
+        await _fetchRevenues();
+      },
+      onFailure: (failure) {
+        throw AppError.serverError(failure.message, statusCode: failure.code);
+      },
+    );
   }
 }
 

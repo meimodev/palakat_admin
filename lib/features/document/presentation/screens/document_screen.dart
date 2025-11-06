@@ -40,12 +40,19 @@ class DocumentScreen extends ConsumerWidget {
                 title: 'Document Identity Number',
                 subtitle: 'Current template used for new documents.',
                 trailing: FilledButton.icon(
-                  onPressed: () => _openIdentityDrawer(context, ref, settings.identityNumberTemplate),
+                  onPressed: () => _openIdentityDrawer(
+                    context,
+                    ref,
+                    settings?.identityNumberTemplate ?? '',
+                  ),
                   icon: const Icon(Icons.edit),
                   label: const Text('Edit'),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 8,
+                  ),
                   child: Row(
                     children: [
                       Text(
@@ -58,7 +65,7 @@ class DocumentScreen extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          settings.identityNumberTemplate,
+                          settings?.identityNumberTemplate ?? '',
                           style: theme.textTheme.titleMedium,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -71,7 +78,10 @@ class DocumentScreen extends ConsumerWidget {
                 title: 'Document Identity Number',
                 subtitle: 'Loading...',
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 8,
+                  ),
                   child: LoadingShimmer(
                     child: ShimmerPlaceholders.text(
                       width: double.infinity,
@@ -191,7 +201,11 @@ class DocumentScreen extends ConsumerWidget {
     );
   }
 
-  void _openIdentityDrawer(BuildContext context, WidgetRef ref, String currentTemplate) {
+  void _openIdentityDrawer(
+    BuildContext context,
+    WidgetRef ref,
+    String currentTemplate,
+  ) {
     DrawerUtils.showDrawer(
       context: context,
       drawer: _IdentityNumberEditDrawer(

@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:palakat_admin/core/services/http_service.dart';
 import 'package:palakat_admin/core/models/document.dart';
 import 'package:palakat_admin/core/models/app_error.dart';
+import 'package:palakat_admin/core/models/result.dart';
 import 'package:palakat_admin/core/models/request/request.dart';
 import 'package:palakat_admin/core/models/response/response.dart';
 import 'package:palakat_admin/core/utils/error_mapper.dart';
@@ -19,7 +20,7 @@ class DocumentRepository {
   final Ref _ref;
   DocumentRepository(this._ref);
 
-  Future<PaginationResponseWrapper<Document>> fetchDocuments({
+  Future<Result<PaginationResponseWrapper<Document>, Failure>> fetchDocuments({
     required PaginationRequestWrapper paginationRequest,
   }) async {
     try {
@@ -33,85 +34,103 @@ class DocumentRepository {
       );
 
       final data = response.data ?? {};
-      return PaginationResponseWrapper.fromJson(
+      final result = PaginationResponseWrapper.fromJson(
         data,
         (e) => Document.fromJson(e as Map<String, dynamic>),
       );
+      return Result.success(result);
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to fetch documents');
+      final error = ErrorMapper.fromDio(e, 'Failed to fetch documents');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to fetch documents', e, st);
+      final error = ErrorMapper.unknown('Failed to fetch documents', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
-  Future<DocumentSettings> getSettings() async {
+  Future<Result<DocumentSettings, Failure>> getSettings() async {
     try {
       // Get churchId from authenticated user
       final auth = _ref.read(localStorageServiceProvider).currentAuth;
       final churchId = auth?.account.membership?.church?.id;
-      
+
       if (churchId == null) {
-        throw AppError.network('Church ID not found in authenticated user');
+        return Result.failure(Failure('Church ID not found in authenticated user'));
       }
 
       // Fetch church detail
       final churchRepo = _ref.read(churchRepositoryProvider);
-      final church = await churchRepo.fetchChurchProfile(churchId);
+      final churchResult = await churchRepo.fetchChurchProfile(churchId);
 
-      // Extract documentAccountNumber
-      final documentAccountNumber = church.documentAccountNumber;
-      if (documentAccountNumber == null || documentAccountNumber.isEmpty) {
-        throw AppError.network('Document account number not found in church profile');
-      }
-
-      return DocumentSettings(identityNumberTemplate: documentAccountNumber);
+      final result = churchResult.when<Result<DocumentSettings, Failure>>(
+        onSuccess: (church) {
+          // Extract documentAccountNumber
+          final documentAccountNumber = church.documentAccountNumber;
+          if (documentAccountNumber == null || documentAccountNumber.isEmpty) {
+            return Result.failure(Failure('Document account number not found in church profile'));
+          }
+          return Result.success(DocumentSettings(identityNumberTemplate: documentAccountNumber));
+        },
+        onFailure: (failure) => Result.failure(failure),
+      );
+      return result!;
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to fetch document settings');
+      final error = ErrorMapper.fromDio(e, 'Failed to fetch document settings');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to fetch document settings', e, st);
+      final error = ErrorMapper.unknown('Failed to fetch document settings', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
-  Future<DocumentSettings> updateIdentityTemplate(String newTemplate) async {
+  Future<Result<DocumentSettings, Failure>> updateIdentityTemplate(String newTemplate) async {
     try {
       // Get churchId from authenticated user
       final auth = _ref.read(localStorageServiceProvider).currentAuth;
       final churchId = auth?.account.membership?.church?.id;
-      
+
       if (churchId == null) {
-        throw AppError.network('Church ID not found in authenticated user');
+        return Result.failure(Failure('Church ID not found in authenticated user'));
       }
 
       // Update church documentAccountNumber
       final churchRepo = _ref.read(churchRepositoryProvider);
-      final updatedChurch = await churchRepo.updateChurchProfile(
+      final updateResult = await churchRepo.updateChurchProfile(
         churchId: churchId,
         update: {'documentAccountNumber': newTemplate},
       );
 
-      // Return updated document settings
-      final documentAccountNumber = updatedChurch.documentAccountNumber;
-      if (documentAccountNumber == null || documentAccountNumber.isEmpty) {
-        throw AppError.network('Document account number not found after update');
-      }
-
-      return DocumentSettings(identityNumberTemplate: documentAccountNumber);
+      final result = updateResult.when<Result<DocumentSettings, Failure>>(
+        onSuccess: (updatedChurch) {
+          // Return updated document settings
+          final documentAccountNumber = updatedChurch.documentAccountNumber;
+          if (documentAccountNumber == null || documentAccountNumber.isEmpty) {
+            return Result.failure(Failure('Document account number not found after update'));
+          }
+          return Result.success(DocumentSettings(identityNumberTemplate: documentAccountNumber));
+        },
+        onFailure: (failure) => Result.failure(failure),
+      );
+      return result!;
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to update identity template');
+      final error = ErrorMapper.fromDio(e, 'Failed to update identity template');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to update identity template', e, st);
+      final error = ErrorMapper.unknown('Failed to update identity template', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 }
 
 
 @riverpod
-Future<DocumentSettings> documentSettings(Ref ref) async {
+Future<DocumentSettings?> documentSettings(Ref ref) async {
   final repo = ref.watch(documentRepositoryProvider);
-  try {
-    return await repo.getSettings();
-  } catch (e) {
-    if (e is AppError) rethrow;
-    throw AppError.unknown('Failed to load document settings: $e');
-  }
+  final result = await repo.getSettings();
+  return result.when(
+    onSuccess: (settings) => settings,
+    onFailure: (failure) {
+      throw AppError.serverError(failure.message, statusCode: failure.code);
+    },
+  );
 }

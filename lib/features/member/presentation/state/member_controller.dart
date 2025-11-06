@@ -31,8 +31,8 @@ class MemberController extends _$MemberController {
   Future<void> _fetchAccounts() async {
     state = state.copyWith(accounts: const AsyncLoading());
     try {
-      final repository = ref.read(memberRepositoryProvider);
-      final accounts = await repository.fetchAccounts(
+      final repository = ref.read(membershipRepositoryProvider);
+      final result = await repository.fetchAccounts(
         paginationRequest: PaginationRequestWrapper(
           data: GetFetchAccountsRequest(
             churchId: church.id,
@@ -43,7 +43,10 @@ class MemberController extends _$MemberController {
           pageSize: state.pageSize,
         ),
       );
-      state = state.copyWith(accounts: AsyncData(accounts));
+      result.when(
+        onSuccess: (accounts) => state = state.copyWith(accounts: AsyncData(accounts)),
+        onFailure: (failure) => state = state.copyWith(accounts: AsyncError(failure.message, StackTrace.current)),
+      );
     } catch (e, st) {
       state = state.copyWith(accounts: AsyncError(e, st));
     }
@@ -52,11 +55,14 @@ class MemberController extends _$MemberController {
   Future<void> _fetchCounts() async {
     state = state.copyWith(counts: const AsyncLoading());
     try {
-      final repository = ref.read(memberRepositoryProvider);
-      final data = await repository.fetchCounts(
+      final repository = ref.read(membershipRepositoryProvider);
+      final result = await repository.fetchCounts(
         GetFetchAccountsRequest(churchId: church.id),
       );
-      state = state.copyWith(counts: AsyncData(data));
+      result.when(
+        onSuccess: (data) => state = state.copyWith(counts: AsyncData(data)),
+        onFailure: (failure) => state = state.copyWith(counts: AsyncError(failure.message, StackTrace.current)),
+      );
     } catch (e, st) {
       state = state.copyWith(counts: AsyncError(e, st));
     }
@@ -65,13 +71,16 @@ class MemberController extends _$MemberController {
   void _fetchMemberPositions() async {
     state = state.copyWith(positions: const AsyncLoading());
     try {
-      final repository = ref.read(memberRepositoryProvider);
-      final positions = await repository.fetchMemberPositionsPagination(
+      final repository = ref.read(membershipRepositoryProvider);
+      final result = await repository.fetchMemberPositionsPagination(
         paginationRequest: PaginationRequestWrapper(
           data: GetFetchMemberPosition(churchId: church.id),
         ),
       );
-      state = state.copyWith(positions: AsyncData(positions.data));
+      result.when(
+        onSuccess: (positions) => state = state.copyWith(positions: AsyncData(positions.data)),
+        onFailure: (failure) => state = state.copyWith(positions: AsyncError(failure.message, StackTrace.current)),
+      );
     } catch (e, st) {
       state = state.copyWith(positions: AsyncError(e, st));
     }
@@ -124,32 +133,45 @@ class MemberController extends _$MemberController {
 
   // Fetch single member detail (doesn't mutate state)
   Future<Account> fetchMember(int memberId) async {
-    final repository = ref.read(memberRepositoryProvider);
-    return await repository.fetchAccount(accountId: memberId);
+    final repository = ref.read(membershipRepositoryProvider);
+    final result = await repository.fetchAccount(accountId: memberId);
+    final value = result.when<Account>(
+      onSuccess: (account) => account,
+      onFailure: (failure) => throw Exception(failure.message),
+    );
+    return value!;
   }
 
   // Save member (create or update)
   Future<void> saveMember(Account account) async {
-    final repository = ref.read(memberRepositoryProvider);
+    final repository = ref.read(membershipRepositoryProvider);
 
     final payload = account.toJson();
-    if (account.id != null) {
-      await repository.updateAccount(accountId: account.id!, update: payload);
-    } else {
-      await repository.createAccount(data: payload);
-    }
+    final result = account.id != null
+        ? await repository.updateAccount(accountId: account.id!, update: payload)
+        : await repository.createAccount(data: payload);
 
-    await _fetchAccounts();
-    await _fetchCounts();
+    result.when(
+      onSuccess: (_) async {
+        await _fetchAccounts();
+        await _fetchCounts();
+      },
+      onFailure: (failure) => throw Exception(failure.message),
+    );
   }
 
   // Delete member
   Future<void> deleteMember(int memberId) async {
-    final repository = ref.read(memberRepositoryProvider);
-    await repository.deleteAccount(accountId: memberId);
+    final repository = ref.read(membershipRepositoryProvider);
+    final result = await repository.deleteAccount(accountId: memberId);
 
-    // Refresh the list after delete
-    await _fetchAccounts();
-    await _fetchCounts();
+    result.when(
+      onSuccess: (_) async {
+        // Refresh the list after delete
+        await _fetchAccounts();
+        await _fetchCounts();
+      },
+      onFailure: (failure) => throw Exception(failure.message),
+    );
   }
 }

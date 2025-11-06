@@ -45,6 +45,10 @@ class Endpoints {
   static const String approvalRules = '/approval-rule';
   static  String approvalRule(String approvalRuleId) => '/approval-rule/$approvalRuleId';
 
+  // Approver
+  static const String approvers = '/approver';
+  static String approver(int approverId) => '/approver/$approverId';
+
   // Church sub-resources (columns and positions)
   static String churchColumns(String churchId) => '/church/$churchId/columns';
   static String churchColumn(String churchId, String columnId) =>
@@ -56,5 +60,10 @@ class Endpoints {
   // Membership positions root (query by churchId)
   static const String membershipPositions = '/membership-position';
   static String membershipPosition({required int positionId}) => '/membership-position/$positionId';
+
+  static const String memberships = '/membership';
+  static String membership({required int membershipId}) => '/membership/$membershipId';
+
+  static const String validatePhone = '/auth/validate';
 
 }

@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../models/app_error.dart';
 import '../models/approval_rule.dart';
 import '../models/member_position.dart';
 import '../models/request/request.dart';
 import '../models/response/response.dart';
+import '../models/result.dart';
 import '../services/http_service.dart';
 import '../utils/error_mapper.dart';
 import '../config/endpoint.dart';
@@ -18,7 +18,7 @@ class ApprovalRepository {
   ApprovalRepository(this._ref);
   
   /// Fetch approval rules with pagination
-  Future<PaginationResponseWrapper<ApprovalRule>> fetchApprovalRules({
+  Future<Result<PaginationResponseWrapper<ApprovalRule>, Failure>> fetchApprovalRules({
     required PaginationRequestWrapper<GetFetchApprovalRulesRequest> paginationRequest,
   }) async {
     try {
@@ -31,19 +31,22 @@ class ApprovalRepository {
       );
       
       final data = response.data ?? {};
-      return PaginationResponseWrapper.fromJson(
+      final result = PaginationResponseWrapper.fromJson(
         data,
         (e) => ApprovalRule.fromJson(e as Map<String, dynamic>),
       );
+      return Result.success(result);
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to fetch approval rules');
+      final error = ErrorMapper.fromDio(e, 'Failed to fetch approval rules');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to fetch approval rules', e, st);
+      final error = ErrorMapper.unknown('Failed to fetch approval rules', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
   /// Fetch membership positions with pagination
-  Future<PaginationResponseWrapper<MemberPosition>> fetchMembershipPositions({
+  Future<Result<PaginationResponseWrapper<MemberPosition>, Failure>> fetchMembershipPositions({
     required PaginationRequestWrapper<GetFetchPositionsRequest> paginationRequest,
   }) async {
     try {
@@ -56,19 +59,22 @@ class ApprovalRepository {
       );
       
       final data = response.data ?? {};
-      return PaginationResponseWrapper.fromJson(
+      final result = PaginationResponseWrapper.fromJson(
         data,
         (e) => MemberPosition.fromJson(e as Map<String, dynamic>),
       );
+      return Result.success(result);
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to fetch positions');
+      final error = ErrorMapper.fromDio(e, 'Failed to fetch positions');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to fetch positions', e, st);
+      final error = ErrorMapper.unknown('Failed to fetch positions', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
   /// Fetch a single approval rule by ID
-  Future<ApprovalRule> fetchApprovalRuleById(int ruleId) async {
+  Future<Result<ApprovalRule, Failure>> fetchApprovalRuleById(int ruleId) async {
     try {
       final http = _ref.read(httpServiceProvider);
       final response = await http.get<Map<String, dynamic>>(
@@ -78,19 +84,21 @@ class ApprovalRepository {
       final body = response.data;
       final Map<String, dynamic> json = body?['data'] ?? {};
       if (json.isEmpty) {
-        throw AppError.network('Invalid approval rule response payload');
+        return Result.failure(Failure('Invalid approval rule response payload'));
       }
       
-      return ApprovalRule.fromJson(json);
+      return Result.success(ApprovalRule.fromJson(json));
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to fetch approval rule');
+      final error = ErrorMapper.fromDio(e, 'Failed to fetch approval rule');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to fetch approval rule', e, st);
+      final error = ErrorMapper.unknown('Failed to fetch approval rule', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
   /// Create a new approval rule
-  Future<ApprovalRule> createApprovalRule(Map<String, dynamic> data) async {
+  Future<Result<ApprovalRule, Failure>> createApprovalRule(Map<String, dynamic> data) async {
     try {
       final http = _ref.read(httpServiceProvider);
       final response = await http.post<Map<String, dynamic>>(
@@ -101,19 +109,21 @@ class ApprovalRepository {
       final body = response.data;
       final Map<String, dynamic> json = body?['data'] ?? {};
       if (json.isEmpty) {
-        throw AppError.network('Invalid create approval rule response payload');
+        return Result.failure(Failure('Invalid create approval rule response payload'));
       }
       
-      return ApprovalRule.fromJson(json);
+      return Result.success(ApprovalRule.fromJson(json));
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to create approval rule');
+      final error = ErrorMapper.fromDio(e, 'Failed to create approval rule');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to create approval rule', e, st);
+      final error = ErrorMapper.unknown('Failed to create approval rule', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
   /// Update an existing approval rule
-  Future<ApprovalRule> updateApprovalRule({
+  Future<Result<ApprovalRule, Failure>> updateApprovalRule({
     required int ruleId,
     required Map<String, dynamic> data,
   }) async {
@@ -127,26 +137,31 @@ class ApprovalRepository {
       final body = response.data;
       final Map<String, dynamic> json = body?['data'] ?? {};
       if (json.isEmpty) {
-        throw AppError.network('Invalid update approval rule response payload');
+        return Result.failure(Failure('Invalid update approval rule response payload'));
       }
       
-      return ApprovalRule.fromJson(json);
+      return Result.success(ApprovalRule.fromJson(json));
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to update approval rule');
+      final error = ErrorMapper.fromDio(e, 'Failed to update approval rule');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to update approval rule', e, st);
+      final error = ErrorMapper.unknown('Failed to update approval rule', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
   /// Delete an approval rule
-  Future<void> deleteApprovalRule(int ruleId) async {
+  Future<Result<void, Failure>> deleteApprovalRule(int ruleId) async {
     try {
       final http = _ref.read(httpServiceProvider);
       await http.delete(Endpoints.approvalRule(ruleId.toString()));
+      return Result.success(null);
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to delete approval rule');
+      final error = ErrorMapper.fromDio(e, 'Failed to delete approval rule');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to delete approval rule', e, st);
+      final error = ErrorMapper.unknown('Failed to delete approval rule', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 }

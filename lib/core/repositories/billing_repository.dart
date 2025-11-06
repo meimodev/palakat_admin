@@ -1,48 +1,39 @@
 import 'package:flutter/material.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:palakat_admin/core/models/async_state.dart';
 import 'package:palakat_admin/core/models/billing.dart';
+import 'package:palakat_admin/core/models/result.dart';
 import 'package:palakat_admin/core/constants/enums.dart';
-import 'package:palakat_admin/core/services/api_service.dart';
 import 'package:palakat_admin/core/utils/error_mapper.dart';
 import 'package:dio/dio.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'billing_repository.g.dart';
 
 @riverpod
-BillingRepository billingRepository(Ref ref) {
-  final apiService = ref.watch(apiServiceProvider);
-  return BillingRepository(apiService: apiService);
-}
+BillingRepository billingRepository(Ref ref) => BillingRepository(ref);
 
 class BillingRepository {
-  final ApiService apiService;
+  BillingRepository(this._ref);
 
-  BillingRepository({required this.apiService});
+  final Ref _ref;
 
   /// Fetch all billing items (with mock data for now)
-  Future<AsyncState<List<BillingItem>>> getBillingItemsAsync() async {
+  Future<Result<List<BillingItem>, Failure>> getBillingItemsAsync() async {
     try {
-      // TODO: Replace with real API call when backend is ready
-      // final response = await apiService.get(BillingEndpoints.getBillingItems);
-      // final items = (response.data as List)
-      //     .map((json) => BillingItem.fromJson(json))
-      //     .toList();
-      
-      // Mock data for now
       await Future.delayed(const Duration(milliseconds: 800));
       final items = _generateMockBillingItems();
       
-      return AsyncState.success(items);
+      return Result.success(items);
     } on DioException catch (e, st) {
-      return AsyncState.error(ErrorMapper.fromDio(e, 'Failed to fetch billing items', st));
+      final error = ErrorMapper.fromDio(e, 'Failed to fetch billing items', st);
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      return AsyncState.error(ErrorMapper.unknown('Failed to fetch billing items', e, st));
+      final error = ErrorMapper.unknown('Failed to fetch billing items', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
   /// Fetch payment history (with mock data for now)
-  Future<AsyncState<List<PaymentHistory>>> getPaymentHistoryAsync() async {
+  Future<Result<List<PaymentHistory>, Failure>> getPaymentHistoryAsync() async {
     try {
       // TODO: Replace with real API call when backend is ready
       // final response = await apiService.get(BillingEndpoints.getPaymentHistory);
@@ -54,16 +45,18 @@ class BillingRepository {
       await Future.delayed(const Duration(milliseconds: 600));
       final payments = _generateMockPaymentHistory();
       
-      return AsyncState.success(payments);
+      return Result.success(payments);
     } on DioException catch (e, st) {
-      return AsyncState.error(ErrorMapper.fromDio(e, 'Failed to fetch payment history', st));
+      final error = ErrorMapper.fromDio(e, 'Failed to fetch payment history', st);
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      return AsyncState.error(ErrorMapper.unknown('Failed to fetch payment history', e, st));
+      final error = ErrorMapper.unknown('Failed to fetch payment history', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
   /// Record a payment for a billing item
-  Future<AsyncState<void>> recordPaymentAsync({
+  Future<Result<void, Failure>> recordPaymentAsync({
     required String billingItemId,
     required PaymentMethod paymentMethod,
     String? transactionId,
@@ -82,11 +75,13 @@ class BillingRepository {
       // );
       
       await Future.delayed(const Duration(milliseconds: 500));
-      return const AsyncState.success(null);
+      return Result.success(null);
     } on DioException catch (e, st) {
-      return AsyncState.error(ErrorMapper.fromDio(e, 'Failed to record payment', st));
+      final error = ErrorMapper.fromDio(e, 'Failed to record payment', st);
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      return AsyncState.error(ErrorMapper.unknown('Failed to record payment', e, st));
+      final error = ErrorMapper.unknown('Failed to record payment', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 

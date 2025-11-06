@@ -11,6 +11,7 @@ part 'app_config.g.dart';
 /// Centralized configuration loaded from .env
 @freezed
 abstract class AppConfig with _$AppConfig {
+
   const factory AppConfig({required String apiBaseUrl, String? apiKey}) =
       _AppConfig;
 

@@ -1,10 +1,11 @@
 import 'package:dio/dio.dart';
+import 'package:palakat_admin/core/models/account.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:palakat_admin/core/config/endpoint.dart';
-import 'package:palakat_admin/core/models/app_error.dart';
 import 'package:palakat_admin/core/models/auth_credentials.dart';
 import 'package:palakat_admin/core/models/auth_response.dart';
 import 'package:palakat_admin/core/models/auth_tokens.dart';
+import 'package:palakat_admin/core/models/result.dart';
 import 'package:palakat_admin/core/services/local_storage_service.dart';
 import 'package:palakat_admin/core/services/local_storage_service_provider.dart';
 import 'package:palakat_admin/core/services/http_service.dart';
@@ -18,7 +19,9 @@ class AuthRepository {
 
   const AuthRepository(this._dio, this._localStorageService);
 
-  Future<AuthResponse> signIn(AuthCredentials credentials) async {
+  Future<Result<AuthResponse, Failure>> signIn(
+    AuthCredentials credentials,
+  ) async {
     try {
       final body = {
         'identifier': credentials.identifier,
@@ -31,45 +34,116 @@ class AuthRepository {
       final auth = AuthResponse.fromJson(res.data?["data"] ?? const {});
       // Persist full auth payload (tokens + account) using Hive
       await _localStorageService.saveAuth(auth);
-      return auth;
+      return Result.success(auth);
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to sign in');
+      final error = ErrorMapper.fromDio(e, 'Failed to sign in');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to sign in', e, st);
+      final error = ErrorMapper.unknown('Failed to sign in', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
-  Future<AuthTokens> refresh() async {
+  Future<Result<AuthTokens, Failure>> refresh() async {
     try {
       final refreshToken = _localStorageService.refreshToken;
       if (refreshToken == null || refreshToken.isEmpty) {
-        throw AppError.validation('No refresh token available');
+        return Result.failure(Failure('No refresh token available'));
       }
       final res = await _dio.post<Map<String, dynamic>>(
         Endpoints.refresh,
-        data: {
-          'refresh_token': refreshToken,
-        },
+        data: {'refresh_token': refreshToken},
       );
       // some APIs return tokens directly; others nest in data
       final data = res.data ?? const {};
       final tokens = AuthTokens.fromJson(data["data"]);
       await _localStorageService.saveTokens(tokens);
-      return tokens;
+      return Result.success(tokens);
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to refresh tokens');
+      final error = ErrorMapper.fromDio(e, 'Failed to refresh tokens');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to refresh tokens', e, st);
+      final error = ErrorMapper.unknown('Failed to refresh tokens', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
-  Future<void> signOut() async {
+  Future<Result<void, Failure>> signOut() async {
     try {
       await _dio.post(Endpoints.signOut);
     } catch (_) {
       // ignore network errors on logout
     } finally {
       await _localStorageService.clear();
+    }
+    // Always succeed after clearing local storage
+    return Result.success(null);
+  }
+
+  Future<Result<Account?, Failure>> getSignedInAccount() async {
+    try {
+      final result = _localStorageService.currentAuth;
+      return Result.success(result?.account);
+    } catch (e) {
+      return Result.failure(Failure.fromException(e));
+    }
+  }
+
+  /// Validates if an account exists by phone number
+  Future<Result<AuthResponse, Failure>> validateAccountByPhone(
+    String phone,
+  ) async {
+    try {
+      final res = await _dio.get<Map<String, dynamic>>(
+        Endpoints.validatePhone,
+        queryParameters: {'phone': phone},
+      );
+
+      final data = res.data ?? {};
+      final json = data['data'];
+
+      if (json == null || json.isEmpty) {
+        return Result.failure(Failure('Account not found', 404));
+      }
+      final auth = AuthResponse.fromJson(json);
+      await _localStorageService.saveAuth(auth);
+
+      return Result.success(auth);
+    } on DioException catch (e) {
+      final error = ErrorMapper.fromDio(e, 'Failed to validate account');
+      return Result.failure(Failure(error.message, error.statusCode));
+    } catch (e, st) {
+      final error = ErrorMapper.unknown('Failed to validate account', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
+    }
+  }
+
+  /// Signs in with an existing account (phone-based auth flow)
+  /// Creates auth session and stores it locally
+  Future<Result<AuthResponse, Failure>> signInWithAccount(
+    Account account,
+  ) async {
+    try {
+      // For phone-based OTP auth, we create a minimal auth response
+      // This assumes the backend validates the OTP separately
+      final authResponse = AuthResponse(
+        tokens: AuthTokens(
+          accessToken: 'phone-auth-${account.phone}',
+          refreshToken: 'refresh-${account.phone}',
+          expiresAt: DateTime.now().add(const Duration(days: 30)),
+        ),
+        account: account,
+      );
+
+      await _localStorageService.saveAuth(authResponse);
+      return Result.success(authResponse);
+    } catch (e, st) {
+      final error = ErrorMapper.unknown(
+        'Failed to sign in with account',
+        e,
+        st,
+      );
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 }

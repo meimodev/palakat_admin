@@ -3,6 +3,7 @@ library;
 
 // Generic models
 export 'app_error.dart';
+export 'result.dart';
 
 // Request/Response models
 export 'request/request.dart';
@@ -30,3 +31,6 @@ export 'member_position_detail.dart';
 export 'membership.dart';
 export 'file_manager.dart';
 export 'report.dart';
+export 'song.dart';
+export 'song_part.dart';
+

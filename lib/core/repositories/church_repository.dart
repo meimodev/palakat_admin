@@ -5,9 +5,9 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/church.dart';
 import '../models/column.dart' as cm;
 import '../models/location.dart';
-import '../models/app_error.dart';
 import '../models/member_position_detail.dart';
 import '../models/member_position.dart';
+import '../models/result.dart';
 import '../services/http_service.dart';
 import '../utils/error_mapper.dart';
 import '../config/endpoint.dart';
@@ -22,7 +22,7 @@ class ChurchRepository {
 
   final Ref _ref;
 
-  Future<Church> fetchChurchProfile(int churchId) async {
+  Future<Result<Church, Failure>> fetchChurchProfile(int churchId) async {
     try {
       final http = _ref.read(httpServiceProvider);
       final response = await http.get<Map<String, dynamic>>(
@@ -32,18 +32,20 @@ class ChurchRepository {
       final data = response.data;
       final Map<String, dynamic> json = data?["data"] ?? {};
       if (json.isEmpty) {
-        throw AppError.network('Invalid church response payload');
+        return Result.failure(Failure('Invalid church response payload'));
       }
 
-      return Church.fromJson(json);
+      return Result.success(Church.fromJson(json));
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to fetch church profile');
+      final error = ErrorMapper.fromDio(e, 'Failed to fetch church profile');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to fetch church profile', e, st);
+      final error = ErrorMapper.unknown('Failed to fetch church profile', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
-  Future<Church> updateChurchProfile({
+  Future<Result<Church, Failure>> updateChurchProfile({
     required int churchId,
     required Map<String, dynamic> update,
   }) async {
@@ -57,17 +59,19 @@ class ChurchRepository {
       final data = response.data;
       final Map<String, dynamic> json = data?["data"] ?? {};
       if (json.isEmpty) {
-        throw AppError.network('Invalid update church response payload');
+        return Result.failure(Failure('Invalid update church response payload'));
       }
-      return Church.fromJson(json);
+      return Result.success(Church.fromJson(json));
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to update church profile');
+      final error = ErrorMapper.fromDio(e, 'Failed to update church profile');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to update church profile', e, st);
+      final error = ErrorMapper.unknown('Failed to update church profile', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
-  Future<Location> fetchLocation(int locationId) async {
+  Future<Result<Location, Failure>> fetchLocation(int locationId) async {
     try {
       final http = _ref.read(httpServiceProvider);
       final response = await http.get<Map<String, dynamic>>(
@@ -77,18 +81,20 @@ class ChurchRepository {
       final data = response.data;
       final Map<String, dynamic> json = data?["data"] ?? {};
       if (json.isEmpty) {
-        throw AppError.network('Invalid church response payload');
+        return Result.failure(Failure('Invalid location response payload'));
       }
 
-      return Location.fromJson(json);
+      return Result.success(Location.fromJson(json));
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to fetch church profile');
+      final error = ErrorMapper.fromDio(e, 'Failed to fetch location');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to fetch church profile', e, st);
+      final error = ErrorMapper.unknown('Failed to fetch location', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
-  Future<Location> updateLocation({
+  Future<Result<Location, Failure>> updateLocation({
     required int locationId,
     required Map<String, dynamic> update,
   }) async {
@@ -103,18 +109,20 @@ class ChurchRepository {
       final data = response.data;
       final Map<String, dynamic> json = data?['data'] ?? {};
       if (json.isEmpty) {
-        throw AppError.network('Invalid update location response payload');
+        return Result.failure(Failure('Invalid update location response payload'));
       }
 
-      return Location.fromJson(json);
+      return Result.success(Location.fromJson(json));
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to update location');
+      final error = ErrorMapper.fromDio(e, 'Failed to update location');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to update location', e, st);
+      final error = ErrorMapper.unknown('Failed to update location', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
-  Future<cm.Column> updateColumn({
+  Future<Result<cm.Column, Failure>> updateColumn({
     required int columnId,
     required Map<String, dynamic> update,
   }) async {
@@ -129,18 +137,20 @@ class ChurchRepository {
       final data = response.data;
       final Map<String, dynamic> json = data?['data'] ?? {};
       if (json.isEmpty) {
-        throw AppError.network('Invalid update column response payload');
+        return Result.failure(Failure('Invalid update column response payload'));
       }
 
-      return cm.Column.fromJson(json);
+      return Result.success(cm.Column.fromJson(json));
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to update column');
+      final error = ErrorMapper.fromDio(e, 'Failed to update column');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to update column', e, st);
+      final error = ErrorMapper.unknown('Failed to update column', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
-  Future<ColumnDetail> fetchColumn({required int columnId}) async {
+  Future<Result<ColumnDetail, Failure>> fetchColumn({required int columnId}) async {
     try {
       final http = _ref.read(httpServiceProvider);
       final response = await http.get<Map<String, dynamic>>(
@@ -150,17 +160,19 @@ class ChurchRepository {
       final data = response.data;
       final Map<String, dynamic> json = data?['data'] ?? {};
       if (json.isEmpty) {
-        throw AppError.network('Invalid column response payload');
+        return Result.failure(Failure('Invalid column response payload'));
       }
-      return ColumnDetail.fromJson(json);
+      return Result.success(ColumnDetail.fromJson(json));
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to fetch column');
+      final error = ErrorMapper.fromDio(e, 'Failed to fetch column');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to fetch column', e, st);
+      final error = ErrorMapper.unknown('Failed to fetch column', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
-  Future<cm.Column> createColumn({required Map<String, dynamic> data}) async {
+  Future<Result<cm.Column, Failure>> createColumn({required Map<String, dynamic> data}) async {
     try {
       final http = _ref.read(httpServiceProvider);
       final response = await http.post<Map<String, dynamic>>(
@@ -171,28 +183,33 @@ class ChurchRepository {
       final body = response.data;
       final Map<String, dynamic> json = body?['data'] ?? {};
       if (json.isEmpty) {
-        throw AppError.network('Invalid create column response payload');
+        return Result.failure(Failure('Invalid create column response payload'));
       }
-      return cm.Column.fromJson(json);
+      return Result.success(cm.Column.fromJson(json));
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to create column');
+      final error = ErrorMapper.fromDio(e, 'Failed to create column');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to create column', e, st);
+      final error = ErrorMapper.unknown('Failed to create column', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
-  Future<void> deleteColumn({required int columnId}) async {
+  Future<Result<void, Failure>> deleteColumn({required int columnId}) async {
     try {
       final http = _ref.read(httpServiceProvider);
       await http.delete<void>(Endpoints.column(columnId: columnId));
+      return Result.success(null);
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to delete column');
+      final error = ErrorMapper.fromDio(e, 'Failed to delete column');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to delete column', e, st);
+      final error = ErrorMapper.unknown('Failed to delete column', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
-  Future<List<cm.Column>> fetchColumns({required int churchId}) async {
+  Future<Result<List<cm.Column>, Failure>> fetchColumns({required int churchId}) async {
     try {
       final http = _ref.read(httpServiceProvider);
       final response = await http.get<Map<String, dynamic>>(
@@ -202,17 +219,20 @@ class ChurchRepository {
 
       final data = response.data;
       final List<dynamic> jsonList = (data?['data'] as List?) ?? const [];
-      return jsonList
+      final columns = jsonList
           .map((e) => cm.Column.fromJson(e as Map<String, dynamic>))
           .toList();
+      return Result.success(columns);
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to fetch columns');
+      final error = ErrorMapper.fromDio(e, 'Failed to fetch columns');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to fetch columns', e, st);
+      final error = ErrorMapper.unknown('Failed to fetch columns', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
-  Future<List<MemberPosition>> fetchPositions({required int churchId}) async {
+  Future<Result<List<MemberPosition>, Failure>> fetchPositions({required int churchId}) async {
     try {
       final http = _ref.read(httpServiceProvider);
       final response = await http.get<Map<String, dynamic>>(
@@ -222,17 +242,20 @@ class ChurchRepository {
 
       final data = response.data;
       final List<dynamic> jsonList = (data?['data'] as List?) ?? const [];
-      return jsonList
+      final positions = jsonList
           .map((e) => MemberPosition.fromJson(e as Map<String, dynamic>))
           .toList();
+      return Result.success(positions);
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to fetch positions');
+      final error = ErrorMapper.fromDio(e, 'Failed to fetch positions');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to fetch positions', e, st);
+      final error = ErrorMapper.unknown('Failed to fetch positions', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
-  Future<MemberPositionDetail> fetchPosition({required int positionId}) async {
+  Future<Result<MemberPositionDetail, Failure>> fetchPosition({required int positionId}) async {
     try {
       final http = _ref.read(httpServiceProvider);
       final response = await http.get<Map<String, dynamic>>(
@@ -242,34 +265,38 @@ class ChurchRepository {
       final data = response.data;
       final Map<String, dynamic> json = data?['data'] ?? {};
       if (json.isEmpty) {
-        throw AppError.network('Invalid position response payload');
+        return Result.failure(Failure('Invalid position response payload'));
       }
-      return MemberPositionDetail.fromJson(json);
+      return Result.success(MemberPositionDetail.fromJson(json));
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to fetch position');
+      final error = ErrorMapper.fromDio(e, 'Failed to fetch position');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to fetch position', e, st);
+      final error = ErrorMapper.unknown('Failed to fetch position', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
-  Future<void> deletePosition({required int positionId}) async {
+  Future<Result<void, Failure>> deletePosition({required int positionId}) async {
     try {
       final http = _ref.read(httpServiceProvider);
       await http.delete<void>(
         Endpoints.membershipPosition(positionId: positionId),
       );
+      return Result.success(null);
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to delete position');
+      final error = ErrorMapper.fromDio(e, 'Failed to delete position');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to delete position', e, st);
+      final error = ErrorMapper.unknown('Failed to delete position', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 
-  Future<MemberPosition> updateMemberPosition({
+  Future<Result<MemberPosition, Failure>> updateMemberPosition({
     required int positionId,
     required Map<String, dynamic> update,
   }) async {
-
     try {
       final http = _ref.read(httpServiceProvider);
 
@@ -281,19 +308,20 @@ class ChurchRepository {
       final data = response.data;
       final Map<String, dynamic> json = data?['data'] ?? {};
       if (json.isEmpty) {
-        throw AppError.network('Invalid update position response payload');
+        return Result.failure(Failure('Invalid update position response payload'));
       }
 
-      return MemberPosition.fromJson(json);
+      return Result.success(MemberPosition.fromJson(json));
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to update position');
+      final error = ErrorMapper.fromDio(e, 'Failed to update position');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to update position', e, st);
+      final error = ErrorMapper.unknown('Failed to update position', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
-
   }
 
-  Future<MemberPosition> createMemberPosition({required Map<String, dynamic> data}) async {
+  Future<Result<MemberPosition, Failure>> createMemberPosition({required Map<String, dynamic> data}) async {
     try {
       final http = _ref.read(httpServiceProvider);
       final response = await http.post<Map<String, dynamic>>(
@@ -304,13 +332,15 @@ class ChurchRepository {
       final body = response.data;
       final Map<String, dynamic> json = body?['data'] ?? {};
       if (json.isEmpty) {
-        throw AppError.network('Invalid create position response payload');
+        return Result.failure(Failure('Invalid create position response payload'));
       }
-      return MemberPosition.fromJson(json);
+      return Result.success(MemberPosition.fromJson(json));
     } on DioException catch (e) {
-      throw ErrorMapper.fromDio(e, 'Failed to create position');
+      final error = ErrorMapper.fromDio(e, 'Failed to create position');
+      return Result.failure(Failure(error.message, error.statusCode));
     } catch (e, st) {
-      throw ErrorMapper.unknown('Failed to create position', e, st);
+      final error = ErrorMapper.unknown('Failed to create position', e, st);
+      return Result.failure(Failure(error.message, error.statusCode));
     }
   }
 }

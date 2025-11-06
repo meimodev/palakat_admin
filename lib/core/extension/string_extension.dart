@@ -1,12 +1,23 @@
+import 'package:jiffy/jiffy.dart';
+
 extension StringExtension on String {
   String get toCamelCase {
-    return toLowerCase().split(' ')
+    return toLowerCase()
+        .split(' ')
         .map(
           (word) => word.isNotEmpty
               ? '${word[0].toUpperCase()}${word.substring(1)}'
               : '',
         )
         .join(' ');
+  }
+
+  Jiffy? get toJiffy {
+    try {
+      return Jiffy.parse(this);
+    } catch (e) {
+      return null;
+    }
   }
 
   // Returns initials from a full name string, e.g., "John Doe" -> "JD"
@@ -26,10 +37,9 @@ extension StringExtension on String {
     if (isEmpty) return this;
     final trimmed = trim();
     final hasPlus = trimmed.startsWith('+');
-    final digits = RegExp(r'\d+')
-        .allMatches(trimmed)
-        .map((m) => m.group(0)!)
-        .join();
+    final digits = RegExp(
+      r'\d+',
+    ).allMatches(trimmed).map((m) => m.group(0)!).join();
 
     if (digits.length == 12 || digits.length == 13) {
       final p1 = digits.substring(0, 4);
