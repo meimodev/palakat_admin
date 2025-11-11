@@ -236,39 +236,4 @@ class MembershipRepository {
     }
   }
 
-  /// Fetches the currently signed-in membership from local storage
-  Future<Result<Membership?, Failure>> getSignedInMembership() async {
-    try {
-      final storage = _ref.read(localStorageServiceProvider);
-      final membership = storage.currentMembership;
-      return Result.success(membership);
-    } catch (e, st) {
-      final error = ErrorMapper.unknown('Failed to get signed in membership', e, st);
-      return Result.failure(Failure(error.message, error.statusCode));
-    }
-  }
-
-  /// Saves the membership to local storage (sign in)
-  Future<Result<void, Failure>> signInMembership(Membership membership) async {
-    try {
-      final storage = _ref.read(localStorageServiceProvider);
-      await storage.saveMembership(membership);
-      return Result.success(null);
-    } catch (e, st) {
-      final error = ErrorMapper.unknown('Failed to sign in membership', e, st);
-      return Result.failure(Failure(error.message, error.statusCode));
-    }
-  }
-
-  /// Clears the membership from local storage (sign out)
-  Future<Result<void, Failure>> signOutMembership() async {
-    try {
-      final storage = _ref.read(localStorageServiceProvider);
-      await storage.clearMembership();
-      return Result.success(null);
-    } catch (e, st) {
-      final error = ErrorMapper.unknown('Failed to sign out membership', e, st);
-      return Result.failure(Failure(error.message, error.statusCode));
-    }
-  }
 }

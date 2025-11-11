@@ -5,7 +5,6 @@ export 'build_context_extension.dart';
 export 'color_extension.dart';
 export 'date_time_extension.dart';
 export 'material_color_extension.dart';
-export 'membership_extension.dart';
 
 export 'map_extension.dart';
 export 'number_string_extensions.dart';

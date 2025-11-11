@@ -5,3 +5,4 @@ export 'get_fetch_documents_request.dart';
 export 'get_fetch_member_position_request.dart';
 export 'get_fetch_positions_request.dart';
 export 'pagination_request_wrapper.dart';
+export 'get_fetch_activity_request.dart';

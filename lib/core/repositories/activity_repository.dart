@@ -19,9 +19,10 @@ class ActivityRepository {
   final Ref _ref;
 
   Future<Result<PaginationResponseWrapper<Activity>, Failure>> fetchActivities({
-    required PaginationRequestWrapper paginationRequest,
+    required PaginationRequestWrapper<GetFetchActivitiesRequest> paginationRequest,
   }) async {
     try {
+
       final http = _ref.read(httpServiceProvider);
 
       final query = paginationRequest.toJsonFlat((p) => p.toJson());

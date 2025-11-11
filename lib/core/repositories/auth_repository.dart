@@ -118,28 +118,15 @@ class AuthRepository {
     }
   }
 
-  /// Signs in with an existing account (phone-based auth flow)
-  /// Creates auth session and stores it locally
-  Future<Result<AuthResponse, Failure>> signInWithAccount(
-    Account account,
-  ) async {
+  Future<Result<AuthResponse?, Failure>> updateLocallySavedAuth(
+      AuthResponse auth,
+      ) async {
     try {
-      // For phone-based OTP auth, we create a minimal auth response
-      // This assumes the backend validates the OTP separately
-      final authResponse = AuthResponse(
-        tokens: AuthTokens(
-          accessToken: 'phone-auth-${account.phone}',
-          refreshToken: 'refresh-${account.phone}',
-          expiresAt: DateTime.now().add(const Duration(days: 30)),
-        ),
-        account: account,
-      );
-
-      await _localStorageService.saveAuth(authResponse);
-      return Result.success(authResponse);
+      await _localStorageService.saveAuth(auth);
+      return Result.success(auth);
     } catch (e, st) {
       final error = ErrorMapper.unknown(
-        'Failed to sign in with account',
+        'Failed to update locally saved auth',
         e,
         st,
       );

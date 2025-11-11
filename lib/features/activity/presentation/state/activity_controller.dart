@@ -173,29 +173,3 @@ class ActivityController extends _$ActivityController {
   }
 }
 
-/// Request model for fetching activities
-class GetFetchActivitiesRequest {
-  final int churchId;
-  final String? search;
-  final DateTime? startDate;
-  final DateTime? endDate;
-  final ActivityType? activityType;
-
-  GetFetchActivitiesRequest({
-    required this.churchId,
-    this.search,
-    this.startDate,
-    this.endDate,
-    this.activityType,
-  });
-
-  Map<String, dynamic> toJson() {
-    return {
-      'churchId': churchId,
-      if (search != null) 'search': search,
-      if (startDate != null) 'startDate': startDate!.toIso8601String(),
-      if (endDate != null) 'endDate': endDate!.toIso8601String(),
-      if (activityType != null) 'activityType': activityType!.name.toUpperCase(),
-    };
-  }
-}

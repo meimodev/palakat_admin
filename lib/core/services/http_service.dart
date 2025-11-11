@@ -272,9 +272,9 @@ HttpService httpService(Ref ref) {
 
   return HttpService(
     baseUrl: config.apiBaseUrl,
-    connectTimeout: const Duration(seconds: 30),
-    receiveTimeout: const Duration(seconds: 30),
-    sendTimeout: const Duration(seconds: 30),
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 20),
+    sendTimeout: const Duration(seconds: 20),
     extraHeaders: headers.isEmpty ? null : headers,
     accessTokenProvider: () => localStorage.accessToken ?? '',
     refreshTokens: () async {
